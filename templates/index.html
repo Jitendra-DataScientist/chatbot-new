@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Analysis Assistant</title>
+  
+  <!-- Content Security Policy to prevent CORB issues -->
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://public.tableau.com https://tableau-aws.uberinternal.com 'unsafe-inline'; connect-src 'self' https://tableau-aws.uberinternal.com; style-src 'self' 'unsafe-inline';">
+  
+  <!-- Prevent multiple requests and race conditions -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
+  <!-- Transparent, click-through canvas except bubble -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  
+  <!-- Tableau Extensions API - Fixed CORB issue with proper source and crossorigin -->
+  <!-- Option 1: Use your internal Tableau server (recommended for your setup) -->
+  <script src="https://tableau-aws.uberinternal.com/javascripts/api/tableau.extensions.1.latest.js" crossorigin="anonymous" defer></script>
+  
+  <!-- Option 2: Fallback to public Tableau API if internal fails -->
+  <script>
+    // Fallback loader for Tableau Extensions API
+    window.addEventListener('DOMContentLoaded', function() {
+      // Check if Tableau API loaded successfully
+      setTimeout(function() {
+        if (typeof tableau === 'undefined') {
+          console.log('Loading fallback Tableau Extensions API...');
+          const fallbackScript = document.createElement('script');
+          fallbackScript.src = 'https://public.tableau.com/javascripts/api/tableau.extensions.1.latest.js';
+          fallbackScript.crossOrigin = 'anonymous';
+          fallbackScript.defer = true;
+          document.head.appendChild(fallbackScript);
+        }
+      }, 1000);
+    });
+  </script>
+</head>
+<body>
+  <div id="root">
+    <!-- Full height container to enable proper sticky positioning -->
+    <div id="sticky-container">
+      <!-- Launcher button (visible by default) -->
+      <button id="launcher" aria-label="Open chatbot">
+        <span>Analysis Assistant</span>
+      </button>
+
+      <!-- Sticky chat bubble (hidden by default) -->
+      <div id="chatbot" role="dialog" aria-label="Chat assistant" aria-modal="false" hidden>
+        <div class="chat-header">
+          <div class="chat-title">Analysis Assistant</div>
+          <div class="chat-actions">
+            <button id="minBtn" title="Minimize" aria-label="Minimize chat">−</button>
+          </div>
+        </div>
+        
+        <!-- Export Progress Indicator (hidden by default) -->
+        <div id="export-progress" style="display: none; padding: 12px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-bottom: 1px solid rgba(255,255,255,0.2); font-size: 13px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <div class="spinner-small"></div>
+            <strong id="progress-stage">Loading...</strong>
+          </div>
+          <div id="progress-message" style="opacity: 0.9; font-size: 12px; margin-left: 26px;"></div>
+          <div id="progress-details" style="opacity: 0.8; font-size: 11px; margin-top: 4px; margin-left: 26px;"></div>
+        </div>
+        
+        <div id="chatlog" class="chat-log" aria-live="polite">
+          <div class="bot msg">Hi! I'm your Analytics Assistant. I'll help you analyze your Tableau dashboard data.</div>
+        </div>
+        
+        <!-- Chart selection will be dynamically inserted here -->
+        <div id="chart-buttons-container" style="display: none;"></div>
+        
+        <form id="chatForm" class="chat-form" autocomplete="off">
+          <input id="chatInput" name="message" type="text" placeholder="Select a chart first, then ask your question..." disabled />
+          <button type="submit" disabled>Send</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Single connection method - load app.js with proper error handling -->
+  <script>
+    // Prevent multiple script loads and race conditions
+    if (!window.appJsLoaded) {
+      window.appJsLoaded = true;
+      
+      // Add connection state tracking to prevent duplicates
+      window.tableauConnectionState = {
+        initializing: false,
+        initialized: false,
+        connectionKey: null
+      };
+      
+      // Load main application script
+      const appScript = document.createElement('script');
+      appScript.src = "{{ url_for('static', filename='app.js') }}";
+      appScript.defer = true;
+      appScript.onerror = function() {
+        console.error('Failed to load app.js');
+      };
+      document.body.appendChild(appScript);
+    }
+  </script>
+  
+  <!-- Export Progress Polling -->
+  <script>
+    (function() {
+      let exportProgressPoller = null;
+      let currentConnectionKey = null;
+      
+      // Export polling function
+      function pollExportStatus() {
+        if (!currentConnectionKey) {
+          stopExportStatusPolling();
+          return;
+        }
+        
+        fetch(`/api/export-status?connection_key=${encodeURIComponent(currentConnectionKey)}`)
+          .then(response => response.json())
+          .then(status => {
+            if (status.in_progress) {
+              showExportProgress(status);
+              // Disable chat input while exporting
+              const chatInput = document.getElementById('chatInput');
+              const chatSubmit = document.querySelector('#chatForm button[type="submit"]');
+              if (chatInput) chatInput.disabled = true;
+              if (chatSubmit) chatSubmit.disabled = true;
+            } else {
+              // Export complete or not started
+              if (status.stage === 'complete') {
+                showExportProgress({
+                  ...status,
+                  message: status.message || 'Dashboard data ready! You can now ask questions.'
+                });
+                // Re-enable chat after brief delay
+                setTimeout(() => {
+                  hideExportProgress();
+                  const chatInput = document.getElementById('chatInput');
+                  const chatSubmit = document.querySelector('#chatForm button[type="submit"]');
+                  if (chatInput) chatInput.disabled = false;
+                  if (chatSubmit) chatSubmit.disabled = false;
+                }, 2000);
+              } else if (status.stage === 'failed') {
+                showExportProgress({
+                  ...status,
+                  message: status.message || 'Export failed. You may still ask questions.'
+                });
+                setTimeout(() => hideExportProgress(), 5000);
+              } else {
+                hideExportProgress();
+              }
+              
+              // Stop polling if not in progress
+              if (!status.in_progress) {
+                stopExportStatusPolling();
+              }
+            }
+          })
+          .catch(err => {
+            console.warn('Export status poll error:', err);
+            // Don't show error to user, just stop polling
+            stopExportStatusPolling();
+          });
+      }
+      
+      function showExportProgress(status) {
+        const progressDiv = document.getElementById('export-progress');
+        const stageSpan = document.getElementById('progress-stage');
+        const messageDiv = document.getElementById('progress-message');
+        const detailsDiv = document.getElementById('progress-details');
+        
+        if (!progressDiv || !stageSpan || !messageDiv) return;
+        
+        // Show progress indicator
+        progressDiv.style.display = 'block';
+        
+        // Update stage
+        const stageText = {
+          'starting': '🚀 Starting',
+          'downloading': '📥 Downloading',
+          'parsing': '🔍 Parsing',
+          'extracting': '📊 Extracting Data',
+          'exporting': '💾 Exporting',
+          'complete': '✅ Complete',
+          'failed': '❌ Failed'
+        }[status.stage] || status.stage;
+        
+        stageSpan.textContent = stageText;
+        
+        // Update message
+        messageDiv.textContent = status.message || '';
+        
+        // Update details (datasources progress)
+        let detailsText = '';
+        if (status.datasources_processed > 0 || status.total_datasources > 0) {
+          detailsText = `Data sources: ${status.datasources_processed}/${status.total_datasources}`;
+          if (status.current_item) {
+            detailsText += ` (${status.current_item})`;
+          }
+        }
+        detailsDiv.textContent = detailsText;
+      }
+      
+      function hideExportProgress() {
+        const progressDiv = document.getElementById('export-progress');
+        if (progressDiv) {
+          progressDiv.style.display = 'none';
+        }
+      }
+      
+      function startExportStatusPolling(connectionKey) {
+        currentConnectionKey = connectionKey;
+        
+        // Stop any existing poller
+        stopExportStatusPolling();
+        
+        // Start polling immediately
+        pollExportStatus();
+        
+        // Then poll every 1 second
+        exportProgressPoller = setInterval(pollExportStatus, 1000);
+        
+        console.log('Started export status polling for:', connectionKey);
+      }
+      
+      function stopExportStatusPolling() {
+        if (exportProgressPoller) {
+          clearInterval(exportProgressPoller);
+          exportProgressPoller = null;
+          console.log('Stopped export status polling');
+        }
+      }
+      
+      // NOTE: Export status polling is now handled directly in app.js
+      // This code is kept for backwards compatibility but is no longer used
+    })();
+  </script>
+  
+  <!-- CSS for spinner -->
+  <style>
+    .spinner-small {
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    #export-progress {
+      animation: slideDown 0.3s ease-out;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</body>
+</html>

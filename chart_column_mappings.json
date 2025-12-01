@@ -1,0 +1,18 @@
+{
+  "dashboards": [],
+  "csv_column_mapping": {},
+  "column_metadata": {},
+  "function_glossary": {
+    "COUNTD": "nunique() - Count distinct values",
+    "SUM": "sum() - Sum all values",
+    "AVG": "mean() - Average of values",
+    "MIN": "min() - Minimum value",
+    "MAX": "max() - Maximum value",
+    "COALESCE": "fillna() - Return first non-null value",
+    "IF...THEN...ELSE...END": "np.where() or df.apply() - Conditional logic",
+    "COUNT": "count() - Count non-null values",
+    "CONTAINS": "str.contains() - Check if string contains substring",
+    "DATEPART": "dt.year, dt.month, etc. - Extract date parts",
+    "DATEDIFF": "(date2 - date1).dt.days - Calculate date difference"
+  }
+}

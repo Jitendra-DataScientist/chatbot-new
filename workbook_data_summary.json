@@ -1,0 +1,2070 @@
+{
+  "FRO Dashboard_new_updated": {
+    "data_description": "This dataset contains information on customer service cases, including timestamps for creation and closure, various time metrics related to case handling, and calculated performance metrics, enabling analysis of ticket management and operational efficiency.",
+    "numerical_columns": {
+      "gap_to_close_in_mins": {
+        "count": 3858.0,
+        "mean": 46450.038102643855,
+        "std": 108313.49045068884,
+        "min": 0.0,
+        "25%": 4385.75,
+        "50%": 10428.5,
+        "75%": 28442.0,
+        "max": 705564.0,
+        "column_type": "string_as_numeric",
+        "original_dtype": "object"
+      },
+      "pending_customer_time": {
+        "count": 4102.0,
+        "mean": 32224.93807898586,
+        "std": 99994.08114016135,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 4320.0,
+        "75%": 12433.0,
+        "max": 703024.0,
+        "column_type": "string_as_numeric",
+        "original_dtype": "object"
+      },
+      "case_gap_to_close_in_mins_c": {
+        "count": 3858.0,
+        "mean": 46450.038102643855,
+        "std": 108313.49045068884,
+        "min": 0.0,
+        "25%": 4385.75,
+        "50%": 10428.5,
+        "75%": 28442.0,
+        "max": 705564.0,
+        "column_type": "string_as_numeric",
+        "original_dtype": "object"
+      },
+      "pending_Internal_time": {
+        "count": 4102.0,
+        "mean": 32224.93807898586,
+        "std": 99994.08114016135,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 4320.0,
+        "75%": 12433.0,
+        "max": 703024.0,
+        "column_type": "string_as_numeric",
+        "original_dtype": "object"
+      },
+      "On_Hold_time": {
+        "count": 4108.0,
+        "mean": 564.199123661149,
+        "std": 3653.7290613616956,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 0.0,
+        "75%": 0.0,
+        "max": 121516.0,
+        "column_type": "measure"
+      }
+    },
+    "categorical_columns": {
+      "create_day": {
+        "count": 4108,
+        "unique": 467,
+        "top": "2025-04-09 00:00:00.000",
+        "freq": 40,
+        "column_type": "categorical"
+      },
+      "create_week": {
+        "count": 4108,
+        "unique": 79,
+        "top": "2025-04-07 00:00:00.000",
+        "freq": 157,
+        "column_type": "categorical"
+      },
+      "create_month": {
+        "count": 4108,
+        "unique": 19,
+        "top": "2025-03-01 00:00:00.000",
+        "freq": 521,
+        "column_type": "categorical"
+      },
+      "case_id": {
+        "count": 4108,
+        "unique": 4108,
+        "top": "500Pb00000l8NR1IAM",
+        "freq": 1,
+        "column_type": "identifier"
+      },
+      "casenumber": {
+        "count": 4108,
+        "unique": 4108,
+        "top": "13459179",
+        "freq": 1,
+        "column_type": "identifier"
+      },
+      "createddate": {
+        "count": 4108,
+        "unique": 4107,
+        "top": "2024-09-12 06:20:02.000",
+        "freq": 2,
+        "column_type": "identifier"
+      },
+      "createddate_ist": {
+        "count": 4108,
+        "unique": 4107,
+        "top": "2024-09-12 11:50:02.000",
+        "freq": 2,
+        "column_type": "identifier"
+      },
+      "createddate_ist_time": {
+        "count": 4108,
+        "unique": 3984,
+        "top": "22:17:17",
+        "freq": 3,
+        "column_type": "identifier"
+      },
+      "created_weekday": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Tuesday",
+        "freq": 893,
+        "column_type": "categorical"
+      },
+      "closeddate": {
+        "count": 4108,
+        "unique": 3836,
+        "top": "\\N",
+        "freq": 250,
+        "column_type": "identifier"
+      },
+      "status": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Closed",
+        "freq": 3833,
+        "column_type": "categorical"
+      },
+      "eng_transfers": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 3619,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "PI_Time": {
+        "count": 4108,
+        "unique": 394,
+        "top": "\\N",
+        "freq": 3692,
+        "column_type": "categorical"
+      },
+      "OnHold_Time": {
+        "count": 4108,
+        "unique": 367,
+        "top": "\\N",
+        "freq": 3703,
+        "column_type": "categorical"
+      },
+      "age_in_hours": {
+        "count": 4108,
+        "unique": 1527,
+        "top": "0.2333333333333333",
+        "freq": 130,
+        "column_type": "categorical_numeric",
+        "original_dtype": "float64"
+      },
+      "date_assigned": {
+        "count": 4108,
+        "unique": 3021,
+        "top": "\\N",
+        "freq": 968,
+        "column_type": "identifier"
+      },
+      "product": {
+        "count": 4108,
+        "unique": 16,
+        "top": "Central",
+        "freq": 1047,
+        "column_type": "categorical"
+      },
+      "first_response_time": {
+        "count": 4108,
+        "unique": 2119,
+        "top": "\\N",
+        "freq": 1990,
+        "column_type": "identifier"
+      },
+      "outbound_email_count": {
+        "count": 4108,
+        "unique": 22,
+        "top": "1",
+        "freq": 1057,
+        "column_type": "categorical"
+      },
+      "initial_queue": {
+        "count": 4108,
+        "unique": 3,
+        "top": "U4B Business API Triage",
+        "freq": 3140,
+        "column_type": "categorical"
+      },
+      "last_queue": {
+        "count": 4108,
+        "unique": 1,
+        "top": "U4B Business API Triage",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "last_status_change_date": {
+        "count": 4108,
+        "unique": 4084,
+        "top": "2025-04-22 15:00:58.000",
+        "freq": 4,
+        "column_type": "identifier"
+      },
+      "lastmodifieddate": {
+        "count": 4108,
+        "unique": 3789,
+        "top": "2025-05-29 09:19:29.000",
+        "freq": 199,
+        "column_type": "identifier"
+      },
+      "level_2": {
+        "count": 4108,
+        "unique": 27,
+        "top": "Did not read documentation",
+        "freq": 1141,
+        "column_type": "categorical"
+      },
+      "level_3": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "level_4": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "accountid": {
+        "count": 4108,
+        "unique": 645,
+        "top": "0014z00001ooaWfAAI",
+        "freq": 357,
+        "column_type": "categorical"
+      },
+      "account_tier": {
+        "count": 4108,
+        "unique": 3,
+        "top": "\\N",
+        "freq": 4100,
+        "column_type": "categorical"
+      },
+      "account_status": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Prospect",
+        "freq": 2187,
+        "column_type": "categorical"
+      },
+      "account_country": {
+        "count": 4108,
+        "unique": 40,
+        "top": "United States",
+        "freq": 1888,
+        "column_type": "categorical"
+      },
+      "account_manager": {
+        "count": 4108,
+        "unique": 194,
+        "top": "U4B Prospect Accounts",
+        "freq": 1434,
+        "column_type": "categorical"
+      },
+      "service_area": {
+        "count": 4108,
+        "unique": 3,
+        "top": "\\N",
+        "freq": 4100,
+        "column_type": "categorical"
+      },
+      "Case_Owner_name": {
+        "count": 4108,
+        "unique": 26,
+        "top": "Pedro Candemil",
+        "freq": 631,
+        "column_type": "categorical"
+      },
+      "case_resolution_sla_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 2536,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "case_resolution_sla_without_pc_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "1",
+        "freq": 3270,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "case_acknowledgement_sla_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 2060,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "Origin": {
+        "count": 4108,
+        "unique": 2,
+        "top": "Email",
+        "freq": 4106,
+        "column_type": "categorical"
+      },
+      "priority": {
+        "count": 4106,
+        "unique": 1,
+        "top": "Medium (1-3 hours)",
+        "freq": 4106,
+        "column_type": "categorical"
+      },
+      "sla_status_reporting": {
+        "count": 4108,
+        "unique": 1,
+        "top": "Green",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "time_to_close": {
+        "count": 4108,
+        "unique": 1235,
+        "top": "\\N",
+        "freq": 968,
+        "column_type": "categorical"
+      },
+      "time_to_first_response": {
+        "count": 4108,
+        "unique": 1238,
+        "top": "\\N",
+        "freq": 1990,
+        "column_type": "categorical"
+      },
+      "agent_email": {
+        "count": 4108,
+        "unique": 26,
+        "top": "pedro.candemil@uber.com",
+        "freq": 631,
+        "column_type": "categorical"
+      },
+      "account_name_shorten_field": {
+        "count": 4108,
+        "unique": 645,
+        "top": "HealthPoint-0014z00001ooaWfAAI",
+        "freq": 357,
+        "column_type": "categorical"
+      },
+      "re_business_category": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "city_id": {
+        "count": 4108,
+        "unique": 308,
+        "top": "\\N",
+        "freq": 796,
+        "column_type": "categorical"
+      },
+      "eats_bulk_telescope_tag": {
+        "count": 4108,
+        "unique": 639,
+        "top": "HealthPoint",
+        "freq": 357,
+        "column_type": "categorical"
+      },
+      "ue_cuisine_category": {
+        "count": 4108,
+        "unique": 3,
+        "top": "\\N",
+        "freq": 4100,
+        "column_type": "categorical"
+      },
+      "type": {
+        "count": 4108,
+        "unique": 9,
+        "top": "Task",
+        "freq": 1542,
+        "column_type": "categorical"
+      },
+      "csat_rating": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "survey_sent_date": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "survey_response_date": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "csat_issue_resolved": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "gap_for_first_response_in_mins": {
+        "count": 4108,
+        "unique": 1241,
+        "top": "\\N",
+        "freq": 1990,
+        "column_type": "categorical"
+      },
+      "re_open": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 3576,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "re_open_date": {
+        "count": 4108,
+        "unique": 533,
+        "top": "\\N",
+        "freq": 3576,
+        "column_type": "categorical"
+      },
+      "abandoned_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "reopen_after_abandoned_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "escalation_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 3670,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "escalation_date": {
+        "count": 4108,
+        "unique": 439,
+        "top": "\\N",
+        "freq": 3670,
+        "column_type": "categorical"
+      },
+      "last_queue_assigned_date_calc": {
+        "count": 4108,
+        "unique": 4107,
+        "top": "2024-09-12 06:20:02.000",
+        "freq": 2,
+        "column_type": "identifier"
+      },
+      "Re_Open_Time": {
+        "count": 4108,
+        "unique": 507,
+        "top": "0",
+        "freq": 3584,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "Re_Open_Time_After_Assigned": {
+        "count": 4108,
+        "unique": 503,
+        "top": "0",
+        "freq": 3588,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "parentid": {
+        "count": 4108,
+        "unique": 2794,
+        "top": "\\N",
+        "freq": 1315,
+        "column_type": "identifier"
+      },
+      "response_time_calc": {
+        "count": 4108,
+        "unique": 2098,
+        "top": "\\N",
+        "freq": 2011,
+        "column_type": "identifier"
+      },
+      "total_inbound_email_count": {
+        "count": 4108,
+        "unique": 30,
+        "top": "\\N",
+        "freq": 1411,
+        "column_type": "categorical"
+      },
+      "total_outbound_email_count": {
+        "count": 4108,
+        "unique": 39,
+        "top": "\\N",
+        "freq": 2011,
+        "column_type": "categorical"
+      },
+      "case_fcr_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 2131,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "survey_sent_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "survey_response_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "issue_non_resolution_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "status_new": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Closed",
+        "freq": 3833,
+        "column_type": "categorical"
+      },
+      "resolution": {
+        "count": 4108,
+        "unique": 2,
+        "top": "\\N",
+        "freq": 4098,
+        "column_type": "categorical"
+      },
+      "case_gap_for_second_response_in_mins_c": {
+        "count": 4108,
+        "unique": 1184,
+        "top": "\\N",
+        "freq": 2011,
+        "column_type": "categorical"
+      },
+      "case_gap_for_second_response_in_mins": {
+        "count": 4108,
+        "unique": 2606,
+        "top": "0",
+        "freq": 227,
+        "column_type": "identifier"
+      },
+      "case_gap_to_close_in_mins": {
+        "count": 4108,
+        "unique": 3488,
+        "top": "0",
+        "freq": 263,
+        "column_type": "identifier"
+      },
+      "case_SLA_buckets_day": {
+        "count": 4108,
+        "unique": 6,
+        "top": ">5day",
+        "freq": 2582,
+        "column_type": "categorical"
+      },
+      "case_SLA_buckets_hour": {
+        "count": 4108,
+        "unique": 8,
+        "top": ">1day",
+        "freq": 3245,
+        "column_type": "categorical"
+      },
+      "case_sla_buckets_without_pc_day": {
+        "count": 4108,
+        "unique": 6,
+        "top": "1day",
+        "freq": 1815,
+        "column_type": "categorical"
+      },
+      "case_sla_buckets_without_pc_hour": {
+        "count": 4108,
+        "unique": 8,
+        "top": ">1day",
+        "freq": 2293,
+        "column_type": "categorical"
+      },
+      "isescalated": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "escalated": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "datestr": {
+        "count": 4108,
+        "unique": 467,
+        "top": "2025-04-09",
+        "freq": 40,
+        "column_type": "categorical"
+      },
+      "Number of Tickets": {
+        "count": 4108,
+        "unique": 4108,
+        "top": "13459179",
+        "freq": 1,
+        "column_type": "identifier"
+      },
+      "Closed_volume": {
+        "count": 4108,
+        "unique": 3834,
+        "top": "nan",
+        "freq": 275,
+        "column_type": "identifier"
+      },
+      "Open_Volume": {
+        "count": 4108,
+        "unique": 276,
+        "top": "nan",
+        "freq": 3833,
+        "column_type": "identifier"
+      },
+      "Eng_Trans": {
+        "count": 4108,
+        "unique": 27,
+        "top": "nan",
+        "freq": 4082,
+        "column_type": "identifier"
+      },
+      "On Hold Tickets": {
+        "count": 4108,
+        "unique": 9,
+        "top": "nan",
+        "freq": 4100,
+        "column_type": "identifier"
+      }
+    },
+    "calculated_columns": {
+      "Number of Tickets": {
+        "formula": "IF [last_queue] = 'U4B Business API Triage' OR [initial_queue] = 'U4B Business API Triage' THEN [casenumber] ELSE NULL END",
+        "datatype": "integer"
+      },
+      "case_AHT": {
+        "formula": "case_gap_to_close_in_mins\r\n  - (COALESCE(On_Hold_time, 0) + COALESCE(pending_Internal_time, 0))",
+        "datatype": "integer"
+      },
+      "AHT": {
+        "formula": "SUM([case_AHT]) / COUNTD([Number of Tickets])",
+        "datatype": "real"
+      },
+      "Closed_volume": {
+        "formula": "IF [status] = \"Closed\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "Open_Volume": {
+        "formula": "IF [status] != \"Closed\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "Eng_Trans": {
+        "formula": "IF [status] = \"Pending Internal\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "On Hold Tickets": {
+        "formula": "IF [status] = \"On Hold\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "Escalations Rate": {
+        "formula": "COUNTD([On Hold Tickets]) / COUNTD([Closed_volume])",
+        "datatype": "real"
+      }
+    },
+    "generated_at": "2025-11-19T15:47:07.826989",
+    "total_rows": 4108,
+    "total_columns": 92
+  },
+  "Centralized CommOps L10N Metrics": {
+    "data_description": "The dataset contains over 2 million records related to project performance metrics, including both numerical and categorical data, focusing on cost, savings, and touchless processes across various projects and time periods.",
+    "numerical_columns": {
+      "cpw_std_all": {
+        "count": 1298283.0,
+        "mean": 0.07347555916777154,
+        "std": 0.01161626262145331,
+        "min": 0.0553337336649866,
+        "25%": 0.0667367193473996,
+        "50%": 0.0717919563789976,
+        "75%": 0.0782755523526765,
+        "max": 0.1043009987673799,
+        "column_type": "measure"
+      },
+      "cpw_std_cg": {
+        "count": 1296926.0,
+        "mean": 0.06656085109190021,
+        "std": 0.01943530264089495,
+        "min": 0.0130310752707207,
+        "25%": 0.0567774785782609,
+        "50%": 0.06646685942498,
+        "75%": 0.0762777497419083,
+        "max": 0.2879806395642665,
+        "column_type": "measure"
+      },
+      "wwc": {
+        "count": 1302789.0,
+        "mean": 215.70435770873092,
+        "std": 87614.04927730917,
+        "min": 0.0,
+        "25%": 7.0,
+        "50%": 29.0,
+        "75%": 105.0,
+        "max": 100000000.0,
+        "column_type": "measure"
+      },
+      "twc": {
+        "count": 2062347.0,
+        "mean": 1175.1195836767529,
+        "std": 195541.81920413102,
+        "min": 0.0,
+        "25%": 19.0,
+        "50%": 90.0,
+        "75%": 240.0,
+        "max": 115957018.0,
+        "column_type": "measure"
+      },
+      "cost": {
+        "count": 1302075.0,
+        "mean": 26.810103047480375,
+        "std": 559.2443349762577,
+        "min": -122191.11,
+        "25%": 1.57,
+        "50%": 6.27,
+        "75%": 19.95,
+        "max": 540671.7,
+        "column_type": "measure"
+      },
+      "mt_saving": {
+        "count": 759462.0,
+        "mean": 168.68918616550735,
+        "std": 19212.060204888257,
+        "min": 0.0,
+        "25%": 7.1145000000000005,
+        "50%": 20.925,
+        "75%": 40.176,
+        "max": 7595184.679,
+        "column_type": "measure"
+      },
+      "mt_spend": {
+        "count": 759462.0,
+        "mean": 2.545743004879112,
+        "std": 208.52218708547846,
+        "min": 0.0,
+        "25%": 0.0265,
+        "50%": 0.076,
+        "75%": 0.1465,
+        "max": 57978.509,
+        "column_type": "measure"
+      },
+      "Touchless Volume": {
+        "count": 2062814.0,
+        "mean": 971.4127928465679,
+        "std": 182701.73718776667,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 0.0,
+        "75%": 87.0,
+        "max": 115957018.0,
+        "column_type": "measure"
+      }
+    },
+    "categorical_columns": {
+      "month": {
+        "count": 2067807,
+        "unique": 46,
+        "top": "2025-09-01 00:00:00",
+        "freq": 238658,
+        "column_type": "categorical"
+      },
+      "project_name": {
+        "count": 2067388,
+        "unique": 94160,
+        "top": "MT Only",
+        "freq": 10730,
+        "column_type": "categorical"
+      },
+      "od": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 965130,
+        "column_type": "categorical"
+      },
+      "cl": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 725853,
+        "column_type": "categorical"
+      },
+      "noce": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 723273,
+        "column_type": "categorical"
+      },
+      "gca": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1078031,
+        "column_type": "categorical"
+      },
+      "urg": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1015038,
+        "column_type": "categorical"
+      },
+      "l10nfix": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1066549,
+        "column_type": "categorical"
+      },
+      "cleanup": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1078797,
+        "column_type": "categorical"
+      },
+      "tcr8": {
+        "count": 2067807,
+        "unique": 4,
+        "top": "False",
+        "freq": 1084203,
+        "column_type": "categorical"
+      },
+      "dtp": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1080572,
+        "column_type": "categorical"
+      },
+      "nocharge": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1083352,
+        "column_type": "categorical"
+      },
+      "rosetta_suggestion": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1084180,
+        "column_type": "categorical"
+      },
+      "vendor": {
+        "count": 2067807,
+        "unique": 8,
+        "top": "Translated",
+        "freq": 806377,
+        "column_type": "categorical"
+      },
+      "vertical": {
+        "count": 2067807,
+        "unique": 12,
+        "top": "Not Reported",
+        "freq": 769524,
+        "column_type": "categorical"
+      },
+      "client_category": {
+        "count": 2067698,
+        "unique": 11,
+        "top": "Marketing",
+        "freq": 1284966,
+        "column_type": "categorical"
+      },
+      "client": {
+        "count": 2067806,
+        "unique": 124,
+        "top": "Marketing - Earner",
+        "freq": 700025,
+        "column_type": "categorical"
+      },
+      "client_raw": {
+        "count": 1298737,
+        "unique": 146,
+        "top": "Marketing - All",
+        "freq": 364197,
+        "column_type": "categorical"
+      },
+      "domain": {
+        "count": 2067793,
+        "unique": 123,
+        "top": "CRM",
+        "freq": 841473,
+        "column_type": "categorical"
+      },
+      "domain_raw": {
+        "count": 1305695,
+        "unique": 138,
+        "top": "UI",
+        "freq": 310597,
+        "column_type": "categorical"
+      },
+      "source_locale_type": {
+        "count": 2067807,
+        "unique": 3,
+        "top": "English",
+        "freq": 1674918,
+        "column_type": "categorical"
+      },
+      "source_locale": {
+        "count": 2067800,
+        "unique": 324,
+        "top": "en-US",
+        "freq": 1674853,
+        "column_type": "categorical"
+      },
+      "source_locale_raw": {
+        "count": 2017060,
+        "unique": 102,
+        "top": "English US",
+        "freq": 805228,
+        "column_type": "categorical"
+      },
+      "target_locale": {
+        "count": 2067796,
+        "unique": 363,
+        "top": "fr-FR",
+        "freq": 62247,
+        "column_type": "categorical"
+      },
+      "target_locale_raw": {
+        "count": 2017060,
+        "unique": 331,
+        "top": "French",
+        "freq": 39109,
+        "column_type": "categorical"
+      },
+      "project_count": {
+        "count": 2067807,
+        "unique": 2,
+        "top": "1.0",
+        "freq": 1298342,
+        "column_type": "categorical_numeric",
+        "original_dtype": "float64"
+      },
+      "mt_saving_source": {
+        "count": 2066553,
+        "unique": 86,
+        "top": "Not Reported",
+        "freq": 1302094,
+        "column_type": "categorical"
+      },
+      "new_service_original_charge": {
+        "count": 2067807,
+        "unique": 202,
+        "top": "nan",
+        "freq": 2067456,
+        "column_type": "identifier"
+      },
+      "new_service_actual_charge": {
+        "count": 2067807,
+        "unique": 269,
+        "top": "nan",
+        "freq": 2067456,
+        "column_type": "identifier"
+      },
+      "new_service_saving": {
+        "count": 2067807,
+        "unique": 272,
+        "top": "nan",
+        "freq": 2067456,
+        "column_type": "identifier"
+      },
+      "new_service_twc": {
+        "count": 2067807,
+        "unique": 202,
+        "top": "nan",
+        "freq": 2067456,
+        "column_type": "identifier"
+      },
+      "mega_region": {
+        "count": 2067807,
+        "unique": 8,
+        "top": "EMEA",
+        "freq": 752712,
+        "column_type": "categorical"
+      },
+      "language_tier": {
+        "count": 2067807,
+        "unique": 9,
+        "top": "Not Reported",
+        "freq": 716492,
+        "column_type": "categorical"
+      },
+      "datestr": {
+        "count": 2067807,
+        "unique": 46,
+        "top": "2025-09-01",
+        "freq": 238658,
+        "column_type": "categorical"
+      },
+      "Target Locale Refined": {
+        "count": 2067796,
+        "unique": 363,
+        "top": "fr-FR",
+        "freq": 62247,
+        "column_type": "categorical"
+      },
+      "Touchless Type": {
+        "count": 2067807,
+        "unique": 2,
+        "top": "Human in Loop",
+        "freq": 1303266,
+        "column_type": "categorical"
+      },
+      "Platform": {
+        "count": 2067807,
+        "unique": 2,
+        "top": "On Phrase",
+        "freq": 2066512,
+        "column_type": "categorical"
+      }
+    },
+    "calculated_columns": {
+      "Touchless Dimension Name": {
+        "formula": "\"Touchless Domain\"",
+        "datatype": "string"
+      },
+      "Metric Name": {
+        "formula": "\"TWC\"",
+        "datatype": "string"
+      },
+      "Domain": {
+        "formula": "if CONTAINS([domain], 'L&D - WF') THEN [domain]\nELSEIF CONTAINS([domain], 'Bliss') THEN 'Bliss Translate'\nELSEIF CONTAINS([domain], 'L&D') OR \nCONTAINS([domain], 'L-D') OR\nCONTAINS([domain], 'L_D') THEN 'L&D'\nELSE [domain] END",
+        "datatype": "string"
+      },
+      "Metric Not CPW": {
+        "formula": "[Parameters].[Parameter 6] != 'CPW'",
+        "datatype": "boolean"
+      },
+      "Target Locale Refined": {
+        "formula": "if [target_locale] = 'uk-AU' THEN 'uk-UA' ELSE [target_locale] END",
+        "datatype": "string"
+      },
+      "Touchless Type": {
+        "formula": "if [vendor] = 'MT Only' THEN 'Touchless' ELSE 'Human in Loop' END",
+        "datatype": "string"
+      },
+      "Language Tier Strings": {
+        "formula": "if ISNULL([language_tier]) then 'Unknown'\nelse 'Tier ' + STR([language_tier]) END",
+        "datatype": "string"
+      },
+      "Platform": {
+        "formula": "if [mt_saving_source] = 'Bliss Translate' THEN 'Off Phrase'\nelse 'On Phrase' END",
+        "datatype": "string"
+      },
+      "Touchless Dimension": {
+        "formula": "if [Parameters].[Dimension Name (copy)_526639702199148561] = 'Touchless Type' THEN [Touchless Type]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Touchless Source' THEN [client_category]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Touchless Domain' THEN [mt_saving_source]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Target Locale' THEN [Target Locale Refined]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Region' THEN [mega_region]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Platform' THEN [Platform]\nEND",
+        "datatype": "string"
+      },
+      "TWC - Dynamic": {
+        "formula": "IF ABS(SUM([twc])) >= 1000000000 THEN\n//round for billions\nSTR(ROUND(SUM([twc] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([twc])) >= 1000000 THEN\n//round for millions\nSTR(ROUND(SUM([twc] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([twc])) >= 1000 THEN\n//round for thousands\nSTR(ROUND(SUM([twc] / 1000), 2)) + \"K\"\nELSE\nSTR(ROUND(SUM([twc]),0))\nEND",
+        "datatype": "string"
+      },
+      "CPW Avg CG": {
+        "formula": "{FIXED [client_category]:\nSUM([cost]) / sum([twc])}",
+        "datatype": "real"
+      },
+      "CPW": {
+        "formula": "IF SUM([cost])/SUM([twc]) < 0 THEN NULL ELSE SUM([cost])/SUM([twc]) END",
+        "datatype": "real"
+      },
+      "TM %": {
+        "formula": "IF [TM % Pre (copy)_126593412764794883] < 0 THEN NULL ELSE [TM % Pre (copy)_126593412764794883] END",
+        "datatype": "real"
+      },
+      "Fake Dimension": {
+        "formula": "1",
+        "datatype": "integer"
+      },
+      "CPW Avg All": {
+        "formula": "{FIXED [Fake Dimension]:\nSUM([cost]) / sum([twc])}",
+        "datatype": "real"
+      },
+      "Color Code - CPW Std CG Capped": {
+        "formula": "IF [CPW] > AVG([CPW Avg All (copy)_542683772359884807]) + 2 * AVG([cpw_std_cg])  \nTHEN 5\nELSEIF [CPW] > AVG([CPW Avg All (copy)_542683772359884807]) + 1 * AVG([cpw_std_cg])\nTHEN 4\nELSEIF [CPW] > AVG([CPW Avg All (copy)_542683772359884807]) - 1 * AVG([cpw_std_cg]) or ISNULL([CPW])\nTHEN 3\nELSEIF [CPW] > AVG([CPW Avg All (copy)_542683772359884807]) - 2 * AVG([cpw_std_cg])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "TM % Pre V2": {
+        "formula": "(\nsum(if [vendor] = 'MT Only' then 0 ELSE [twc]  end) - \nsum(if [vendor] = 'MT Only' then 0 ELSEIF [wwc] > [twc] then [twc] ELSE [wwc] end)\n)/\nsum(if [vendor] = 'MT Only' then 0 ELSE [twc]  end)",
+        "datatype": "real"
+      },
+      "Color Code - CPW Std All Capped": {
+        "formula": "IF [CPW] > AVG([CPW Avg All]) + 2 * AVG([cpw_std_all])\nTHEN 5\nELSEIF [CPW] > AVG([CPW Avg All]) + 1 * AVG([cpw_std_all])\nTHEN 4\nELSEIF [CPW] > AVG([CPW Avg All]) - 1 * AVG([cpw_std_all]) OR ISNULL([CPW])\nTHEN 3\nELSEIF [CPW] > AVG([CPW Avg All]) - 2 * AVG([cpw_std_all])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "Spend  - Dynamic": {
+        "formula": "IF ABS(SUM([cost])) >= 1000000000 THEN\n//round for billions\n\"$\" + STR(ROUND(SUM([cost] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([cost])) >= 1000000 THEN\n//round for millions\n\"$\" + STR(ROUND(SUM([cost] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([cost])) >= 1000 THEN\n//round for thousands\n\"$\" + STR(ROUND(SUM([cost] / 1000), 2)) + \"K\"\nELSE\n\"$\" + STR(ROUND(SUM([cost]),0))\nEND",
+        "datatype": "string"
+      },
+      "Dimension Name": {
+        "formula": "\"Resource Name\"",
+        "datatype": "string"
+      },
+      "Resource Type": {
+        "formula": "IF vendor in ('Acolad', 'Translated', 'Welocalize') THEN 'LSP'\nelse vendor end",
+        "datatype": "string"
+      },
+      "Dimension": {
+        "formula": "if [Parameters].[Parameter 7] = 'Resource Type' THEN [Resource Type]\nELSEIF [Parameters].[Parameter 7] = 'Resource Name' THEN [vendor]\nELSEIF [Parameters].[Parameter 7] = 'Line of Business' THEN [client_category]\nELSEIF [Parameters].[Parameter 7] = 'Client' THEN [client]\nELSEIF [Parameters].[Parameter 7] = 'Domain' THEN [Domain]\nELSEIF [Parameters].[Parameter 7] = 'Source Locale Type' THEN [source_locale_type]\nELSEIF [Parameters].[Parameter 7] = 'Source Locale' THEN [source_locale]\nELSEIF [Parameters].[Parameter 7] = 'Target Locale' THEN [Target Locale Refined]\nELSEIF [Parameters].[Parameter 7] = 'Target Language Tier' THEN [Language Tier Strings]\nELSEIF [Parameters].[Parameter 7] = 'Region' THEN [mega_region]\nEND",
+        "datatype": "string"
+      },
+      "Metric": {
+        "formula": "if [Parameters].[Parameter 6] = 'TWC' THEN SUM([twc])\nELSEIF [Parameters].[Parameter 6] = 'Spend' THEN SUM([cost])\nELSEIF [Parameters].[Parameter 6] = 'CPW' THEN [CPW]\nEND",
+        "datatype": "real"
+      },
+      "Metric Label": {
+        "formula": "if [Parameters].[Parameter 6] = 'CPW' THEN STR(ROUND([CPW],2))\nELSEIF [Parameters].[Parameter 6] = 'Spend' THEN [Spend (copy)_4627659770320306176]\nELSEIF [Parameters].[Parameter 6] = 'TWC' THEN [TWC (copy)_4627659770321125377]\nEND",
+        "datatype": "string"
+      },
+      "CPW STD - Dynamic": {
+        "formula": "if [Parameters].[Parameter 7] in ('Client', 'Domain') THEN [cpw_std_cg]\nelse [cpw_std_all] end",
+        "datatype": "real"
+      },
+      "Color Code - Dynamic": {
+        "formula": "if [Parameters].[Parameter 7] in ('Client', 'Domain') THEN [Color Code - CPW Std All Refined (copy)_2125980516718186497]\nelse [Color Code - CPW Std Oct (copy)_2125980516717330432] end",
+        "datatype": "integer"
+      },
+      "CPW AVG - Dynamic": {
+        "formula": "if [Parameters].[Parameter 7] in ('Client', 'Domain') THEN [CPW Avg All (copy)_542683772359884807]\nelse [CPW Avg All] end",
+        "datatype": "real"
+      },
+      "TaT Caculated": {
+        "formula": "SUM([TaT_sum (Custom SQL Query1)]) / SUM([job_count (Custom SQL Query1)])",
+        "datatype": "real"
+      },
+      "Is Legal": {
+        "formula": "[client_category (Custom SQL Query1)] = 'Legal'",
+        "datatype": "boolean"
+      },
+      "Is Marketing": {
+        "formula": "[client_category (Custom SQL Query1)] = 'Marketing'",
+        "datatype": "boolean"
+      },
+      "Compare TaT By": {
+        "formula": "\"No Breakdown\"",
+        "datatype": "string"
+      },
+      "TaT Breakdown": {
+        "formula": "IF [Parameters].[Compare By (copy)_807059183526182912] = 'Vendor' THEN [vendor (Custom SQL Query1)]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'LOB' THEN [client_category (Custom SQL Query1)]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'Client' THEN [client (Custom SQL Query1)]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'Domain' THEN [domain (Custom SQL Query1)]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'Target Locale' THEN [target_locale (Custom SQL Query1)]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'No Breakdown' THEN 'Overall'\nEND",
+        "datatype": "string"
+      },
+      "Is Product": {
+        "formula": "[client_category (Custom SQL Query1)] = 'Product'",
+        "datatype": "boolean"
+      },
+      "Is Support": {
+        "formula": "[client_category (Custom SQL Query1)] = 'Support'",
+        "datatype": "boolean"
+      },
+      "TaT / SLA Ratio": {
+        "formula": "[TaT Caculated] / [TaT Caculated (copy)_313844613153333250]",
+        "datatype": "real"
+      },
+      "SLA Calculated": {
+        "formula": "SUM([TaT Sum (copy)_313844613157924867]) / SUM([job_count (Custom SQL Query1)])",
+        "datatype": "real"
+      },
+      "SLA Sum": {
+        "formula": "[SLA_sum]",
+        "datatype": "real"
+      },
+      "Choose Color Code Based on SLA or Avg TaT": {
+        "formula": "2",
+        "datatype": "integer"
+      },
+      "All Avg - Calculated": {
+        "formula": "{FIXED [Fake Dimension]:\nSUM([TaT_sum (Custom SQL Query1)]) / sum([job_count (Custom SQL Query1)])}",
+        "datatype": "real"
+      },
+      "Baseline Avg - Calculated": {
+        "formula": "\"Avg: \" + LEFT(STR(ROUND(AVG([All Avg - Agg (copy)_563301807327445013]),2)), 4)",
+        "datatype": "string"
+      },
+      "Color code - Combined - All - Threshold": {
+        "formula": "CASE [Parameters].[Parameter 1]\nWHEN 1 THEN \n\nCASE [Color code - All (copy)_313844613151555584]\nWHEN 1 THEN \"50% + Below SLA\"\nWHEN 2 THEN \"25% - 50% Below SLA\"\nWHEN 3 THEN \"0% - 25% Below SLA\"\nWHEN 4 THEN \"0% - 50% + Above SLA\"\nWHEN 5 THEN \"50% + Above SLA\"\nEND \n\nWHEN 2 THEN\nCASE [color code - Client Category New (copy)_563301807292854283] \nWHEN 1 THEN \"[Avg + 2 STDDEV, ∞]\"\nWHEN 2 THEN \"[Avg + 1 STDDEV, Avg + 2 STDDEV]\"\nWHEN 3 THEN \"[Avg - STDDEV, Avg + STDDEV]\"\nWHEN 4 THEN \"[Avg- 2 STDDEV, Avg - STDDEV]\"\nWHEN 5 THEN \"[-∞, Avg - 2 STDDEV]]\"\nEND\n\nEND",
+        "datatype": "string"
+      },
+      "Color code - SLA": {
+        "formula": "IF [TaT Caculated (copy)_313844613159297029] > 0.5\nTHEN 5\nELSEIF [TaT Caculated (copy)_313844613159297029] > 0\nTHEN 4\nELSEIF [TaT Caculated (copy)_313844613159297029] > -0.25\nTHEN 3\nELSEIF [TaT Caculated (copy)_313844613159297029] > -0.5\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "Color code - Combined - All": {
+        "formula": "CASE [Parameters].[Parameter 1] \nWHEN 1 THEN [Color code - All (copy)_313844613151555584] ELSE [color code - Client Category New (copy)_563301807292854283] END",
+        "datatype": "integer"
+      },
+      "WC per Day": {
+        "formula": "SUM([word_count (Custom SQL Query1)]) / SUM([TaT_sum (Custom SQL Query1)])",
+        "datatype": "real"
+      },
+      "TaT SLA Diff": {
+        "formula": "([TaT Caculated] - [TaT Caculated (copy)_313844613153333250]) / [TaT Caculated (copy)_313844613153333250]",
+        "datatype": "real"
+      },
+      "All Std": {
+        "formula": "{FIXED [Fake Dimension]:STDEV([TaT_avg (Custom SQL Query1)])}",
+        "datatype": "real"
+      },
+      "Color code - All": {
+        "formula": "IF [TaT Caculated] > AVG([All Avg - Agg (copy)_563301807327445013]) + 2 * AVG([W Std - Agg (copy)_563301807269814276])\nTHEN 5\nELSEIF [TaT Caculated] > AVG([All Avg - Agg (copy)_563301807327445013]) + 1 * AVG([W Std - Agg (copy)_563301807269814276])\nTHEN 4\nELSEIF [TaT Caculated] > AVG([All Avg - Agg (copy)_563301807327445013]) - 1 * AVG([W Std - Agg (copy)_563301807269814276])\nTHEN 3\nELSEIF [TaT Caculated] > AVG([All Avg - Agg (copy)_563301807327445013]) - 2 * AVG([W Std - Agg (copy)_563301807269814276])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "Color Code Threshold - All": {
+        "formula": "\"Comparing to AVG and STDDEV\"\n+\" \n\"\n+\"Avg: \" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013],2)), 4)\n+\" \n\"\n+\"STDDEV: \" + LEFT(STR(ROUND([W Std - Agg (copy)_563301807269814276],2)), 4)\n+\" \n\"\n+\"Red: Value >\" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] + 2 * [W Std - Agg (copy)_563301807269814276],2)), 4)\n+\" \n\"\n+\"Orange: \" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013]+ 1 * [W Std - Agg (copy)_563301807269814276],2)), 4) + ' < value <= ' + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] + 2*[W Std - Agg (copy)_563301807269814276],2)), 4)\n+\" \n\"\n+\"Yellow: \" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] - [W Std - Agg (copy)_563301807269814276], 2)), 4) + ' < value <= ' + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] + [W Std - Agg (copy)_563301807269814276], 2)), 4)\n+\" \n\"\n+\"Lime: \" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013]- 2 * [W Std - Agg (copy)_563301807269814276],2)), 4) + ' < value <= ' + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] - 1*[W Std - Agg (copy)_563301807269814276],2)), 4)\n+\" \n\"\n+\"Pine: Value <=\" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] - 2 * [W Std - Agg (copy)_563301807269814276],2)), 4)",
+        "datatype": "string"
+      },
+      "Color code - Combined - CG - Threshold": {
+        "formula": "CASE [Parameters].[Parameter 1]\nWHEN 1 THEN \n\nCASE [Color code - All (copy)_313844613151555584]\nWHEN 1 THEN \"50% + Below SLA\"\nWHEN 2 THEN \"25% - 50% Below SLA\"\nWHEN 3 THEN \"0% - 25% Below SLA\"\nWHEN 4 THEN \"0% - 50% + Above SLA\"\nWHEN 5 THEN \"50% + Above SLA\"\nEND \n\nWHEN 2 THEN\nCASE [F - Color code - All (copy)_3113676202876297222] \nWHEN 1 THEN \"[Avg + 2 STDDEV, ∞]\"\nWHEN 2 THEN \"[Avg + 1 STDDEV, Avg + 2 STDDEV]\"\nWHEN 3 THEN \"[Avg - STDDEV, Avg + STDDEV]\"\nWHEN 4 THEN \"[Avg- 2 STDDEV, Avg - STDDEV]\"\nWHEN 5 THEN \"[-∞, Avg - 2 STDDEV]]\"\nEND\n\nEND",
+        "datatype": "string"
+      },
+      "Color code - Combined - CG": {
+        "formula": "CASE [Parameters].[Parameter 1] \nWHEN 1 THEN [Color code - All (copy)_313844613151555584] ELSE [F - Color code - All (copy)_3113676202876297222] END",
+        "datatype": "integer"
+      },
+      "CG Avg - Calculated": {
+        "formula": "{FIXED [client_category (Custom SQL Query1)]:\nSUM([TaT_sum (Custom SQL Query1)]) / sum([job_count (Custom SQL Query1)])}",
+        "datatype": "real"
+      },
+      "CG Std": {
+        "formula": "{FIXED [client_category (Custom SQL Query1)]:STDEV([TaT_avg (Custom SQL Query1)])}",
+        "datatype": "real"
+      },
+      "Color Code Threshold -CG": {
+        "formula": "\"Comparing to AVG and STDDEV\"\n+\" \n\"\n+\"Avg: \" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607],2)), 4)\n+\" \n\"\n+\"STDDEV: \" + LEFT(STR(ROUND([F - All Std (copy)_3113676202876919816],2)), 4)\n+\" \n\"\n+\"Red: Value >\" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] + 2 * [F - All Std (copy)_3113676202876919816],2)), 4)\n+\" \n\"\n+\"Orange: \" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607]+ 1 * [F - All Std (copy)_3113676202876919816],2)), 4) + ' < value <= ' + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] + 2*[F - All Std (copy)_3113676202876919816],2)), 4)\n+\" \n\"\n+\"Yellow: \" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] - [F - All Std (copy)_3113676202876919816], 2)), 4) + ' < value <= ' + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] + [F - All Std (copy)_3113676202876919816], 2)), 4)\n+\" \n\"\n+\"Lime: \" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607]- 2 * [F - All Std (copy)_3113676202876919816],2)), 4) + ' < value <= ' + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] - 1*[F - All Std (copy)_3113676202876919816],2)), 4)\n+\" \n\"\n+\"Pine: Value <=\" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] - 2 * [F - All Std (copy)_3113676202876919816],2)), 4)",
+        "datatype": "string"
+      },
+      "Color code - CG": {
+        "formula": "IF [TaT Caculated] > AVG([F - All Avg - Calculated (copy)_3113676202876825607]) + 2 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 5\nELSEIF [TaT Caculated] > AVG([F - All Avg - Calculated (copy)_3113676202876825607]) + 1 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 4\nELSEIF [TaT Caculated] > AVG([F - All Avg - Calculated (copy)_3113676202876825607]) - 1 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 3\nELSEIF [TaT Caculated] > AVG([F - All Avg - Calculated (copy)_3113676202876825607]) - 2 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "CG Avg": {
+        "formula": "{FIXED [client_category (Custom SQL Query1)]:\nAVG([TaT_avg (Custom SQL Query1)])}",
+        "datatype": "real"
+      },
+      "Color code - CG - Not Calculated": {
+        "formula": "IF [TaT Caculated] > AVG([F - CG Avg - Calculated (copy)_3113676202879500300]) + 2 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 5\nELSEIF [TaT Caculated] > AVG([F - CG Avg - Calculated (copy)_3113676202879500300]) + 1 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 4\nELSEIF [TaT Caculated] > AVG([F - CG Avg - Calculated (copy)_3113676202879500300]) - 1 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 3\nELSEIF [TaT Caculated] > AVG([F - CG Avg - Calculated (copy)_3113676202879500300]) - 2 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "All Std By Complete": {
+        "formula": "{FIXED [is_job_completed]:STDEV([TaT_avg (Custom SQL Query1)])}",
+        "datatype": "real"
+      },
+      "TAT Per 100 WC": {
+        "formula": "SUM([TaT_sum (Custom SQL Query1)]) / SUM([word_count (Custom SQL Query1)]) * 100",
+        "datatype": "real"
+      },
+      "WC Per Job": {
+        "formula": "SUM([word_count (Custom SQL Query1)])/SUM([job_count (Custom SQL Query1)])",
+        "datatype": "real"
+      },
+      "WWC - Dynamic": {
+        "formula": "IF ABS(SUM([wwc])) >= 1000000000 THEN\n//round for billions\nSTR(ROUND(SUM([wwc] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([wwc])) >= 1000000 THEN\n//round for millions\nSTR(ROUND(SUM([wwc] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([wwc])) >= 1000 THEN\n//round for thousands\nSTR(ROUND(SUM([wwc] / 1000), 2)) + \"K\"\nELSE\nSTR(ROUND(SUM([wwc]),0))\nEND",
+        "datatype": "string"
+      },
+      "Month After 2023 Jul": {
+        "formula": "DATE([month]) >= date('2023-07-01')",
+        "datatype": "boolean"
+      },
+      "Not Touchless": {
+        "formula": "[vendor] != 'MT Only'",
+        "datatype": "boolean"
+      },
+      "Data include MS Jobs Til": {
+        "formula": "Max([date])",
+        "datatype": "date"
+      },
+      "Touchless Volume %": {
+        "formula": "SUM([Touchless Volume]) / SUM([twc])",
+        "datatype": "real"
+      },
+      "Touchless Volume": {
+        "formula": "if [vendor] = 'MT Only' THEN [twc] ELSE 0 end",
+        "datatype": "real"
+      },
+      "Touchless Metric Name": {
+        "formula": "\"Touchless Volume\"",
+        "datatype": "string"
+      },
+      "Touchless Saving - Dynamic": {
+        "formula": "IF ABS(SUM([mt_saving])) >= 1000000000 THEN\n//round for billions\n\"$\" + STR(ROUND(SUM([mt_saving] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([mt_saving])) >= 1000000 THEN\n//round for millions\n\"$\" + STR(ROUND(SUM([mt_saving] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([mt_saving])) >= 1000 THEN\n//round for thousands\n\"$\" + STR(ROUND(SUM([mt_saving] / 1000), 2)) + \"K\"\nELSE\n\"$\" + STR(ROUND(SUM([mt_saving]),0))\nEND",
+        "datatype": "string"
+      },
+      "Touchless Volume - Dynamic": {
+        "formula": "IF ABS(SUM([Touchless Volume])) >= 1000000000 THEN\n//round for billions\nSTR(ROUND(SUM([Touchless Volume] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([Touchless Volume])) >= 1000000 THEN\n//round for millions\nSTR(ROUND(SUM([Touchless Volume] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([Touchless Volume])) >= 1000 THEN\n//round for thousands\nSTR(ROUND(SUM([Touchless Volume] / 1000), 2)) + \"K\"\nELSE\nSTR(ROUND(SUM([Touchless Volume]),0))\nEND",
+        "datatype": "string"
+      },
+      "Touchless Metric": {
+        "formula": "if [Parameters].[Parameter 8] = 'Touchless Saving' THEN [mt_saving]\nELSEIF [Parameters].[Parameter 8] = 'Touchless Volume' THEN [Touchless Volume]\nend",
+        "datatype": "real"
+      },
+      "Touchless Metric Label": {
+        "formula": "if [Parameters].[Parameter 8] = 'Touchless Saving' THEN [Touchless Saving - Dynamic]\nELSEIF [Parameters].[Parameter 8] = 'Touchless Volume' THEN [Touchless Volume - Dynamic]\nend",
+        "datatype": "string"
+      },
+      "Exclude Welocalize and RWS": {
+        "formula": "[vendor] != 'Welocalize' AND NOT CONTAINS([vendor], 'RWS')",
+        "datatype": "boolean"
+      }
+    },
+    "generated_at": "2025-11-19T15:58:24.111016",
+    "total_rows": 2067807,
+    "total_columns": 46
+  },
+  "FRO Dashboard_final": {
+    "data_description": "This dataset contains information on ticket management, including timestamps for ticket creation and closure, along with metrics such as average handling time (AHT), ticket volume, and on-hold durations, facilitating analysis of operational efficiency and performance trends.",
+    "numerical_columns": {
+      "On_Hold_time": {
+        "count": 4108.0,
+        "mean": 564.199123661149,
+        "std": 3653.7290613616956,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 0.0,
+        "75%": 0.0,
+        "max": 121516.0,
+        "column_type": "measure"
+      }
+    },
+    "categorical_columns": {
+      "create_day": {
+        "count": 4108,
+        "unique": 467,
+        "top": "2025-04-09 00:00:00",
+        "freq": 40,
+        "column_type": "categorical"
+      },
+      "create_week": {
+        "count": 4108,
+        "unique": 79,
+        "top": "2025-04-07 00:00:00",
+        "freq": 157,
+        "column_type": "categorical"
+      },
+      "create_month": {
+        "count": 4108,
+        "unique": 19,
+        "top": "2025-03-01 00:00:00",
+        "freq": 521,
+        "column_type": "categorical"
+      },
+      "case_id": {
+        "count": 4108,
+        "unique": 4108,
+        "top": "5004z00001tbBcwAAE",
+        "freq": 1,
+        "column_type": "identifier"
+      },
+      "casenumber": {
+        "count": 4108,
+        "unique": 4108,
+        "top": "12637205",
+        "freq": 1,
+        "column_type": "identifier"
+      },
+      "createddate": {
+        "count": 4108,
+        "unique": 4107,
+        "top": "2024-09-12 06:20:02",
+        "freq": 2,
+        "column_type": "identifier"
+      },
+      "createddate_ist": {
+        "count": 4108,
+        "unique": 4107,
+        "top": "2024-09-12 11:50:02",
+        "freq": 2,
+        "column_type": "identifier"
+      },
+      "createddate_ist_time": {
+        "count": 4108,
+        "unique": 3984,
+        "top": "19:20:08",
+        "freq": 3,
+        "column_type": "identifier"
+      },
+      "created_weekday": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Tuesday",
+        "freq": 893,
+        "column_type": "categorical"
+      },
+      "closeddate": {
+        "count": 3858,
+        "unique": 3835,
+        "top": "2025-04-22 15:00:58",
+        "freq": 4,
+        "column_type": "identifier"
+      },
+      "status": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Closed",
+        "freq": 3833,
+        "column_type": "categorical"
+      },
+      "eng_transfers": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 3619,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "PI_Time": {
+        "count": 4108,
+        "unique": 394,
+        "top": "\\N",
+        "freq": 3692,
+        "column_type": "categorical"
+      },
+      "OnHold_Time": {
+        "count": 4108,
+        "unique": 367,
+        "top": "\\N",
+        "freq": 3703,
+        "column_type": "categorical"
+      },
+      "age_in_hours": {
+        "count": 4108,
+        "unique": 1527,
+        "top": "0.2333333333333333",
+        "freq": 130,
+        "column_type": "categorical_numeric",
+        "original_dtype": "float64"
+      },
+      "date_assigned": {
+        "count": 4108,
+        "unique": 3021,
+        "top": "\\N",
+        "freq": 968,
+        "column_type": "identifier"
+      },
+      "product": {
+        "count": 4108,
+        "unique": 16,
+        "top": "Central",
+        "freq": 1047,
+        "column_type": "categorical"
+      },
+      "first_response_time": {
+        "count": 4108,
+        "unique": 2119,
+        "top": "\\N",
+        "freq": 1990,
+        "column_type": "identifier"
+      },
+      "outbound_email_count": {
+        "count": 4108,
+        "unique": 22,
+        "top": "1",
+        "freq": 1057,
+        "column_type": "categorical"
+      },
+      "initial_queue": {
+        "count": 4108,
+        "unique": 3,
+        "top": "U4B Business API Triage",
+        "freq": 3140,
+        "column_type": "categorical"
+      },
+      "last_queue": {
+        "count": 4108,
+        "unique": 1,
+        "top": "U4B Business API Triage",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "last_status_change_date": {
+        "count": 4108,
+        "unique": 4084,
+        "top": "2025-04-22 15:00:58",
+        "freq": 4,
+        "column_type": "identifier"
+      },
+      "lastmodifieddate": {
+        "count": 4108,
+        "unique": 3789,
+        "top": "2025-05-29 09:19:29",
+        "freq": 199,
+        "column_type": "identifier"
+      },
+      "level_2": {
+        "count": 4108,
+        "unique": 27,
+        "top": "Did not read documentation",
+        "freq": 1141,
+        "column_type": "categorical"
+      },
+      "level_3": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "level_4": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "accountid": {
+        "count": 4108,
+        "unique": 645,
+        "top": "0014z00001ooaWfAAI",
+        "freq": 357,
+        "column_type": "categorical"
+      },
+      "account_tier": {
+        "count": 4108,
+        "unique": 3,
+        "top": "\\N",
+        "freq": 4100,
+        "column_type": "categorical"
+      },
+      "account_status": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Prospect",
+        "freq": 2187,
+        "column_type": "categorical"
+      },
+      "account_country": {
+        "count": 4108,
+        "unique": 40,
+        "top": "United States",
+        "freq": 1888,
+        "column_type": "categorical"
+      },
+      "account_manager": {
+        "count": 4108,
+        "unique": 194,
+        "top": "U4B Prospect Accounts",
+        "freq": 1434,
+        "column_type": "categorical"
+      },
+      "service_area": {
+        "count": 4108,
+        "unique": 3,
+        "top": "\\N",
+        "freq": 4100,
+        "column_type": "categorical"
+      },
+      "Case_Owner_name": {
+        "count": 4108,
+        "unique": 26,
+        "top": "Pedro Candemil",
+        "freq": 631,
+        "column_type": "categorical"
+      },
+      "case_resolution_sla_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 2536,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "case_resolution_sla_without_pc_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "1",
+        "freq": 3270,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "case_acknowledgement_sla_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 2060,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "Origin": {
+        "count": 4108,
+        "unique": 2,
+        "top": "Email",
+        "freq": 4106,
+        "column_type": "categorical"
+      },
+      "priority": {
+        "count": 4106,
+        "unique": 1,
+        "top": "Medium (1-3 hours)",
+        "freq": 4106,
+        "column_type": "categorical"
+      },
+      "sla_status_reporting": {
+        "count": 4108,
+        "unique": 1,
+        "top": "Green",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "time_to_close": {
+        "count": 4108,
+        "unique": 1235,
+        "top": "\\N",
+        "freq": 968,
+        "column_type": "categorical"
+      },
+      "time_to_first_response": {
+        "count": 4108,
+        "unique": 1238,
+        "top": "\\N",
+        "freq": 1990,
+        "column_type": "categorical"
+      },
+      "agent_email": {
+        "count": 4108,
+        "unique": 26,
+        "top": "pedro.candemil@uber.com",
+        "freq": 631,
+        "column_type": "categorical"
+      },
+      "account_name_shorten_field": {
+        "count": 4108,
+        "unique": 645,
+        "top": "HealthPoint-0014z00001ooaWfAAI",
+        "freq": 357,
+        "column_type": "categorical"
+      },
+      "re_business_category": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "city_id": {
+        "count": 4106,
+        "unique": 307,
+        "top": "\\N",
+        "freq": 796,
+        "column_type": "categorical"
+      },
+      "eats_bulk_telescope_tag": {
+        "count": 4108,
+        "unique": 639,
+        "top": "HealthPoint",
+        "freq": 357,
+        "column_type": "categorical"
+      },
+      "ue_cuisine_category": {
+        "count": 4108,
+        "unique": 3,
+        "top": "\\N",
+        "freq": 4100,
+        "column_type": "categorical"
+      },
+      "type": {
+        "count": 4108,
+        "unique": 9,
+        "top": "Task",
+        "freq": 1542,
+        "column_type": "categorical"
+      },
+      "csat_rating": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "csat_issue_resolved": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "gap_for_first_response_in_mins": {
+        "count": 4108,
+        "unique": 1241,
+        "top": "\\N",
+        "freq": 1990,
+        "column_type": "categorical"
+      },
+      "gap_to_close_in_mins": {
+        "count": 4108,
+        "unique": 3489,
+        "top": "nan",
+        "freq": 250,
+        "column_type": "identifier"
+      },
+      "re_open": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 3576,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "re_open_date": {
+        "count": 4108,
+        "unique": 533,
+        "top": "\\N",
+        "freq": 3576,
+        "column_type": "categorical"
+      },
+      "abandoned_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "reopen_after_abandoned_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "escalation_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 3670,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "escalation_date": {
+        "count": 4108,
+        "unique": 439,
+        "top": "\\N",
+        "freq": 3670,
+        "column_type": "categorical"
+      },
+      "last_queue_assigned_date_calc": {
+        "count": 4108,
+        "unique": 4107,
+        "top": "2024-09-12 06:20:02",
+        "freq": 2,
+        "column_type": "identifier"
+      },
+      "pending_customer_time": {
+        "count": 4108,
+        "unique": 2079,
+        "top": "0.0",
+        "freq": 1627,
+        "column_type": "identifier"
+      },
+      "Re_Open_Time": {
+        "count": 4108,
+        "unique": 507,
+        "top": "0",
+        "freq": 3584,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "Re_Open_Time_After_Assigned": {
+        "count": 4108,
+        "unique": 503,
+        "top": "0",
+        "freq": 3588,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "parentid": {
+        "count": 4108,
+        "unique": 2794,
+        "top": "\\N",
+        "freq": 1315,
+        "column_type": "identifier"
+      },
+      "response_time_calc": {
+        "count": 4108,
+        "unique": 2098,
+        "top": "\\N",
+        "freq": 2011,
+        "column_type": "identifier"
+      },
+      "total_inbound_email_count": {
+        "count": 4108,
+        "unique": 30,
+        "top": "\\N",
+        "freq": 1411,
+        "column_type": "categorical"
+      },
+      "total_outbound_email_count": {
+        "count": 4108,
+        "unique": 39,
+        "top": "\\N",
+        "freq": 2011,
+        "column_type": "categorical"
+      },
+      "case_fcr_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 2131,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "survey_sent_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "survey_response_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "issue_non_resolution_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "status_new": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Closed",
+        "freq": 3833,
+        "column_type": "categorical"
+      },
+      "resolution": {
+        "count": 4108,
+        "unique": 2,
+        "top": "\\N",
+        "freq": 4098,
+        "column_type": "categorical"
+      },
+      "case_gap_for_second_response_in_mins_c": {
+        "count": 4108,
+        "unique": 1184,
+        "top": "\\N",
+        "freq": 2011,
+        "column_type": "categorical"
+      },
+      "case_gap_to_close_in_mins_c": {
+        "count": 4108,
+        "unique": 3489,
+        "top": "nan",
+        "freq": 250,
+        "column_type": "identifier"
+      },
+      "case_gap_for_second_response_in_mins": {
+        "count": 4108,
+        "unique": 2606,
+        "top": "0",
+        "freq": 227,
+        "column_type": "identifier"
+      },
+      "case_gap_to_close_in_mins": {
+        "count": 4108,
+        "unique": 3488,
+        "top": "0",
+        "freq": 263,
+        "column_type": "identifier"
+      },
+      "case_SLA_buckets_day": {
+        "count": 4108,
+        "unique": 6,
+        "top": ">5day",
+        "freq": 2582,
+        "column_type": "categorical"
+      },
+      "case_SLA_buckets_hour": {
+        "count": 4108,
+        "unique": 8,
+        "top": ">1day",
+        "freq": 3245,
+        "column_type": "categorical"
+      },
+      "case_sla_buckets_without_pc_day": {
+        "count": 4108,
+        "unique": 6,
+        "top": "1day",
+        "freq": 1815,
+        "column_type": "categorical"
+      },
+      "case_sla_buckets_without_pc_hour": {
+        "count": 4108,
+        "unique": 8,
+        "top": ">1day",
+        "freq": 2293,
+        "column_type": "categorical"
+      },
+      "pending_Internal_time": {
+        "count": 4108,
+        "unique": 2079,
+        "top": "0.0",
+        "freq": 1627,
+        "column_type": "identifier"
+      },
+      "isescalated": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "escalated": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "datestr": {
+        "count": 4108,
+        "unique": 467,
+        "top": "2025-04-09",
+        "freq": 40,
+        "column_type": "categorical"
+      },
+      "Number of Tickets": {
+        "count": 4108,
+        "unique": 4108,
+        "top": "12637205",
+        "freq": 1,
+        "column_type": "identifier"
+      },
+      "Closed_volume": {
+        "count": 4108,
+        "unique": 3834,
+        "top": "nan",
+        "freq": 275,
+        "column_type": "identifier"
+      },
+      "Open_Volume": {
+        "count": 4108,
+        "unique": 276,
+        "top": "nan",
+        "freq": 3833,
+        "column_type": "identifier"
+      },
+      "Eng_Trans": {
+        "count": 4108,
+        "unique": 27,
+        "top": "nan",
+        "freq": 4082,
+        "column_type": "identifier"
+      },
+      "On Hold Tickets": {
+        "count": 4108,
+        "unique": 9,
+        "top": "nan",
+        "freq": 4100,
+        "column_type": "identifier"
+      }
+    },
+    "calculated_columns": {
+      "Number of Tickets": {
+        "formula": "IF [last_queue] = 'U4B Business API Triage' OR [initial_queue] = 'U4B Business API Triage' THEN [casenumber] ELSE NULL END",
+        "datatype": "integer"
+      },
+      "case_AHT": {
+        "formula": "case_gap_to_close_in_mins\r\n  - (COALESCE(On_Hold_time, 0) + COALESCE(pending_Internal_time, 0))",
+        "datatype": "integer"
+      },
+      "AHT": {
+        "formula": "SUM([case_AHT]) / COUNTD([Number of Tickets])",
+        "datatype": "real"
+      },
+      "Closed_volume": {
+        "formula": "IF [status] = \"Closed\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "Open_Volume": {
+        "formula": "IF [status] != \"Closed\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "Eng_Trans": {
+        "formula": "IF [status] = \"Pending Internal\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "On Hold Tickets": {
+        "formula": "IF [status] = \"On Hold\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "Escalations Rate": {
+        "formula": "COUNTD([On Hold Tickets]) / COUNTD([Closed_volume])",
+        "datatype": "real"
+      }
+    },
+    "generated_at": "2025-11-23T21:02:29.872276",
+    "total_rows": 4108,
+    "total_columns": 92
+  }
+}

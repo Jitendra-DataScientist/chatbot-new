@@ -1,0 +1,99 @@
+{
+  "workbook_name": "FRODashboard_final",
+  "exported_at": "2025-11-25T11:44:43.022065",
+  "total_fields_with_descriptions": 23,
+  "field_descriptions": [
+    {
+      "field_name": "Case Owner name",
+      "comment": "(categorical) Name of the case owner/agent"
+    },
+    {
+      "field_name": "On Hold time",
+      "comment": "(numerical) Time in minutes the case spent on hold"
+    },
+    {
+      "field_name": "Abandoned Flag",
+      "comment": "(categorical) Binary flag indicating if the case was abandoned"
+    },
+    {
+      "field_name": "Account Country",
+      "comment": "(categorical) Country where the account is located"
+    },
+    {
+      "field_name": "Account Manager",
+      "comment": "(categorical) Name of the account manager assigned to the account"
+    },
+    {
+      "field_name": "Account Name Shorten Field",
+      "comment": "(categorical) Shortened version of the account name"
+    },
+    {
+      "field_name": "Account Status",
+      "comment": "(categorical) Current status of the account (e.g., Self Service, Customer, Prospect)"
+    },
+    {
+      "field_name": "Account Tier",
+      "comment": "(categorical) Tier classification of the account"
+    },
+    {
+      "field_name": "Accountid",
+      "comment": "(categorical) Unique identifier for the account"
+    },
+    {
+      "field_name": "Age In Hours",
+      "comment": "(numerical) Age of the case in hours at time of data extraction"
+    },
+    {
+      "field_name": "Case Acknowledgement Sla Flag",
+      "comment": "(categorical) Binary flag indicating if case acknowledgement SLA was met"
+    },
+    {
+      "field_name": "Case Gap To Close In Mins",
+      "comment": "(numerical) Time gap in minutes from case creation to closure"
+    },
+    {
+      "field_name": "Case Id",
+      "comment": "(categorical) Unique identifier for the case"
+    },
+    {
+      "field_name": "Case Resolution Sla Flag",
+      "comment": "(categorical) Binary flag indicating if case resolution SLA was met"
+    },
+    {
+      "field_name": "City Id",
+      "comment": "(categorical) Identifier or name of the city associated with the case"
+    },
+    {
+      "field_name": "Create Day",
+      "comment": "(categorical) Date when the case was created (day level)"
+    },
+    {
+      "field_name": "Create Month",
+      "comment": "(categorical) Month when the case was created"
+    },
+    {
+      "field_name": "Priority",
+      "comment": "(categorical) Priority level of the case (e.g., Medium, High)"
+    },
+    {
+      "field_name": "Status",
+      "comment": "(categorical) Current status of the case (e.g., Closed, Open)"
+    },
+    {
+      "field_name": "Status New",
+      "comment": "(categorical) Updated or new status classification of the case"
+    },
+    {
+      "field_name": "Time To Close",
+      "comment": "(numerical) Time in hours from case creation to closure"
+    },
+    {
+      "field_name": "Time To First Response",
+      "comment": "(numerical) Time in minutes from case creation to first response"
+    },
+    {
+      "field_name": "Type",
+      "comment": "(categorical) Type or category of the case (e.g., Task, Partner Error)"
+    }
+  ]
+}

@@ -1,0 +1,751 @@
+{
+  "Closed_volume": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "Explicit Tableau aggregation hint from column name prefix",
+    "confidence": "very_high",
+    "source": "tableau_hint_explicit",
+    "column_type": "tableau_defined"
+  },
+  "Open_Volume": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "Explicit Tableau aggregation hint from column name prefix",
+    "confidence": "very_high",
+    "source": "tableau_hint_explicit",
+    "column_type": "tableau_defined"
+  },
+  "product": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences of different products over time. The 'product' column contains categorical data, and the goal is likely to understand how many times each product appears. Therefore, COUNT is appropriate to determine the frequency of each product in the dataset.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "Case_Owner_name": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding how many cases are associated with each case owner over time. Since 'Case_Owner_name' contains categorical data representing different owners, the appropriate aggregation is to count the occurrences of each owner. This will provide insights into the distribution of cases among the owners.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "initial_queue": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'initial_queue' contains categorical data with a few unique values. The user query 'temporal comparison drivers' suggests a need to count occurrences of each category over time. Since the values are not pre-aggregated counts and are categorical in nature, COUNT is the appropriate aggregation to determine how many times each category appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "outbound_email_count": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'outbound_email_count' contains numerical values representing counts of outbound emails, and the query 'temporal comparison drivers' suggests a need to aggregate these counts over time. Since the values are already counts, the appropriate aggregation function is SUM to get the total outbound email counts across the specified time periods.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "level_2": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'level_2' contains categorical data representing different drivers or reasons for user actions. The user query is focused on a temporal comparison, which suggests counting occurrences of each driver over time. Since the values are not pre-aggregated counts but rather categories, the appropriate aggregation function is COUNT to determine how many times each driver appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "create_day": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences over time. The 'create_day' column contains datetime values, which are likely used to track when events occurred. Since the query does not specify a need for distinct counts or sums of numerical values, a simple count of occurrences is appropriate to understand the frequency of events over time.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "create_week": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences of the 'create_week' dates over time. Given that the 'create_week' column contains datetime values, the appropriate aggregation is to count the number of occurrences for each unique date or week. This aligns with the intent of comparing temporal data, as we want to see how many entries exist for each time period.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "create_month": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences over time, specifically by month. The 'create_month' column contains date-time values, which can be grouped by month to analyze trends. Since the values are dates and the query implies a count of occurrences, COUNT is the appropriate aggregation to determine how many entries exist for each month.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "case_id": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The column 'case_id' contains unique identifiers for cases, and the user query 'temporal comparison drivers' suggests an interest in understanding the distinct cases over time. Since the values are unique and represent individual cases, using COUNT_DISTINCT will provide the number of unique cases, which is relevant for temporal comparisons.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "created_weekday": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding the frequency of occurrences of each weekday in the 'created_weekday' column. Since the values are categorical (days of the week) and the intent is to count how many times each day appears, COUNT is the appropriate aggregation function. This will provide insights into which days are most common in the dataset.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "status": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests a need to count the occurrences of different statuses over time. The 'status' column contains categorical data representing the state of tickets, and the goal is likely to understand how many tickets fall into each status category. Since the values are not pre-aggregated counts but rather categorical statuses, COUNT is the appropriate aggregation to determine the number of occurrences for each status.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "eng_transfers": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'eng_transfers' contains binary values (0 and 1), which represent occurrences of a specific event (in this case, transfers). Since the user query is about 'temporal comparison drivers', it suggests an interest in understanding the total number of transfers over a period. Using SUM will provide the total count of transfers, which aligns with the binary nature of the data where 1 indicates an occurrence and 0 indicates none.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "last_queue": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'last_queue' contains categorical data with only one unique value ('U4B Business API Triage') across all rows. The user query is about a temporal comparison, which suggests they are interested in the frequency of occurrences over time. Since the data is not numerical and does not require summation, the appropriate aggregation is to count the occurrences of this categorical value.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "level_3": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'level_3' contains only the value '\\N' across all rows, indicating that there is no meaningful data to aggregate. However, since the query is about a temporal comparison, it suggests counting the occurrences of this placeholder value to understand its presence in the dataset. Therefore, COUNT is appropriate to reflect the total number of rows, even though they all contain the same non-informative value.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "level_4": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'level_4' contains only a single unique value ('\\N') across all rows, indicating that there is no meaningful data to aggregate. However, since the user query is about a temporal comparison, it implies a need to count occurrences of the existing value, which is effectively just counting the total number of rows. Therefore, COUNT is the appropriate aggregation function to reflect the total number of entries.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "accountid": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The column 'accountid' contains unique identifiers for accounts, and the user query 'temporal comparison drivers' suggests an interest in understanding the distinct accounts over time. Given that the data type is object and the unique count is relatively high (645 unique values out of 4108 total rows), using COUNT_DISTINCT will provide insights into the number of unique accounts involved in the temporal comparison.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "account_tier": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'account_tier' contains categorical data with a significant number of missing values represented as '\\N'. The query 'temporal comparison drivers' suggests an interest in understanding the distribution of account tiers over time. Since the values are categorical and we want to count occurrences of each tier, COUNT is the appropriate aggregation function to determine how many accounts fall into each tier category.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "account_status": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'account_status' contains categorical values representing different statuses of accounts. The user query 'temporal comparison drivers' suggests an interest in understanding the distribution of these statuses over time. Since the values are not numerical and do not represent counts themselves, the appropriate aggregation is to count the occurrences of each status. This will provide insights into how many accounts fall into each category, which is essential for temporal comparisons.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "account_country": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding the frequency of occurrences of different countries in the 'account_country' column over time. Since the values in this column are categorical (representing countries), the appropriate aggregation function is COUNT to determine how many times each country appears in the dataset. This will provide insights into the distribution of accounts by country.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "account_manager": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding how many instances of each account manager exist over time. The 'account_manager' column contains categorical data representing different account managers, and the goal is likely to count occurrences of each manager. Since the values are not pre-aggregated counts and are categorical in nature, COUNT is the appropriate aggregation function to determine the number of records associated with each account manager.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "service_area": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'service_area' contains categorical data with a significant number of missing values ('\\N'). The user query is about a temporal comparison, which suggests counting occurrences of each service area over time. Since the values are not pre-aggregated counts and are categorical, using COUNT will provide the number of occurrences for each unique service area, which aligns with the intent of the query.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "case_resolution_sla_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'case_resolution_sla_flag' contains binary indicator values (0 and 1), where 1 indicates a positive outcome (e.g., case resolved within SLA) and 0 indicates a negative outcome. Since the user query is about 'temporal comparison drivers', summing these values will provide the total count of cases that met the SLA over a specified time period, which aligns with the intent of comparing performance over time.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "case_resolution_sla_without_pc_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'case_resolution_sla_without_pc_flag' contains binary indicator values (0 and 1), where '1' likely indicates a positive outcome (e.g., case resolved within SLA) and '0' indicates a negative outcome. Since the user query is about 'temporal comparison drivers', summing these values will provide the total count of cases that met the SLA over a specified time period, which aligns with the intent of comparing performance over time.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "case_acknowledgement_sla_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'case_acknowledgement_sla_flag' contains binary indicator values (0 and 1), where 1 indicates a positive acknowledgment and 0 indicates a negative acknowledgment. Since the user query is about 'temporal comparison drivers', using SUM will allow us to aggregate the total number of positive acknowledgments across the dataset, which is relevant for temporal comparisons. This aligns with the statistical hint suggesting SUM as the appropriate aggregation function.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "Origin": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests a need to count occurrences of the 'Origin' values over time. The data in the 'Origin' column consists of categorical values ('Email' and 'U4B'), and since the query does not specify a need for distinct counts or sums, a simple count of occurrences is appropriate to understand the frequency of each origin type. Given that the data type is object and the unique values are limited, COUNT is the most fitting aggregation.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "priority": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'priority' contains categorical data with a single unique value ('Medium (1-3 hours)') and a small number of missing values (nan). Since the user query is about 'temporal comparison drivers', it suggests an interest in how many instances of this priority exist. COUNT is appropriate here to quantify the occurrences of this category, as there are no numerical values to sum or average.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "sla_status_reporting": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'sla_status_reporting' contains categorical data with only one unique value ('Green') across all rows. The user query 'temporal comparison drivers' suggests an interest in understanding the frequency of this status over time. Since the data is categorical and the intent is to count occurrences, COUNT is the appropriate aggregation function.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "agent_email": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding the unique agents involved over time. The column 'agent_email' contains email addresses, which are categorical identifiers. Given that the data has a relatively low unique count (26 unique emails out of 4108 total rows), using COUNT_DISTINCT will provide insights into how many different agents are present in the dataset, which aligns with the intent of comparing these drivers over time.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "account_name_shorten_field": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The column 'account_name_shorten_field' contains unique identifiers for accounts, and the user query 'temporal comparison drivers' suggests an interest in understanding the distinct accounts involved over time. Given that the data type is categorical and the unique count is relatively high (645 unique values out of 4108 total rows), using COUNT_DISTINCT will provide insights into the number of unique accounts without duplication.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "re_business_category": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 're_business_category' contains only a single unique value ('\\N') across all rows, indicating that there is no meaningful categorical data to aggregate. However, since the user query is about a temporal comparison, we can count the occurrences of this single value to understand its presence over time. COUNT is appropriate here as it will provide the total number of rows, which is relevant for temporal analysis.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "city_id": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The column 'city_id' contains categorical data representing different cities, and the query is about 'temporal comparison drivers', which suggests an interest in unique city identifiers over time. Since the column has a high number of unique values (308 unique cities out of 4108 total rows), using COUNT_DISTINCT will provide insights into the number of different cities involved in the comparison, rather than just counting occurrences of each city.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "eats_bulk_telescope_tag": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The column 'eats_bulk_telescope_tag' contains categorical values representing different entities (e.g., companies, accounts). The user query 'temporal comparison drivers' suggests an interest in understanding the unique drivers over time. Since the data type is object and the unique count is relatively low (639 unique values out of 4108 total rows), using COUNT_DISTINCT will provide insights into the number of distinct drivers present in the dataset, which aligns with the intent of the query.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "ue_cuisine_category": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'ue_cuisine_category' contains categorical data with a significant number of missing values ('\\N'). The query 'temporal comparison drivers' suggests an interest in counting occurrences of each category over time. Since the values are not pre-aggregated counts and are categorical, the appropriate aggregation function is COUNT to determine how many times each category appears, excluding the missing values.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "type": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'type' contains categorical data representing different types of events or errors. The user query 'temporal comparison drivers' suggests an interest in counting occurrences of each type over time. Since the values are not pre-aggregated counts and are categorical in nature, the appropriate aggregation function is COUNT to determine how many times each type appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "csat_rating": {
+    "aggregation": "COUNT",
+    "reasoning": "The csat_rating column contains only the value '\\N', indicating that there are no valid customer satisfaction ratings present in the data. Since the query is about a temporal comparison, we can count the occurrences of the non-null values (if any existed) to understand the distribution over time. However, given that all values are '\\N', the count will reflect the absence of data. Thus, COUNT is the appropriate aggregation to determine how many entries exist, even if they are all null.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "csat_issue_resolved": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'csat_issue_resolved' contains only a single unique value ('\\N') across all rows, indicating that there is no meaningful data to aggregate. However, since the query is about a temporal comparison, we can count the occurrences of this value to understand how many entries exist, even if they are not useful for analysis. Thus, COUNT is appropriate to determine the number of records.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "gap_for_first_response_in_mins": {
+    "aggregation": "AVG",
+    "reasoning": "The column 'gap_for_first_response_in_mins' contains numeric values representing time in minutes, but also includes '\\N' which indicates missing data. Since the query is about 'temporal comparison drivers', it suggests an interest in understanding the average time taken for the first response. The AVG function is appropriate here as it will provide the mean response time, excluding the missing values. This aligns with the intent of comparing temporal metrics.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "gap_to_close_in_mins": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'gap_to_close_in_mins' contains numerical values representing time in minutes, which suggests that they can be summed to provide a total gap across all entries. The presence of '\\N' indicates missing values, but since the query is about a temporal comparison, summing the valid numerical entries will give a meaningful aggregate. The data type is object, but the values are numeric strings that can be converted to integers for summation.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "re_open": {
+    "aggregation": "SUM",
+    "reasoning": "The column 're_open' contains binary indicator values (0 and 1), where 1 indicates a specific event (e.g., a reopening) and 0 indicates its absence. Since the user query is about 'temporal comparison drivers', summing these values will provide the total count of occurrences (1s) across the dataset, which is relevant for temporal comparisons.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "abandoned_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'abandoned_flag' contains binary indicator values (0s), indicating whether an event (like abandonment) occurred or not. Since all values are 0, using SUM will allow us to aggregate the total number of abandoned events across all rows. This fits the query intent of performing a temporal comparison, as we can sum the flags over time to analyze trends.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "reopen_after_abandoned_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'reopen_after_abandoned_flag' contains binary indicator values (0), indicating that there are no instances of reopening after abandonment. Since the data is entirely composed of zeros, using SUM will effectively provide the total count of instances where the flag is set to 1 (which is none in this case). This aligns with the statistical hint suggesting SUM as the appropriate aggregation function for binary indicators.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "escalation_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'escalation_flag' contains binary values (0 and 1), where 1 indicates an escalation and 0 indicates no escalation. Since the query is about 'temporal comparison drivers', summing the values will provide the total number of escalations, which is relevant for understanding trends over time. This aligns with the statistical hint suggesting SUM as the appropriate aggregation for binary indicators.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "parentid": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The column 'parentid' contains unique identifiers, and the user query is about 'temporal comparison drivers', which suggests an interest in understanding the distinct instances of these identifiers over time. Given that the data type is object and the unique count is relatively high (68.0%), using COUNT_DISTINCT will provide insights into the number of unique drivers present in the dataset.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "total_inbound_email_count": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'total_inbound_email_count' contains numerical values representing counts of inbound emails, with some entries marked as '\\N' indicating missing data. Since the query is about a temporal comparison, it suggests that we want to aggregate these counts over a time period. The appropriate aggregation function here is SUM, as we want to total the counts of inbound emails across the relevant time frames.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "total_outbound_email_count": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'total_outbound_email_count' contains numeric values representing counts of outbound emails, with some entries marked as '\\N' indicating missing data. Since the query is about a temporal comparison, it implies that we want to aggregate these counts over a time period. The appropriate aggregation function here is SUM, as we want to total the counts of outbound emails across the relevant time frames.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "case_fcr_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'case_fcr_flag' contains binary indicator values (0 and 1), which represent counts of occurrences (1 for true, 0 for false). The user query 'temporal comparison drivers' suggests an interest in understanding the total number of occurrences over time. Therefore, using SUM will provide the total count of cases where the flag is set to 1, which aligns with the intent of comparing these occurrences temporally.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "survey_sent_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'survey_sent_flag' contains binary indicator values (0), indicating whether a survey was sent or not. Since all values are 0, using SUM will provide the total count of surveys sent across all rows, which is relevant for temporal comparison. The data type is integer, and the unique count is 1, confirming that there are no variations in the data. Therefore, SUM is the appropriate aggregation function.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "survey_response_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'survey_response_flag' contains binary indicator values (all zeros), indicating whether a survey response was flagged or not. Since the values are binary (0), the SUM function is appropriate to aggregate the total number of flagged responses across all rows. Given that all values are 0, the sum will also be 0, but this aggregation aligns with the intent of comparing temporal drivers in the context of survey responses.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "issue_non_resolution_flag": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'issue_non_resolution_flag' contains binary indicator values (0s), indicating whether an issue was resolved or not. Since all values are 0, the SUM function is appropriate to aggregate the total count of unresolved issues across all rows. This aligns with the query intent of performing a temporal comparison, as summing the binary indicators will provide a total count of unresolved issues over time.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "status_new": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding the frequency of different statuses over time. The 'status_new' column contains categorical data representing the status of items, and the goal is likely to count how many items fall into each status category. Since the values are not numerical and represent distinct categories, COUNT is the appropriate aggregation to determine the number of occurrences for each status.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "resolution": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'resolution' contains categorical data with very few unique values, primarily consisting of '\\N' and ' Customer Responded'. The query is about a temporal comparison, which suggests that we want to count occurrences of each category over time. Since the values are not numerical and do not represent pre-aggregated counts, COUNT is the appropriate aggregation function to determine how many times each resolution appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "case_gap_for_second_response_in_mins_c": {
+    "aggregation": "AVG",
+    "reasoning": "The column 'case_gap_for_second_response_in_mins_c' contains numerical values representing time in minutes, but also includes '\\N' which indicates missing data. Since the query is about a temporal comparison, the average time taken for the second response is a meaningful metric to analyze. The presence of non-numeric values suggests that we should calculate the average of the valid numeric entries, ignoring the '\\N' values.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "case_gap_to_close_in_mins_c": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'case_gap_to_close_in_mins_c' contains numeric values representing time in minutes, but it also includes '\\N' which indicates missing data. The query 'temporal comparison drivers' suggests an interest in understanding the total time across cases. Since the values are numeric and represent a measurable quantity, using SUM will provide the total time across all valid entries, allowing for a temporal comparison. The presence of '\\N' indicates that some values are missing, but this does not affect the decision to sum the valid numeric entries.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "case_SLA_buckets_day": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'case_SLA_buckets_day' contains categorical values representing time buckets (e.g., '1day', '>5day', etc.). The user query 'temporal comparison drivers' suggests an interest in understanding the frequency of these time buckets rather than summing or averaging numerical values. Therefore, COUNT is appropriate to determine how many cases fall into each SLA bucket.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "case_SLA_buckets_hour": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'case_SLA_buckets_hour' contains categorical time buckets representing service level agreements (SLAs). The user query 'temporal comparison drivers' suggests an interest in understanding the frequency of these time buckets rather than summing or averaging numerical values. Therefore, counting the occurrences of each unique SLA bucket is appropriate to analyze the distribution of these categories over time.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "case_sla_buckets_without_pc_day": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'case_sla_buckets_without_pc_day' contains categorical data representing time buckets (e.g., '1day', '>5day'). The user query 'temporal comparison drivers' suggests an interest in understanding the frequency of these time buckets rather than summing or averaging numerical values. Therefore, counting occurrences of each category is appropriate.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "case_sla_buckets_without_pc_hour": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'case_sla_buckets_without_pc_hour' contains categorical time buckets representing service level agreements (SLAs). The user query 'temporal comparison drivers' suggests an interest in understanding the frequency of these time buckets. Since the values are categorical and not numerical counts, the appropriate aggregation is COUNT to determine how many instances fall into each SLA bucket.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "isescalated": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'isescalated' contains binary indicator values (0s), indicating whether an issue has been escalated or not. Since all values are 0, using SUM will provide the total count of escalated issues across all rows, which is relevant for a temporal comparison. The data type is integer, and the unique count is 1, confirming that all entries are the same. Therefore, SUM is the appropriate aggregation function.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "escalated": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'escalated' contains binary indicator values (0s), indicating whether an event occurred or not. Since all values are 0, using SUM will allow us to quantify the total number of escalations across all rows, which is relevant for a temporal comparison. The data type is integer, and the context suggests that we are interested in the total count of escalations, even though the current data shows no escalations.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "Eng_Trans": {
+    "aggregation": "AVG",
+    "reasoning": "The column 'Eng_Trans' contains numeric values representing some form of measurement, likely related to engagement or transactions. Given the query 'temporal comparison drivers', it suggests an interest in understanding trends over time. The mean and median values indicate that the data is continuous and can be averaged. Although there are some NaN values, the presence of numeric data allows for the calculation of an average to analyze temporal trends effectively.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "On Hold Tickets": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'On Hold Tickets' contains numeric values representing counts of tickets, with a low cardinality of unique values. Given the context of a temporal comparison, it is likely that the intent is to aggregate these counts over time. Since the values are numeric and represent counts, using SUM will provide the total number of on-hold tickets across the specified time periods.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "cpw_std_all": {
+    "aggregation": "AVG",
+    "reasoning": "The column 'cpw_std_all' contains numeric values that represent some form of measurement, likely continuous data. Given the user query about a spike in August, it suggests an interest in understanding the average value during that period. The presence of NaN values indicates that not all rows contain valid data, but the aggregation function AVG is appropriate to analyze trends over time, especially when looking for spikes. The low cardinality suggests that while there are repeated values, they are not categorical in nature, and thus averaging is suitable.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "month": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences of data points over time. The column 'month' contains date-time values, which are likely used to track events or records by month. Since the data type is an object and represents dates, the appropriate aggregation is to count the number of occurrences for each month. This aligns with the intent of temporal comparison, where we want to see how many records exist for each month.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "project_name": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences of different project names over time. The data in the 'project_name' column consists of categorical values representing different projects. Since the goal is to compare these projects temporally, using COUNT will provide the number of occurrences for each project name, which is appropriate for categorical data.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "od": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'od' contains categorical values representing boolean states ('True', 'False', 'Not Reported'). The user query 'temporal comparison drivers' suggests a need to count occurrences of these categories over time. Since the values are not numerical and the query does not imply a need for summation or averaging, COUNT is the appropriate aggregation to determine how many times each category appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "cl": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'cl' contains categorical values representing boolean states (True, False, Not Reported). The user query 'temporal comparison drivers' suggests a need to count occurrences of these categories over time. Since the values are not pre-aggregated counts and the intent is to analyze the frequency of these categories, COUNT is the appropriate aggregation function.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "noce": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'noce' contains boolean-like values ('True', 'False', 'Not Reported') which are categorical in nature. The user query 'temporal comparison drivers' suggests a need to count occurrences of these categories over time. Since the values are not pre-aggregated counts and are categorical, the appropriate aggregation function is COUNT to determine the frequency of each category.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "gca": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'gca' contains boolean-like values ('True', 'False', 'Not Reported') which are categorical in nature. The user query 'temporal comparison drivers' suggests an interest in counting occurrences of these categories over time. Since the values are not pre-aggregated counts and the intent is to understand the frequency of these categories, COUNT is the appropriate aggregation function.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "urg": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'urg' contains categorical values representing urgency levels (True, False, Not Reported). The user query 'temporal comparison drivers' suggests an interest in counting occurrences of these categories over time. Since the values are not numerical and do not represent pre-aggregated counts, COUNT is the appropriate aggregation to determine how many times each category appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "l10nfix": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'l10nfix' contains categorical values indicating boolean states ('True', 'False', 'Not Reported'). The user query 'temporal comparison drivers' suggests a need to count occurrences of these categories over time. Since the values are not numerical and do not represent pre-aggregated counts, COUNT is the appropriate aggregation to determine how many times each category appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "cleanup": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'cleanup' contains categorical values indicating the status of data (e.g., 'True', 'False', 'Not Reported'). The user query 'temporal comparison drivers' suggests an interest in counting occurrences of these statuses over time. Since the values are not numerical and the query does not imply a need for summation or averaging, COUNT is the appropriate aggregation to determine how many times each status appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "tcr8": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'tcr8' contains boolean-like values ('True', 'False', 'Not Reported') and is primarily categorical in nature. The user query 'temporal comparison drivers' suggests an interest in counting occurrences of these values over time. Since the values are not pre-aggregated counts and are categorical, the appropriate aggregation function is COUNT to determine how many times each category appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "dtp": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'dtp' contains categorical values representing boolean states ('True', 'False', 'Not Reported'). The user query 'temporal comparison drivers' suggests a need to count occurrences of these categories over time. Since the values are not pre-aggregated counts and are categorical in nature, using COUNT will provide the total number of occurrences for each category, which aligns with the intent of comparing these drivers temporally.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "nocharge": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'nocharge' contains categorical values indicating whether a charge is applicable or not, with a mix of boolean-like strings and a 'Not Reported' category. The user query suggests a need for a count of occurrences of these categories over time, which aligns with the intent to compare temporal data. Since the values are not pre-aggregated counts, COUNT is the appropriate aggregation to determine the frequency of each category.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "rosetta_suggestion": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'rosetta_suggestion' contains categorical values representing boolean states (True/False) and a 'Not Reported' category. The user query indicates a need for a temporal comparison, which suggests counting occurrences of each category over time. Since the values are not numerical and do not represent pre-aggregated counts, COUNT is the appropriate aggregation to determine how many times each suggestion appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "vendor": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding the frequency of different vendors over time. The 'vendor' column contains categorical data representing different vendors, and the goal is likely to count occurrences of each vendor. Since the values are not pre-aggregated counts but rather categorical identifiers, COUNT is the appropriate aggregation function to determine how many times each vendor appears in the dataset.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "vertical": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'vertical' contains categorical data representing different drivers or categories, including a significant number of 'Not Reported' entries. The user query indicates a need for a temporal comparison, which suggests counting occurrences of each category over time. Since the values are not numerical and do not represent pre-aggregated counts, COUNT is the appropriate aggregation to determine how many entries fall into each category.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "client_category": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding the frequency of occurrences of different client categories over time. Since 'client_category' contains categorical data, the appropriate aggregation is to count the number of occurrences for each category. This aligns with the intent to compare how many clients fall into each category over a specified time period.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "client": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in the frequency of occurrences of different clients over time. The 'client' column contains categorical data representing different client types, and the goal is likely to count how many times each client appears in the dataset. Since the values are not pre-aggregated counts and are categorical, COUNT is the appropriate aggregation function to determine the number of occurrences for each unique client.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "client_raw": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences of different drivers over time. The column 'client_raw' contains categorical data representing different drivers, and the intent is likely to count how many times each driver appears. Given that the data type is object and the values are categorical, COUNT is appropriate to determine the frequency of each unique driver.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "domain": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences of different domains over time. The 'domain' column contains categorical data representing different categories or types, and the intent is to count how many times each domain appears. Since the values are not pre-aggregated counts but rather categorical identifiers, COUNT is the appropriate aggregation function to determine the frequency of each domain.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "domain_raw": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences of different categories within the 'domain_raw' column. The values in this column are categorical (e.g., 'UI', 'CRM', 'SEO'), and the goal is likely to understand how many times each category appears over a specific time period. Since the data type is object and the values are not pre-aggregated counts, COUNT is the appropriate aggregation function to determine the frequency of each category.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "source_locale_type": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'source_locale_type' contains categorical data representing different types of locales (English, Non-English, Not Reported). The user query 'temporal comparison drivers' suggests an interest in counting occurrences of these categories over time. Since the values are not numerical and the intent is to understand the frequency of each category, COUNT is the appropriate aggregation function.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "source_locale": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'source_locale' contains categorical data representing different locales. The user query 'temporal comparison drivers' suggests an interest in understanding the frequency of these locales over time. Therefore, using COUNT will provide the number of occurrences of each locale, which aligns with the intent of comparing these counts temporally.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "source_locale_raw": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The column 'source_locale_raw' contains categorical data representing different locales. The user query 'temporal comparison drivers' suggests an interest in understanding the unique locales over time. Since the column has a high number of unique values (102 unique values), using COUNT_DISTINCT will provide insights into the diversity of locales without double counting any duplicates.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "target_locale": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'target_locale' contains categorical data representing different locales. The user query 'temporal comparison drivers' suggests an interest in counting occurrences of each locale over time. Since the values are not pre-aggregated counts and are categorical, the appropriate aggregation function is COUNT to determine how many times each locale appears in the dataset.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "target_locale_raw": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The column 'target_locale_raw' contains categorical data representing different locales. The user query 'temporal comparison drivers' suggests an interest in understanding the unique locales over time. Given that the column has a high number of unique values (331) and the query implies a need for distinct counts of these categories, COUNT_DISTINCT is the appropriate aggregation to capture the variety of locales without duplication.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "cpw_std_cg": {
+    "aggregation": "AVG",
+    "reasoning": "The column 'cpw_std_cg' contains numeric values with a low cardinality of 244 unique values, indicating that it may represent a continuous variable rather than categorical data. Given the query 'temporal comparison drivers', it suggests an interest in understanding trends over time, which aligns with calculating the average value. The presence of NaN values indicates that some rows may not contribute to the average, but the aggregation of the non-null values will provide insight into the overall trend.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "project_count": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'project_count' contains pre-aggregated counts, as indicated by the column name and the statistical hint provided. The actual data shows that the only non-null value is 1.0, which suggests that each row represents a count of projects. Therefore, to obtain the total number of projects across all rows, the appropriate aggregation function is SUM.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "wwc": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'wwc' contains numeric values that appear to represent some form of measurement or count, as indicated by the presence of float values and the numeric range. Given the query 'temporal comparison drivers', it suggests an interest in aggregating these values over time. Since the data type is float64 and the values are not categorical, using SUM will provide a total of these measurements, which aligns with the intent of comparing drivers over time.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "twc": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'twc' contains numeric values that appear to represent some form of measurement or count, given the context of the query 'temporal comparison drivers'. Since the values are not categorical and seem to be raw data points, the appropriate aggregation function is SUM to obtain the total across all rows for temporal comparisons.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "mt_saving_source": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'mt_saving_source' contains categorical data representing different sources of savings. The user query 'temporal comparison drivers' suggests an interest in counting occurrences of these categories over time. Since the values are not numerical and do not represent pre-aggregated counts, the appropriate aggregation function is COUNT to determine how many times each source appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "mt_saving": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'mt_saving' contains numeric values that represent some form of savings or monetary amounts. Given the user query 'temporal comparison drivers', it suggests an interest in understanding the total savings over time. Since the values are numeric and the query implies a need for aggregation over a temporal dimension, using SUM is appropriate to capture the total savings across the dataset.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "mt_spend": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'mt_spend' contains numeric values representing monetary amounts. Given the user query 'temporal comparison drivers', it suggests an interest in understanding total spending over time. Since the values are not categorical or identifiers, and the query implies a need for a total amount, SUM is the appropriate aggregation function to capture the overall spending across the specified time periods.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "new_service_original_charge": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'new_service_original_charge' contains numeric values representing charges, with a mix of valid floats and NaN values. Given the query 'temporal comparison drivers', it suggests an interest in understanding the total charges over time. Since the values are numeric and the query implies aggregation over a time period, using SUM is appropriate to capture the total charges. The presence of NaN values indicates that some rows may not contribute to the total, but this does not negate the use of SUM for the valid entries.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "new_service_actual_charge": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'new_service_actual_charge' contains numeric values representing charges, and the query 'temporal comparison drivers' suggests an interest in understanding the total charges over time. Given that the data includes a range of numeric values and the intent appears to be to aggregate these charges, SUM is the appropriate aggregation function to provide a total across the relevant time periods.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "new_service_saving": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'new_service_saving' contains numeric values that represent savings amounts, which can be aggregated. Given the query 'temporal comparison drivers', it suggests a need to analyze total savings over time. The presence of numeric values alongside a significant number of NaNs indicates that while some rows contain valid savings data, the aggregation should focus on summing these values to understand the overall impact. The low cardinality suggests that while there are repeated values, they still represent continuous data rather than categorical data.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "new_service_twc": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'new_service_twc' contains numeric values that appear to represent some form of measurement or count, despite the presence of NaN values. Given the context of the query 'temporal comparison drivers', it suggests an interest in understanding the total impact or contribution over time. Since the values are numeric and the query implies aggregation over a temporal dimension, using SUM is appropriate to capture the total across the relevant time periods.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "mega_region": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding the frequency of occurrences of different mega regions over time. The column 'mega_region' contains categorical data representing different regions. Since the goal is to count how many entries exist for each region, COUNT is the appropriate aggregation function to determine the number of occurrences for each unique mega region.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "language_tier": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'language_tier' contains categorical values representing different tiers of language proficiency. The user query 'temporal comparison drivers' suggests an interest in understanding the frequency of these categories over time. Since the values are not numerical counts but rather categories, the appropriate aggregation function is COUNT to determine how many instances of each language tier exist.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "Target Locale Refined": {
+    "aggregation": "COUNT",
+    "reasoning": "The column 'Target Locale Refined' contains categorical data representing different locales. The user query 'temporal comparison drivers' suggests a need to count occurrences of each locale over time. Since the values are not pre-aggregated counts and are categorical, the appropriate aggregation function is COUNT to determine how many times each locale appears.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "Touchless Type": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in understanding the frequency of occurrences of the 'Touchless Type' values over time. Given that the column contains categorical data with only two unique values ('Touchless' and 'Human in Loop'), using COUNT will provide the total number of occurrences for each category, which is relevant for temporal comparisons.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "Platform": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in counting occurrences of the 'Platform' values over time. The data consists of categorical values ('On Phrase' and 'Off Phrase'), and the goal is likely to understand how many instances of each category exist. Since the values are not pre-aggregated counts and are categorical, COUNT is the appropriate aggregation function to determine the frequency of each category.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "pre_aggregated_measure"
+  },
+  "Touchless Volume": {
+    "aggregation": "SUM",
+    "reasoning": "The column 'Touchless Volume' contains numerical values that represent a volume metric. Given the user query 'temporal comparison drivers', it suggests an interest in understanding the total volume over time. Since the values are not categorical or identifiers, and the query implies a need for aggregation of these numerical values, SUM is the appropriate aggregation function to capture the total volume across the specified time periods.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "Number of Tickets": {
+    "aggregation": "COUNT",
+    "reasoning": "Explicit Tableau aggregation hint from column name prefix",
+    "confidence": "very_high",
+    "source": "tableau_hint_explicit",
+    "column_type": "tableau_defined"
+  }
+}

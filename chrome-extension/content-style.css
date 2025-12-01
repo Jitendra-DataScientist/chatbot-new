@@ -1,0 +1,818 @@
+/* Tableau Analysis Assistant Chrome Extension Styles
+   FIX: scope blur to chatbot only (do NOT blur entire page)
+   Preserves all selectors/responsive rules and launcher auto-hide.
+*/
+
+/* Ensure no conflicts with page styles */
+#tableau-analysis-assistant * {
+  box-sizing: border-box;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  /* Keep text visible against varied dashboards */
+  color: #fff !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6) !important;
+}
+
+/* Container for the entire assistant - IMPORTANT: NO backdrop-filter here */
+#tableau-analysis-assistant {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  pointer-events: none !important;
+  z-index: 2147483647 !important; /* Maximum z-index */
+  /* Keep root transparent and lightweight to avoid blurring the page */
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 0 !important;
+}
+
+/* Launcher button - TRULY fixed to viewport bottom-right */
+#tableau-analysis-launcher {
+  position: fixed !important;
+  right: 20px !important;
+  bottom: 20px !important;
+  width: 180px !important;
+  height: 48px !important;
+  border-radius: 24px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  /* keep the button visible but with stronger contrast */
+ background: linear-gradient(180deg, rgba(121,96,231,1), rgba(59,53,141,1)) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #fff !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
+  transition: all 0.28s cubic-bezier(.2,.9,.2,1) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+}
+
+#tableau-analysis-launcher:hover {
+  transform: translateY(-2px) !important;
+  background: rgba(37, 99, 235, 0.95) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.30) !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+}
+
+/* Auto-hide launcher when chat is open
+   1) If JS toggles .open on the root container -> hide.
+   2) If not, modern browsers (Chrome) support :has() -> hide when chatbot has .visible.
+*/
+#tableau-analysis-assistant.open #tableau-analysis-launcher,
+#tableau-analysis-assistant:has(#tableau-analysis-chatbot.visible) #tableau-analysis-launcher {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: scale(0.98) !important;
+}
+
+/* Chat interface - Clean white design */
+#tableau-analysis-chatbot {
+  position: fixed !important;
+  right: 20px !important;
+  bottom: 20px !important;
+  width: 360px !important;
+  max-width: calc(100vw - 40px) !important;
+  height: 520px !important;
+  max-height: calc(100vh - 40px) !important;
+  border-radius: 16px !important;
+  /* Clean white background with refined shadows */
+  background: #ffffff !important;
+  box-shadow: 
+    0 20px 40px rgba(0,0,0,0.08),
+    0 8px 16px rgba(0,0,0,0.06),
+    0 2px 4px rgba(0,0,0,0.04) !important;
+  display: none !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+  border: 1px solid rgba(0,0,0,0.06) !important;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+}
+
+#tableau-analysis-chatbot.visible {
+  display: flex !important;
+}
+
+/* Header */
+.tableau-chat-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 10px 12px !important;
+  background: linear-gradient(180deg, rgba(121,96,231,1), rgba(59,53,141,1)) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  color: #fff !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+.tableau-chat-title {
+  font-weight: 600 !important;
+  font-size: 16px !important;
+  color: #ffffff !important;
+}
+
+.tableau-chat-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Both action buttons (minimize and feedback) get exactly the same styling */
+.tableau-chat-actions button,
+.feedback-trigger-button {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #fff !important;
+  font-size: 18px !important;
+  cursor: pointer !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  flex-shrink: 0 !important;
+  margin: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.tableau-chat-actions button:hover,
+.feedback-trigger-button:hover {
+  background: rgba(255,255,255,0.09) !important;
+  border-color: rgba(255, 255, 255, 0.10) !important;
+}
+
+
+/* Chat page header for back button */
+.tableau-chat-page-header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 10px 12px !important;
+  background: rgba(249, 249, 250, 0.02) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.04) !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+}
+
+.tableau-chat-log {
+  flex: 1 !important;
+  padding: 12px !important;
+  overflow-y: auto !important;
+  background: transparent !important;
+}
+
+/* Message bubbles — solid backgrounds for maximum readability */
+.tableau-msg {
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+  margin: 8px 0 !important;
+  max-width: 85% !important;
+  line-height: 1.35 !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.16) !important;
+  word-wrap: break-word !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
+  color: #333333 !important;
+}
+
+.tableau-msg.bot {
+  background: #f8f9fa !important;
+  border: 1px solid rgba(0,0,0,0.08) !important;
+  color: #2d3748 !important;
+}
+
+.tableau-msg.user {
+  margin-left: auto !important;
+  background: #e3f2fd !important;
+  border: 1px solid rgba(25,118,210,0.2) !important;
+  color: #1565c0 !important;
+}
+
+/* status and error indicators with visible bars */
+.tableau-msg.status {
+  background: rgba(219,234,254,0.95) !important;
+  border-left: 3px solid rgba(59,130,246,1) !important;
+  color: #1e40af !important;
+}
+
+.tableau-msg.error {
+  background: rgba(254,226,226,0.95) !important;
+  border-left: 3px solid rgba(239,68,68,1) !important;
+  color: #dc2626 !important;
+}
+
+/* Chart buttons container */
+#tableau-chart-buttons-container {
+  padding: 10px 12px !important;
+  background: rgba(255,255,255,0.01) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-top: 1px solid rgba(255,255,255,0.02) !important;
+  max-height: 200px !important;
+  overflow-y: auto !important;
+}
+
+/* Chart selection buttons */
+.tableau-chart-selection-button {
+  padding: 8px 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 6px !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #fff !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  transition: all 0.18s ease !important;
+  text-align: center !important;
+  word-wrap: break-word !important;
+  min-height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-weight: 500 !important;
+}
+
+.tableau-chart-selection-button:hover {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(59, 130, 246, 0.12) !important;
+  color: #fff !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12) !important;
+}
+
+.tableau-chart-selection-button.selected {
+  background: rgba(30, 58, 138, 0.95) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: rgba(59, 130, 246, 0.16) !important;
+  color: white !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.18) !important;
+}
+
+/* Chat form */
+.tableau-chat-form {
+  display: flex !important;
+  gap: 8px !important;
+  padding: 10px !important;
+  background: #ffffff !important;
+  border-top: 1px solid rgba(0,0,0,0.06) !important;
+}
+
+.tableau-chat-form input {
+  flex: 1 !important;
+  border: 1px solid rgba(0,0,0,0.12) !important;
+  border-radius: 10px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+  background: #ffffff !important;
+  color: #000 !important;
+  box-shadow: 
+    0 1px 2px rgba(0,0,0,0.04),
+    inset 0 1px 2px rgba(0,0,0,0.02) !important;
+}
+
+.tableau-chat-form input:focus {
+  border-color: rgba(121,96,231,0.5) !important;
+  background: #ffffff !important;
+  box-shadow: 
+    0 0 0 3px rgba(121,96,231,0.08),
+    0 2px 4px rgba(0,0,0,0.08),
+    inset 0 1px 2px rgba(0,0,0,0.02) !important;
+}
+
+.tableau-chat-form input:disabled {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+  cursor: not-allowed !important;
+  border-color: rgba(0,0,0,0.06) !important;
+  box-shadow: none !important;
+}
+
+.tableau-chat-form button {
+  border: none !important;
+  background: linear-gradient(180deg, rgba(121,96,231,1), rgba(59,53,141,1)) !important;
+  color: #fff !important;
+  padding: 10px 14px !important;
+  border-radius: 10px !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif !important;
+  box-shadow: 0 4px 10px rgba(121,96,231,0.25) !important;
+  font-weight: 600 !important;
+}
+
+.tableau-chat-form button:hover:not(:disabled) {
+  background: linear-gradient(180deg, rgba(141,116,251,1), rgba(79,73,161,1)) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 14px rgba(121,96,231,0.35) !important;
+}
+
+.tableau-chat-form button:disabled {
+  background: rgba(121,96,231,0.15) !important;
+  cursor: not-allowed !important;
+  opacity: 0.5 !important;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 900px) {
+  #tableau-analysis-chatbot {
+    width: 92vw !important;
+    height: 70vh !important;
+    right: 4vw !important;
+    bottom: 4vh !important;
+  }
+  
+  #tableau-analysis-launcher { 
+    right: 4vw !important; 
+    bottom: 4vh !important; 
+    width: 160px !important; 
+    height: 44px !important; 
+    font-size: 14px !important;
+  }
+
+  #tableau-chart-buttons-container {
+    max-height: 150px !important;
+  }
+  
+  .tableau-chart-selection-button {
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+    min-height: 32px !important;
+  }
+}
+
+/* Animation for smooth transitions */
+@keyframes tableau-slideInUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+#tableau-analysis-chatbot.visible {
+  animation: tableau-slideInUp 0.3s ease-out !important;
+}
+
+/* Ensure the extension doesn't interfere with Tableau's interface */
+#tableau-analysis-assistant {
+  user-select: none !important;
+}
+
+#tableau-analysis-assistant input,
+#tableau-analysis-assistant textarea {
+  user-select: text !important;
+}
+
+/* Enhanced Static Chart Visualization Styles */
+.static-chart-container {
+  margin: 12px 0 !important;
+  /* transparent container with subtle radius/shadow */
+  background: rgba(255, 255, 255, 0.02) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255,255,255,0.02) !important;
+}
+
+.chart-title {
+  padding: 12px 16px 8px !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  border-bottom: 0 !important;
+  background: rgba(255,255,255,0.01) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  font-size: 14px !important;
+}
+
+.static-chart {
+  padding: 16px !important;
+  background: transparent !important;
+  text-align: center !important;
+}
+
+.static-chart img {
+  max-width: 100% !important;
+  height: auto !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+
+.chart-insights {
+  padding: 12px 16px !important;
+  background: rgba(255,255,255,0.01) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-top: 0 !important;
+  font-size: 13px !important;
+  color: #fff !important;
+  line-height: 1.4 !important;
+}
+
+.chart-insights div {
+  margin-bottom: 4px !important;
+}
+
+.suggested-actions {
+  margin: 12px 0 0 !important;
+  padding: 12px !important;
+  background: rgba(255,255,255,0.01) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(255,255,255,0.02) !important;
+}
+
+.suggested-actions > div:first-child {
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #fff !important;
+  margin-bottom: 8px !important;
+}
+
+.suggested-action-btn {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(255,255,255,0.04) !important;
+  border-radius: 4px !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  color: #fff !important;
+  cursor: pointer !important;
+  transition: all 0.18s !important;
+  margin: 2px !important;
+  font-family: inherit !important;
+}
+
+.suggested-action-btn:hover {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(148, 163, 184, 0.12) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.10) !important;
+}
+
+/* Responsive adjustments for smaller chat windows */
+@media (max-width: 480px) {
+  .static-chart {
+    padding: 12px !important;
+  }
+  
+  .chart-title {
+    padding: 10px 12px 6px !important;
+    font-size: 13px !important;
+  }
+  
+  .chart-insights {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+  
+  .suggested-action-btn {
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+  }
+}
+
+/* Ensure static charts are properly styled within the message container */
+.tableau-msg.bot .static-chart-container {
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+/* Message text styling for enhanced responses */
+.message-text {
+  margin-bottom: 8px !important;
+  line-height: 1.5 !important;
+  color: #fff !important;
+}
+
+.message-text strong {
+  font-weight: 600 !important;
+  color: #fff !important;
+}
+
+/* Chart Modal Styles */
+.tableau-chart-modal {
+  font-family: "Open Sans", verdana, arial, sans-serif !important;
+  /* modal overlay kept translucent dark so dashboard is still visible */
+  background: transparent !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+}
+
+.tableau-chart-modal * {
+  box-sizing: border-box !important;
+}
+
+.tableau-chart-modal-content {
+  animation: tableau-modal-appear 0.3s ease-out !important;
+  background: transparent !important; /* faint content panel */
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(255,255,255,0.04) !important;
+  border-radius: 8px !important;
+}
+
+@keyframes tableau-modal-appear {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Responsive modal for smaller screens */
+@media (max-width: 768px) {
+  .tableau-chart-modal-content {
+    max-width: 95vw !important;
+    max-height: 95vh !important;
+    margin: 10px !important;
+  }
+  
+  .tableau-chart-modal-header {
+    padding: 12px 16px !important;
+  }
+  
+  .tableau-chart-modal-header h3 {
+    font-size: 16px !important;
+  }
+  
+  .tableau-chart-modal-header button {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Ensure modal appears above everything */
+.tableau-chart-modal {
+  z-index: 2147483647 !important;
+}
+
+/* ============================================================================
+   CLARIFICATION UI STYLES (Added for context manager support)
+   ============================================================================ */
+
+/* Clarification container with warning style - made translucent but keeps accent */
+.tableau-clarification-container {
+  margin: 12px 0 !important;
+  padding: 14px !important;
+  background: transparent !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  border: 2px solid rgba(255, 193, 7, 0.20) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+  animation: tableau-clarification-appear 0.3s ease-out !important;
+}
+
+@keyframes tableau-clarification-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Question text styling */
+.tableau-clarification-question {
+  font-size: 14px !important;
+  color: #856404 !important;
+  margin-bottom: 14px !important;
+  line-height: 1.6 !important;
+  font-weight: 500 !important;
+}
+
+.tableau-clarification-question strong {
+  font-weight: 700 !important;
+  color: #664d03 !important;
+}
+
+/* Options container */
+.tableau-clarification-options {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  margin-top: 12px !important;
+}
+
+/* Individual option buttons */
+.tableau-clarification-btn {
+  padding: 12px 16px !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 2px solid rgba(255, 193, 7, 0.20) !important;
+  border-radius: 8px !important;
+  color: #ffd54a !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.25s ease !important;
+  text-align: left !important;
+  font-family: inherit !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Hover effect */
+.tableau-clarification-btn:hover:not(:disabled) {
+  background: rgba(255, 249, 230, 0.03) !important;
+  border-color: rgba(255, 152, 0, 0.36) !important;
+  transform: translateX(4px) !important;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.06) !important;
+}
+
+/* Active/clicking effect */
+.tableau-clarification-btn:active {
+  transform: translateX(2px) !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.04) !important;
+}
+
+/* Selected state */
+.tableau-clarification-btn.selected {
+  background: rgba(76, 175, 80, 0.12) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-color: rgba(76, 175, 80, 0.36) !important;
+  color: #e6fff0 !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+}
+
+/* Disabled state */
+.tableau-clarification-btn:disabled {
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+/* Responsive design for smaller screens */
+@media (max-width: 480px) {
+  .tableau-clarification-container {
+    padding: 12px !important;
+  }
+  
+  .tableau-clarification-question {
+    font-size: 13px !important;
+    margin-bottom: 12px !important;
+  }
+  
+  .tableau-clarification-btn {
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Data table container with subtle tint */
+.data-table-container {
+  background: rgba(255,255,255,0.02) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(255,255,255,0.02) !important;
+  border-radius: 6px !important;
+}
+
+/* Interactive visualization container */
+.interactive-viz-container {
+  background: rgba(255,255,255,0.02) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(255,255,255,0.02) !important;
+  border-radius: 6px !important;
+}
+
+/* small usability tweak: make actionable things still accept pointer-events */
+#tableau-analysis-chatbot,
+#tableau-analysis-launcher,
+#tableau-chat-log,
+.tableau-chat-form,
+.tableau-chart-selection-button,
+.tableau-chart-selection-button.selected,
+.tableau-chat-actions button,
+.tableau-clarification-btn,
+.suggested-action-btn {
+  pointer-events: auto !important;
+}
+
+/* Base: all text inside the assistant -> black, remove text-shadow */
+#tableau-analysis-assistant,
+#tableau-analysis-assistant * {
+  color: #000 !important;
+  text-shadow: none !important;
+}
+
+/* Ensure header title stays white */
+.tableau-chat-title {
+  color: #ffffff !important;
+}
+
+/* ============================================================================
+   APPENDED: Rims for launcher, header and send button (Option B - pseudo elements)
+   These are the only additions made to your file.
+   ============================================================================
+*/
+
+/* Launcher rim (crisp rim outside launcher) */
+#tableau-analysis-launcher {
+  position: fixed !important; /* already fixed, left here intentionally */
+  z-index: 2147483648 !important; /* keep rim above other content */
+}
+#tableau-analysis-launcher::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  border-radius: 25px !important;
+  border: 1px solid rgba(255,255,255,0.30) !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.18) !important;
+  pointer-events: none !important;
+  z-index: 2147483648 !important;
+}
+
+/* Header rim (crisp rim around the chat header) */
+.tableau-chat-header {
+  position: relative !important; /* enable pseudo-element to align to header */
+  z-index: 3 !important;
+}
+.tableau-chat-header::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  border-radius: 13px !important;
+  border: 1px solid rgba(255,255,255,0.30) !important;
+  box-shadow: 0 8px 18px rgba(0,0,0,0.14) !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+
+/* Send button rim (crisp rim around the send button) */
+.tableau-chat-form button {
+  position: relative !important; /* allow ::before to sit around the button */
+  z-index: 2 !important;
+}
+.tableau-chat-form button::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  border-radius: 12px !important;
+  border: 1px solid rgba(255,255,255,0.30) !important;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.14) !important;
+  pointer-events: none !important;
+  z-index: -1 !important; /* keep rim behind button content but above panel rim */
+}
+
+/* Action buttons rim (crisp rim around minimize and feedback buttons) */
+.tableau-chat-actions button::before,
+.feedback-trigger-button::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: -1px !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(255,255,255,0.30) !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12) !important;
+  pointer-events: none !important;
+  z-index: -1 !important; /* keep rim behind button content */
+}
+
+/* ============================================================================
+   End of appended rims
+   ============================================================================
+*/

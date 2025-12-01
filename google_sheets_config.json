@@ -1,0 +1,34 @@
+{
+  "google_sheets": {
+    "enabled": true,
+    "apps_script_url": "https://script.google.com/macros/s/AKfycbwV2jC4YZ_lfttQhPxa6vPaDXG7Fvu8KwG2tG50wpDf0h1RhFpTza5EHJ6axgywefwW/exec",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1S065BvUyKDAHdWgQgLqzKUZAFYGnlP2Kl1xPxE81UGw/edit",
+    "timeout_seconds": 10,
+    "retry_attempts": 2,
+    "fallback_on_failure": true,
+    "log_responses": true
+  },
+  "data_exploration_logging": {
+    "enabled": true,
+    "apps_script_url": "https://script.google.com/macros/s/AKfycbwV6F0_AGHBzXj-kAP7lqSdcfiFQXQANe9ASKDt2JB0kR3Bj4uT1ycWFmLEczOCJum-JQ/exec",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1oq-BjErImPlTRz-E6XEVp2x5YESirrYM-Litrb_Eu1Y/edit?usp=sharing", 
+    "timeout_seconds": 10,
+    "retry_attempts": 2,
+    "fallback_on_failure": true,
+    "log_responses": true
+  },
+  "tableau_credentials": {
+    "enabled": true,
+    "apps_script_url": "https://script.google.com/macros/s/AKfycbyZlCm5cZ28nxUeW_kiPWUfhyHWMCgVinvbdHr2hXvHCsUfLGuiGEZY4B4sBEMWuV42/exec",
+    "sheet_url": "https://docs.google.com/spreadsheets/d/1QLtg3bBPrShP-niZVoTyQ8s9GDLqXL85Vj1zpnwgdcs/edit?usp=sharing",
+    "timeout_seconds": 10,
+    "retry_attempts": 2,
+    "cache_duration_seconds": 300
+  },
+  "backup_storage": {
+    "json_file": "feedback_submissions.json",
+    "simple_log": "feedback_simple.log",
+    "data_exploration_log": "data_exploration_logs.json",
+    "max_json_entries": 1000
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "Closed_Volume & Open_volume Brief": {
+    "closed_volume": "COUNT_DISTINCT",
+    "open_volume": "COUNT_DISTINCT"
+  },
+  "Number of Tickets Line chart": {
+    "number_of_tickets": "COUNT"
+  }
+}

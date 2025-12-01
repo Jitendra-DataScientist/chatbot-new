@@ -1,0 +1,8 @@
+{
+    "personal_access_token_name": "tableau",
+    "personal_access_token_secret": "6FPJO1QPTf2gH5alGXRmUg==:AaULy92viTz3wi06RR8iU4zWC9HzIaXh",
+    "tableau_server_url": "https://tableau-aws.uberinternal.com",
+    "api_version": "3.19",
+    "site_id": "4b7b67a8-800f-4a65-b470-12cc35378131",
+    "site_content_url": "CODS"
+}

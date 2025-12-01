@@ -1,0 +1,284 @@
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║            TABLEAU CREDENTIALS MANAGEMENT SYSTEM - ARCHITECTURE               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              SYSTEM FLOW DIAGRAM                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+   ┌──────────────────┐
+   │  Your Python App │
+   │                  │
+   │   app.py or      │
+   │   tableau_       │
+   │   backend.py     │
+   └────────┬─────────┘
+            │
+            │ 1. Request credentials
+            │    load_tableau_config(username="user@email.com")
+            ▼
+   ┌──────────────────────────────────────────┐
+   │  tableau_credentials_service.py          │
+   │                                          │
+   │  • Check if Google Sheets enabled        │
+   │  • Check in-memory cache (5 min)         │
+   │  • Fetch from Google Sheets or fallback  │
+   └────────┬─────────────────┬───────────────┘
+            │                 │
+            │ 2a. Primary     │ 2b. Fallback
+            │    Path         │     Path
+            ▼                 ▼
+   ┌─────────────────┐   ┌────────────────┐
+   │ Google Apps     │   │ pass_config.   │
+   │ Script API      │   │ json           │
+   │                 │   │                │
+   │ POST:           │   │ Local file     │
+   │ {username: ..} │   │ (backup)       │
+   └────────┬────────┘   └────────┬───────┘
+            │                     │
+            │ 3. Lookup           │
+            ▼                     │
+   ┌─────────────────┐            │
+   │ Google Sheets   │            │
+   │                 │            │
+   │ Credentials     │            │
+   │ Sheet           │            │
+   │                 │            │
+   │ username | pwd  │            │
+   │ user1@.. | *** │            │
+   │ user2@.. | *** │            │
+   └────────┬────────┘            │
+            │                     │
+            │ 4. Return           │ 4b. Return
+            │    credentials      │     credentials
+            ▼                     │
+   ┌──────────────────────────────┴───────┐
+   │  Credential Response                 │
+   │                                      │
+   │  {                                   │
+   │    "username": "user@email.com",     │
+   │    "password": "***",                │
+   │    "site_content_url": "site-123",   │
+   │    "tableau_server_url": "https.."   │
+   │  }                                   │
+   └────────┬─────────────────────────────┘
+            │
+            │ 5. Use credentials
+            ▼
+   ┌──────────────────┐
+   │  Tableau Server  │
+   │                  │
+   │  Authenticate    │
+   │  & Connect       │
+   └──────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           COMPONENT BREAKDOWN                               │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 1. GOOGLE SHEETS (Credential Store)                                         │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Sheet Name: "Credentials"                                                 │
+│   ┌────────────────────────────────────────────────────────────────────┐    │
+│   │ A: username  │ B: password │ C: site_content_url │ D: server_url  │    │
+│   ├──────────────┼─────────────┼─────────────────────┼────────────────┤    │
+│   │ user1@...    │ Pass123     │ site-abc            │ https://...    │    │
+│   │ user2@...    │ Pass456     │ site-xyz            │ https://...    │    │
+│   └────────────────────────────────────────────────────────────────────┘    │
+│                                                                              │
+│   ✓ Centralized credential storage                                          │
+│   ✓ Easy to update (no code changes)                                        │
+│   ✓ Multiple users supported                                                │
+│   ✓ Access controlled by Google permissions                                 │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 2. GOOGLE APPS SCRIPT (API Layer)                                           │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   File: google_apps_script_for_credentials.js                               │
+│                                                                              │
+│   Functions:                                                                 │
+│   • doGet()  - Test endpoint                                                 │
+│   • doPost() - Main API endpoint                                             │
+│   • lookupCredentials(username) - Username lookup                            │
+│                                                                              │
+│   API Endpoints:                                                             │
+│   GET  /exec - Test connection                                               │
+│   POST /exec - Lookup credentials by username                                │
+│                                                                              │
+│   Request Format:                                                            │
+│   {                                                                          │
+│     "action": "get_credentials",                                             │
+│     "username": "user@email.com"                                             │
+│   }                                                                          │
+│                                                                              │
+│   Response Format:                                                           │
+│   {                                                                          │
+│     "success": true,                                                         │
+│     "data": { "username": "...", "password": "...", ... }                    │
+│   }                                                                          │
+│                                                                              │
+│   ✓ RESTful API interface                                                    │
+│   ✓ JSON request/response                                                    │
+│   ✓ Error handling built-in                                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 3. PYTHON SERVICE (Client Library)                                          │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   File: services/tableau_credentials_service.py                             │
+│                                                                              │
+│   Main Class: TableauCredentialsService                                      │
+│                                                                              │
+│   Key Methods:                                                               │
+│   • get_credentials_by_username(username)                                    │
+│   • load_tableau_config(username)  ← Use this!                               │
+│   • test_connection()                                                        │
+│   • clear_cache()                                                            │
+│                                                                              │
+│   Features:                                                                  │
+│   ✓ In-memory caching (5 minutes)                                            │
+│   ✓ Automatic retries (configurable)                                         │
+│   ✓ Fallback to pass_config.json                                             │
+│   ✓ Comprehensive logging                                                    │
+│   ✓ Thread-safe operations                                                   │
+│                                                                              │
+│   Usage Example:                                                             │
+│   from services.tableau_credentials_service import load_tableau_config       │
+│   config = load_tableau_config(username="user@email.com")                    │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 4. CONFIGURATION (google_sheets_config.json)                                │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   {                                                                          │
+│     "tableau_credentials": {                                                 │
+│       "enabled": true,                  ← Enable/disable the service         │
+│       "apps_script_url": "https://...", ← Your Apps Script Web App URL       │
+│       "sheet_url": "https://...",       ← Google Sheet URL (reference)       │
+│       "timeout_seconds": 10,            ← Request timeout                    │
+│       "retry_attempts": 2,              ← Number of retries                  │
+│       "cache_duration_seconds": 300     ← Cache duration (5 minutes)         │
+│     }                                                                        │
+│   }                                                                          │
+│                                                                              │
+│   ✓ Single configuration file                                                │
+│   ✓ Easy to enable/disable                                                   │
+│   ✓ Configurable timeouts and retries                                        │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────────┐
+│ 5. FALLBACK MECHANISM (pass_config.json)                                    │
+├──────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   Fallback triggers when:                                                    │
+│   • Google Sheets service is disabled                                        │
+│   • Apps Script URL not configured                                           │
+│   • Network error reaching Apps Script                                       │
+│   • Credential not found in Google Sheets                                    │
+│   • Request timeout                                                          │
+│                                                                              │
+│   Fallback reads:                                                            │
+│   {                                                                          │
+│     "username": "user@email.com",                                            │
+│     "password": "***",                                                       │
+│     "site_content_url": "site-123",                                          │
+│     ...                                                                      │
+│   }                                                                          │
+│                                                                              │
+│   ✓ High availability                                                        │
+│   ✓ No service interruption                                                  │
+│   ✓ Graceful degradation                                                     │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CACHING MECHANISM                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+   Time: 0s              5min             10min            15min
+   ──────────────────────────────────────────────────────────────────────►
+        │                 │                 │                 │
+        │                 │                 │                 │
+   Request 1              │                 │            Request 2
+   (Fetch from            │                 │            (Cache expired,
+    Google Sheets)        │                 │             fetch again)
+        │                 │                 │                 │
+        ▼                 ▼                 ▼                 ▼
+   [CACHE MISS]      [CACHE HIT]     [CACHE HIT]        [CACHE MISS]
+   Lookup: 500ms     Lookup: 1ms     Lookup: 1ms        Lookup: 500ms
+        │                 │                 │                 │
+        └─────────────────┴─────────────────┴─────────────────┘
+                        (5-minute cache window)
+
+   ✓ First request: Fetches from Google Sheets (~500ms)
+   ✓ Subsequent requests: Use cache (~1ms) - 500x faster!
+   ✓ Cache expires: After 5 minutes
+   ✓ Automatic cleanup: Expired entries removed
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           SECURITY ARCHITECTURE                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+   SECURITY LAYERS:
+
+   1. Google Account Authentication
+      └─ Apps Script runs under your Google account
+      └─ Requires Google authentication to access
+
+   2. Google Sheet Permissions
+      └─ Share only with authorized users
+      └─ Restrict to "Specific people" or "Anyone with link"
+
+   3. Apps Script Deployment Permissions
+      └─ Deploy as "Anyone" or "Anyone with link"
+      └─ Apps Script URL is secret (acts as API key)
+
+   4. In-Memory Caching Only
+      └─ No persistent credential storage
+      └─ Cache clears on app restart
+
+   5. Git Ignored Files
+      └─ pass_config.json → Ignored
+      └─ google_apps_script_for_credentials.js → Ignored
+      └─ Prevents accidental credential commits
+
+   6. HTTPS Transport
+      └─ All communication over HTTPS
+      └─ Encrypted in transit
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         ERROR HANDLING & RECOVERY                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+   SCENARIO 1: Google Sheets Unavailable
+   ────────────────────────────────────────────────────────────────────────
+   Google Sheets Down → Retry (2x) → Fallback to pass_config.json → Success
+   
+   SCENARIO 2: Network Timeout
+   ────────────────────────────────────────────────────────────────────────
+   Request Timeout → Retry with exponential backoff → Fallback → Success
+   
+   SCENARIO 3: Credential Not Found
+   ────────────────────────────────────────────────────────────────────────
+   Username Not in Sheet → Return error → Fallback to pass_config.json
+   
+   SCENARIO 4: Service Disabled
+   ────────────────────────────────────────────────────────────────────────
+   enabled: false → Skip Google Sheets → Use pass_config.json directly
+
+
+═══════════════════════════════════════════════════════════════════════════════
+Version: 1.0 | Created: November 2024 | Tableau Credentials Management System
+═══════════════════════════════════════════════════════════════════════════════
+

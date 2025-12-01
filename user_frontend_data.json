@@ -1,0 +1,1981 @@
+[
+  {
+    "extraction_timestamp": "2025-12-01T07:46:39.990Z",
+    "extraction_source": "chrome_extension_content_script",
+    "page_info": {
+      "url": "https://prod-in-a.online.tableau.com/#/site/cca49542-0680f1e1d6/views/FRODashboard_final/FROGRMI?:iid=2",
+      "title": "FRO Dashboard_final: FRO GRMI - Tableau Cloud",
+      "hostname": "prod-in-a.online.tableau.com",
+      "pathname": "/",
+      "protocol": "https:",
+      "referrer": "https://sso.online.tableau.com/"
+    },
+    "browser_info": {
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+      "language": "en-US",
+      "languages": [
+        "en-US",
+        "en"
+      ],
+      "platform": "Win32",
+      "vendor": "Google Inc.",
+      "screen_width": 1280,
+      "screen_height": 800,
+      "viewport_width": 1600,
+      "viewport_height": 832,
+      "timezone": "Asia/Calcutta"
+    },
+    "dom_extracted_data": {
+      "page_title": "FRO Dashboard_final: FRO GRMI - Tableau Cloud",
+      "body_classes": "tb-body js-focus-visible",
+      "html_lang": "en",
+      "user_profile_selectors": {},
+      "header_texts": []
+    },
+    "tableau_api_data": {
+      "tableau_available": false,
+      "extensions_available": false,
+      "user_info": null
+    },
+    "cookies": {
+      "cookie_count": 9,
+      "cookies": [
+        {
+          "name": "optimizelyEndUserId",
+          "value_length": 35,
+          "value": "oeu1759909870191r0.0725945441783199"
+        },
+        {
+          "name": "_cs_c",
+          "value_length": 1,
+          "value": "[REDACTED]"
+        },
+        {
+          "name": "_ga",
+          "value_length": 27,
+          "value": "[REDACTED]"
+        },
+        {
+          "name": "OptanonConsent",
+          "value_length": 12,
+          "value": "[REDACTED]"
+        },
+        {
+          "name": "_cs_id",
+          "value_length": 93,
+          "value": "[REDACTED]"
+        },
+        {
+          "name": "_gcl_au",
+          "value_length": 57,
+          "value": "[REDACTED]"
+        },
+        {
+          "name": "_ga_8YLN0SNXVS",
+          "value_length": 46,
+          "value": "[REDACTED]"
+        },
+        {
+          "name": "XSRF-TOKEN",
+          "value_length": 32,
+          "value": "[REDACTED]"
+        },
+        {
+          "name": "org.springframework.web.servlet.i18n.CookieLocaleResolver.LOCALE",
+          "value_length": 2,
+          "value": "[REDACTED]"
+        }
+      ]
+    },
+    "storage_data": {
+      "local_storage": {
+        "key_count": 64,
+        "keys": [
+          {
+            "key": "TableauLog14",
+            "value": "(1763261042169) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog47",
+            "value": "(1761315467342) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog50",
+            "value": "(1763281254678) http error 404 for request api/3.9/sites/8a68853f-781b-4782-bd6c-300eeaed3d68/workbookdrafts/findDraftByReferenceId/39cdbc3b-2c9e-4bfc-90a1-6c538c1b02aa",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog22",
+            "value": "(1763221956224) http error 404 for request api/3.9/sites/8a68853f-781b-4782-bd6c-300eeaed3d68/workbookdrafts/findDraftByReferenceId/3538454f-0edc-49a6-9e2e-03281755c840",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog26",
+            "value": "(1761803771183) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog20",
+            "value": "(1763441447504) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog35",
+            "value": "(1761613534578) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog24",
+            "value": "(1763200490020) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog9",
+            "value": "(1763285971430) http error 404 for request api/3.9/sites/8a68853f-781b-4782-bd6c-300eeaed3d68/workbookdrafts/findDraftByReferenceId/39cdbc3b-2c9e-4bfc-90a1-6c538c1b02aa",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog58",
+            "value": "(1763616538080) http error undefined for request vizportal/api/web/v1/refreshSession",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog48",
+            "value": "(1762679935422) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog57",
+            "value": "(1762770438802) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog21",
+            "value": "(1763009502655) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog2",
+            "value": "(1763641973472) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog32",
+            "value": "(1763449353073) http error 401 for request vizportal/api/web/v1/refreshSession",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog36",
+            "value": "(1762783581908) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog1",
+            "value": "(1763602319976) 46",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog10",
+            "value": "(1763221222398) http error 404 for request api/3.9/sites/8a68853f-781b-4782-bd6c-300eeaed3d68/workbookdrafts/findDraftByReferenceId/3538454f-0edc-49a6-9e2e-03281755c840",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog28",
+            "value": "(1762923484506) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog56",
+            "value": "(1761550013626) http error 404 for request api/3.9/sites/69478e15-894f-49ac-8dd8-a5ab70c4fa73/workbookdrafts/findDraftByReferenceId/6c0181e9-288f-4e9d-a217-eb510c9e60ad",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog31",
+            "value": "(1762948864777) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog5",
+            "value": "(1761093355786) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog45",
+            "value": "(1762647327300) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog17",
+            "value": "(1761688055784) http error 404 for request api/3.9/sites/ce270949-f593-4f9c-a946-d04b58cc7cc8/workbookdrafts/findDraftByReferenceId/2dcb114f-0b68-4ec3-b7b5-4efc73ec6cbf",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog40",
+            "value": "(1761894605524) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog11",
+            "value": "(1762224085129) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog41",
+            "value": "(1761549074987) http error 404 for request api/3.9/sites/69478e15-894f-49ac-8dd8-a5ab70c4fa73/workbookdrafts/findDraftByReferenceId/6c0181e9-288f-4e9d-a217-eb510c9e60ad",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog30",
+            "value": "(1761303622057) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog33",
+            "value": "(1763449389897) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog39",
+            "value": "(1762218547590) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog34",
+            "value": "(1762135482610) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog15",
+            "value": "(1762566302873) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog51",
+            "value": "(1763688113708) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog18",
+            "value": "(1763027316626) http error 404 for request api/3.9/sites/8a68853f-781b-4782-bd6c-300eeaed3d68/workbookdrafts/findDraftByReferenceId/3538454f-0edc-49a6-9e2e-03281755c840",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog19",
+            "value": "(1763110149030) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog23",
+            "value": "(1762253592411) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog54",
+            "value": "(1761830691533) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog16",
+            "value": "(1763027203196) http error 404 for request api/3.9/sites/8a68853f-781b-4782-bd6c-300eeaed3d68/workbookdrafts/findDraftByReferenceId/3538454f-0edc-49a6-9e2e-03281755c840",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog4",
+            "value": "(1761017676241) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog43",
+            "value": "(1762175618597) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog6",
+            "value": "(1762868176327) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog8",
+            "value": "(1761885492321) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog49",
+            "value": "(1763281189563) http error 404 for request api/3.9/sites/8a68853f-781b-4782-bd6c-300eeaed3d68/workbookdrafts/findDraftByReferenceId/39cdbc3b-2c9e-4bfc-90a1-6c538c1b02aa",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog29",
+            "value": "(1763265544335) http error 404 for request api/3.9/sites/8a68853f-781b-4782-bd6c-300eeaed3d68/workbookdrafts/findDraftByReferenceId/39cdbc3b-2c9e-4bfc-90a1-6c538c1b02aa",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog38",
+            "value": "(1763975339312) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog42",
+            "value": "(1764047533758) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog13",
+            "value": "(1763476998204) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog37",
+            "value": "(1760450874732) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog12",
+            "value": "(1763476978812) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog3",
+            "value": "(1763440418514) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          },
+          {
+            "key": "TableauLog59",
+            "value": "(1761028161137) http error 401 for request vizportal/api/web/v1/getSessionInfo",
+            "value_type": "string"
+          }
+        ]
+      },
+      "session_storage": {
+        "key_count": 0,
+        "keys": []
+      }
+    },
+    "meta_tags": {
+      "tags": [
+        {
+          "name": "viewport",
+          "content": "initial-scale=1,maximum-scale=2,width=device-width,height=device-height,viewport-fit=cover"
+        },
+        {
+          "name": "format-detection",
+          "content": "telephone=no"
+        }
+      ]
+    },
+    "user_profile_elements": {
+      "found_elements": [
+        {
+          "selector": "navigation/header",
+          "tag": "NAV",
+          "text": "Explore/default/FRO Dashboard_final/FRO GRMI",
+          "className": "f1mt71si"
+        }
+      ]
+    },
+    "tableau_context": {
+      "dashboardName": "FROGRMI",
+      "workbookName": "FRODashboard_final",
+      "workbookId": null,
+      "viewContentUrl": "FRODashboard_final/FROGRMI",
+      "siteContentUrl": "cca49542-0680f1e1d6",
+      "worksheetNames": [],
+      "url": "https://prod-in-a.online.tableau.com/#/site/cca49542-0680f1e1d6/views/FRODashboard_final/FROGRMI?:iid=2",
+      "timestamp": "2025-12-01T07:46:40.007Z"
+    },
+    "intercepted_network_requests": {
+      "capture_enabled": true,
+      "capture_start_time": "2025-12-01T07:46:37.989Z",
+      "capture_duration_seconds": 10,
+      "total_requests_captured": 1,
+      "requests": [
+        {
+          "id": 1,
+          "url": "vizportal/api/web/v1/getSessionInfo",
+          "method": "POST",
+          "status": 200,
+          "timestamp": "2025-12-01T07:46:33.194Z",
+          "response_headers": {
+            "cache-control": "private, max-age=0, must-revalidate",
+            "connection": "keep-alive",
+            "content-encoding": "gzip",
+            "content-length": "8674",
+            "content-type": "application/json;charset=UTF-8",
+            "date": "Mon, 01 Dec 2025 07:46:33 GMT",
+            "global-session-header": "MTAuNzcuNS4xNTo4MDgw",
+            "p3p": "CP=\"NON\"",
+            "pragma": "",
+            "referrer-policy": "strict-origin-when-cross-origin",
+            "server": "sfdcedge",
+            "strict-transport-security": "max-age=31536000; includeSubDomains",
+            "vary": "Accept-Encoding",
+            "x-content-type-options": "nosniff",
+            "x-request-id": "c285918f560feff64716b4d18e775601",
+            "x-sfdc-request-id": "c285918f560feff64716b4d18e775601",
+            "x-tableau": "Tableau Server",
+            "x-ua-compatible": "IE=Edge",
+            "x-xss-protection": "1; mode=block"
+          },
+          "response_body": {
+            "result": {
+              "isRestrictedTrustedTicketSession": false,
+              "user": {
+                "isImpersonated": false,
+                "hasServerDisplay": false,
+                "authId": "3105711202-5c2cb0974dc6436f99f9acfc026cde34",
+                "canAuthorOnWeb": true,
+                "canManageUsers": true,
+                "numberOfSites": 2,
+                "userTimeZone": {
+                  "timeZoneRawOffsetMinutes": 19800000,
+                  "timeZoneId": "Asia/Calcutta",
+                  "displayName": "(UTC+05:30) Asia/Calcutta"
+                },
+                "canEmbedCredentials": true,
+                "canWebEditFlow": true,
+                "canUsePulse": true,
+                "canUsePrepAgent": false,
+                "showCatalogAwareness": true,
+                "isCloudAdmin": false,
+                "siteRoleId": 11,
+                "toastAutoDismissTimeout": 5,
+                "viewerControlledTheme": "DEFAULT",
+                "domainId": 63,
+                "displayMode": "thumbnail",
+                "showMetricsBanner": true,
+                "showWelcomeScreen": true,
+                "showPrepConductorAwareness": true,
+                "startPage": "/",
+                "isUserSetTimeZone": false,
+                "luid": "b00ae7b7-b09e-4701-8cb9-1ee3156bce89",
+                "systemUserId": 21913,
+                "username": "cca49542@gmail.com",
+                "domainName": "external",
+                "locale": "en_US",
+                "displayName": "Ash Ch",
+                "id": "76916",
+                "language": "en"
+              },
+              "server": {
+                "podUUID": "9fb9aa5d-981b-4cd7-9262-6a1a9f1691aa",
+                "smtpconfigured": true,
+                "betaPod": false,
+                "flowsOnServerEnabled": true,
+                "flowInputNodeAllowList": [],
+                "flowOutputNodeAllowList": [],
+                "runNowOnServerEnabled": true,
+                "popularViewsEnabled": false,
+                "webstoreUrl": "https://buy.tableau.com",
+                "tsmClusterId": "",
+                "renewSiteUrl": "https://www.tableau.com/support/renew",
+                "manageMfaUrl": "https://sso.online.tableau.com/public/mfa/manage",
+                "contactSaleUrl": "https://www.tableau.com/about/contact/global-sales#contact_sales",
+                "sitePickerEnabled": true,
+                "metricsEnabledOnServer": false,
+                "datasourceHelpUrl": "http://www.tableausoftware.com/app/server-datasources7?edition=online",
+                "offlineHelpEnabled": false,
+                "updateEmailAllowed": false,
+                "updateDisplayNameAllowed": false,
+                "changePasswordUrl": "https://id.tableau.com/user/changePassword",
+                "helpEdition": "online",
+                "sessionIdleLimitSeconds": 7200,
+                "rebuildingSearchIndex": false,
+                "publishingSamples": false,
+                "logicalServerInstanceId": "prod_online_prod-in-a",
+                "supportHost": "tableau.com",
+                "supportPath": "/support",
+                "tabAdminServiceEnabled": false,
+                "alertLookBackDaysLimit": 14,
+                "analyticsEndpoint": "https://prod.telemetry.tableausoftware.com",
+                "oauthSettings": [
+                  {
+                    "supportsGenericAuth": true,
+                    "supportsTestToken": false,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "pt": "Anaplan (obsoleto)",
+                      "de": "Anaplan (veraltet)",
+                      "fr_CA": "Anaplan (deprecated)",
+                      "ga": "Anaplan (deprecated)",
+                      "th": "Anaplan (deprecated)",
+                      "zh_TW": "Anaplan (deprecated)",
+                      "zh": "Anaplan (已弃用)",
+                      "it": "Anaplan (deprecated)",
+                      "ja": "Anaplan (非推奨)",
+                      "es": "Anaplan (obsoleto)",
+                      "fr": "Anaplan (obsolète)",
+                      "en_GB": "Anaplan (deprecated)",
+                      "sv": "Anaplan (deprecated)",
+                      "nl": "Anaplan (deprecated)",
+                      "en": "Anaplan (deprecated)",
+                      "ko": "Anaplan (더 이상 사용되지 않음)"
+                    },
+                    "type": "webdata-direct:anaplan-anaplan"
+                  },
+                  {
+                    "supportsGenericAuth": true,
+                    "supportsTestToken": false,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "fr": "Esri ArcGIS Server",
+                      "en_GB": "Esri ArcGIS Server",
+                      "ja": "Esri ArcGIS Server",
+                      "es": "Esri ArcGIS Server",
+                      "de": "Esri ArcGIS Server",
+                      "fr_CA": "Esri ArcGIS Server",
+                      "ko": "Esri ArcGIS Server",
+                      "zh_TW": "Esri ArcGIS Server",
+                      "zh": "Esri ArcGIS Server",
+                      "en": "Esri ArcGIS Server",
+                      "th": "Esri ArcGIS Server",
+                      "pt": "Esri ArcGIS Server",
+                      "it": "Esri ArcGIS Server",
+                      "nl": "Esri ArcGIS Server",
+                      "sv": "Esri ArcGIS Server",
+                      "ga": "Esri ArcGIS Server"
+                    },
+                    "type": "webdata-direct:wdc-arcgis-server"
+                  },
+                  {
+                    "supportsGenericAuth": true,
+                    "supportsTestToken": false,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "ko": "Oracle Eloqua (더 이상 사용되지 않음)",
+                      "pt": "Oracle Eloqua (obsoleto)",
+                      "zh": "Oracle Eloqua (已弃用)",
+                      "th": "Oracle Eloqua (deprecated)",
+                      "zh_TW": "Oracle Eloqua (deprecated)",
+                      "it": "Oracle Eloqua (deprecated)",
+                      "ja": "Oracle Eloqua (非推奨)",
+                      "es": "Oracle Eloqua (obsoleto)",
+                      "ga": "Oracle Eloqua (deprecated)",
+                      "sv": "Oracle Eloqua (deprecated)",
+                      "fr": "Oracle Eloqua (obsolète)",
+                      "en_GB": "Oracle Eloqua (deprecated)",
+                      "nl": "Oracle Eloqua (deprecated)",
+                      "de": "Oracle Eloqua (veraltet)",
+                      "en": "Oracle Eloqua (deprecated)",
+                      "fr_CA": "Oracle Eloqua (deprecated)"
+                    },
+                    "type": "webdata-direct:oracle-eloqua"
+                  },
+                  {
+                    "supportsGenericAuth": true,
+                    "supportsTestToken": false,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "fr_CA": "LinkedIn Sales Navigator (deprecated)",
+                      "nl": "LinkedIn Sales Navigator (deprecated)",
+                      "de": "LinkedIn Sales Navigator (veraltet)",
+                      "ga": "LinkedIn Sales Navigator (deprecated)",
+                      "ja": "LinkedIn Sales Navigator (非推奨)",
+                      "zh": "LinkedIn Sales Navigator (已弃用)",
+                      "fr": "LinkedIn Sales Navigator (obsolète)",
+                      "es": "LinkedIn Sales Navigator (obsoleto)",
+                      "sv": "LinkedIn Sales Navigator (deprecated)",
+                      "pt": "LinkedIn Sales Navigator (obsoleto)",
+                      "en_GB": "LinkedIn Sales Navigator (deprecated)",
+                      "zh_TW": "LinkedIn Sales Navigator (deprecated)",
+                      "en": "LinkedIn Sales Navigator (deprecated)",
+                      "it": "LinkedIn Sales Navigator (deprecated)",
+                      "ko": "LinkedIn Sales Navigator (더 이상 사용되지 않음)",
+                      "th": "LinkedIn Sales Navigator (deprecated)"
+                    },
+                    "type": "webdata-direct:linkedin-snap"
+                  },
+                  {
+                    "supportsGenericAuth": true,
+                    "supportsTestToken": false,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "pt": "Marketo (obsoleto)",
+                      "es": "Marketo (obsoleto)",
+                      "it": "Marketo (deprecated)",
+                      "ko": "Marketo (더 이상 사용되지 않음)",
+                      "nl": "Marketo (deprecated)",
+                      "zh_TW": "Marketo (deprecated)",
+                      "en_GB": "Marketo (deprecated)",
+                      "ga": "Marketo (deprecated)",
+                      "fr_CA": "Marketo (deprecated)",
+                      "sv": "Marketo (deprecated)",
+                      "fr": "Marketo (obsolète)",
+                      "de": "Marketo (veraltet)",
+                      "zh": "Marketo (已弃用)",
+                      "ja": "Marketo (非推奨)",
+                      "th": "Marketo (deprecated)",
+                      "en": "Marketo (deprecated)"
+                    },
+                    "type": "webdata-direct:marketo-marketo"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "es": "Azure Data Lake Storage Gen2",
+                      "sv": "Azure Data Lake Storage Gen2",
+                      "ko": "Azure Data Lake Storage Gen2",
+                      "nl": "Azure Data Lake Storage Gen2",
+                      "it": "Azure Data Lake Storage Gen2",
+                      "ga": "Azure Data Lake Storage Gen2",
+                      "ja": "Azure Data Lake Storage Gen2",
+                      "fr_CA": "Azure Data Lake Storage Gen2",
+                      "fr": "Azure Data Lake Storage Gen2",
+                      "de": "Azure Data Lake Storage Gen2",
+                      "zh": "Azure Data Lake Storage Gen2",
+                      "en": "Azure Data Lake Storage Gen2",
+                      "en_GB": "Azure Data Lake Storage Gen2",
+                      "pt": "Azure Data Lake Storage Gen2",
+                      "th": "Azure Data Lake Storage Gen2",
+                      "zh_TW": "Azure Data Lake Storage Gen2"
+                    },
+                    "type": "azuredatalakestoragegen2"
+                  },
+                  {
+                    "supportsGenericAuth": true,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "nl": "Box",
+                      "ko": "Box",
+                      "fr": "Box",
+                      "ga": "Box",
+                      "es": "Box",
+                      "ja": "Box",
+                      "zh": "Box",
+                      "en": "Box",
+                      "fr_CA": "Box",
+                      "sv": "Box",
+                      "en_GB": "Box",
+                      "de": "Box",
+                      "pt": "Box",
+                      "it": "Box",
+                      "zh_TW": "Box",
+                      "th": "Box"
+                    },
+                    "type": "box"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "pt": "Dropbox",
+                      "zh_TW": "Dropbox",
+                      "en_GB": "Dropbox",
+                      "zh": "Dropbox",
+                      "fr": "Dropbox",
+                      "es": "Dropbox",
+                      "ja": "Dropbox",
+                      "ko": "Dropbox",
+                      "ga": "Dropbox",
+                      "it": "Dropbox",
+                      "fr_CA": "Dropbox",
+                      "de": "Dropbox",
+                      "en": "Dropbox",
+                      "nl": "Dropbox",
+                      "sv": "Dropbox",
+                      "th": "Dropbox"
+                    },
+                    "type": "dropbox"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "de": "Google Drive",
+                      "ko": "Google Drive",
+                      "es": "Google Drive",
+                      "en": "Google Drive",
+                      "th": "Google Drive",
+                      "fr": "Google Drive",
+                      "it": "Google Drive",
+                      "zh": "Google Drive",
+                      "zh_TW": "Google Drive",
+                      "nl": "Google Drive",
+                      "en_GB": "Google Drive",
+                      "ga": "Google Drive",
+                      "ja": "Google Drive",
+                      "fr_CA": "Google Drive",
+                      "pt": "Google Drive",
+                      "sv": "Google Drive"
+                    },
+                    "type": "googledrive"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": true,
+                    "displayNames": {
+                      "it": "OneDrive e SharePoint Online",
+                      "sv": "OneDrive and SharePoint Online",
+                      "th": "OneDrive and SharePoint Online",
+                      "fr_CA": "OneDrive and SharePoint Online",
+                      "nl": "OneDrive and SharePoint Online",
+                      "ja": "OneDrive と SharePoint Online",
+                      "zh_TW": "OneDrive and SharePoint Online",
+                      "zh": "OneDrive 和 SharePoint Online",
+                      "de": "OneDrive und SharePoint Online",
+                      "es": "OneDrive y SharePoint Online",
+                      "fr": "OneDrive et SharePoint Online",
+                      "en": "OneDrive and SharePoint Online",
+                      "pt": "OneDrive e SharePoint Online",
+                      "en_GB": "OneDrive and SharePoint Online",
+                      "ko": "OneDrive 및 SharePoint Online",
+                      "ga": "OneDrive and SharePoint Online"
+                    },
+                    "type": "onedrivesharepoint"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "en_GB": "Google Analytics",
+                      "fr_CA": "Google Analytics",
+                      "sv": "Google Analytics",
+                      "ga": "Google Analytics",
+                      "zh": "Google Analytics",
+                      "th": "Google Analytics",
+                      "it": "Google Analytics",
+                      "zh_TW": "Google Analytics (分析)",
+                      "ko": "Google Analytics",
+                      "fr": "Google Analytics",
+                      "es": "Google Analytics",
+                      "en": "Google Analytics",
+                      "nl": "Google Analytics",
+                      "de": "Google Analytics",
+                      "ja": "Google アナリティクス",
+                      "pt": "Google Analytics"
+                    },
+                    "type": "google-analytics"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "de": "Google BigQuery",
+                      "fr_CA": "Google BigQuery",
+                      "ja": "Google BigQuery",
+                      "nl": "Google BigQuery",
+                      "pt": "Google BigQuery",
+                      "zh_TW": "Google BigQuery",
+                      "es": "Google BigQuery",
+                      "th": "Google BigQuery",
+                      "fr": "Google BigQuery",
+                      "en_GB": "Google BigQuery",
+                      "ga": "Google BigQuery",
+                      "en": "Google BigQuery",
+                      "zh": "Google BigQuery",
+                      "it": "Google BigQuery",
+                      "ko": "Google BigQuery",
+                      "sv": "Google BigQuery"
+                    },
+                    "type": "bigquery"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "th": "Google ชีต (เลิกใช้งานแล้ว)",
+                      "pt": "Google Sheets (obsoleto)",
+                      "it": "Fogli Google (deprecato)",
+                      "sv": "Google Kalkylark (inaktuell)",
+                      "fr": "Google Sheets (obsolète)",
+                      "en": "Google Sheets (deprecated)",
+                      "en_GB": "Google Sheets (deprecated)",
+                      "ko": "Google 스프레드시트(사용 중단)",
+                      "ja": "Google スプレッド シート (非推奨)",
+                      "zh": "Google Sheets (已弃用)",
+                      "de": "Google Sheets (veraltet)",
+                      "nl": "Google Spreadsheets (verouderd)",
+                      "zh_TW": "Google 試算表(已棄用)",
+                      "ga": "Google Sheets (deprecated)",
+                      "es": "Hojas de cálculo de Google (obsoleto)",
+                      "fr_CA": "Google Feuille de calcul (obsolète)"
+                    },
+                    "type": "google-sheets"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": true,
+                    "displayNames": {
+                      "zh_TW": "Salesforce",
+                      "sv": "Salesforce",
+                      "en_GB": "Salesforce",
+                      "fr": "Salesforce",
+                      "en": "Salesforce",
+                      "de": "Salesforce",
+                      "es": "Salesforce",
+                      "fr_CA": "Salesforce",
+                      "pt": "Salesforce",
+                      "ja": "Salesforce",
+                      "nl": "Salesforce",
+                      "it": "Salesforce",
+                      "th": "Salesforce",
+                      "ga": "Salesforce",
+                      "ko": "Salesforce",
+                      "zh": "Salesforce"
+                    },
+                    "type": "salesforce"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": true,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "en_GB": "Dremio",
+                      "th": "Dremio",
+                      "pt": "Dremio",
+                      "zh_TW": "Dremio",
+                      "ko": "Dremio",
+                      "fr": "Dremio",
+                      "zh": "Dremio",
+                      "ga": "Dremio",
+                      "es": "Dremio",
+                      "de": "Dremio",
+                      "sv": "Dremio",
+                      "fr_CA": "Dremio",
+                      "en": "Dremio",
+                      "nl": "Dremio",
+                      "ja": "Dremio",
+                      "it": "Dremio"
+                    },
+                    "type": "dremio"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": true,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "ga": "Looker by Google",
+                      "zh_TW": "Looker by Google",
+                      "fr_CA": "Looker by Google",
+                      "nl": "Looker by Google",
+                      "ja": "Looker by Google",
+                      "it": "Looker by Google",
+                      "sv": "Looker by Google",
+                      "th": "Looker by Google",
+                      "fr": "Looker by Google",
+                      "en": "Looker by Google",
+                      "es": "Looker by Google",
+                      "zh": "Looker by Google",
+                      "en_GB": "Looker by Google",
+                      "ko": "Looker by Google",
+                      "pt": "Looker by Google",
+                      "de": "Looker by Google"
+                    },
+                    "type": "looker"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "ko": "Linkedin Sales Navigator",
+                      "de": "Linkedin Sales Navigator",
+                      "fr_CA": "Linkedin Sales Navigator",
+                      "nl": "Linkedin Sales Navigator",
+                      "es": "Linkedin Sales Navigator",
+                      "th": "Linkedin Sales Navigator",
+                      "en_GB": "Linkedin Sales Navigator",
+                      "fr": "Linkedin Sales Navigator",
+                      "ga": "Linkedin Sales Navigator",
+                      "pt": "Linkedin Sales Navigator",
+                      "it": "Linkedin Sales Navigator",
+                      "zh_TW": "Linkedin Sales Navigator",
+                      "sv": "Linkedin Sales Navigator",
+                      "en": "Linkedin Sales Navigator",
+                      "ja": "Linkedin Sales Navigator",
+                      "zh": "Linkedin Sales Navigator"
+                    },
+                    "type": "linkedin_sales_navigator"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "Azure AD",
+                        "supportsCustomDomain": true,
+                        "configLabel": "Azure AD"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "it": "Denodo JDBC by Denodo Technologies",
+                      "fr_CA": "Denodo JDBC by Denodo Technologies",
+                      "en_GB": "Denodo JDBC by Denodo Technologies",
+                      "zh_TW": "Denodo JDBC by Denodo Technologies",
+                      "sv": "Denodo JDBC by Denodo Technologies",
+                      "es": "Denodo JDBC by Denodo Technologies",
+                      "ko": "Denodo JDBC by Denodo Technologies",
+                      "zh": "Denodo JDBC by Denodo Technologies",
+                      "ja": "Denodo JDBC by Denodo Technologies",
+                      "th": "Denodo JDBC by Denodo Technologies",
+                      "ga": "Denodo JDBC by Denodo Technologies",
+                      "nl": "Denodo JDBC by Denodo Technologies",
+                      "fr": "Denodo JDBC by Denodo Technologies",
+                      "en": "Denodo JDBC by Denodo Technologies",
+                      "de": "Denodo JDBC by Denodo Technologies",
+                      "pt": "Denodo JDBC by Denodo Technologies"
+                    },
+                    "type": "denodo_jdbc"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": true,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "de": "SharePoint Lists (JDBC)",
+                      "ja": "SharePoint Lists (JDBC)",
+                      "fr_CA": "SharePoint Lists (JDBC)",
+                      "zh_TW": "SharePoint Lists (JDBC)",
+                      "en_GB": "SharePoint Lists (JDBC)",
+                      "it": "SharePoint Lists (JDBC)",
+                      "th": "SharePoint Lists (JDBC)",
+                      "nl": "SharePoint Lists (JDBC)",
+                      "en": "SharePoint Lists (JDBC)",
+                      "fr": "SharePoint Lists (JDBC)",
+                      "pt": "SharePoint Lists (JDBC)",
+                      "ko": "SharePoint Lists (JDBC)",
+                      "sv": "SharePoint Lists (JDBC)",
+                      "ga": "SharePoint Lists (JDBC)",
+                      "zh": "SharePoint Lists (JDBC)",
+                      "es": "SharePoint Lists (JDBC)"
+                    },
+                    "type": "cdata_sharepoint"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "null-config-label"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "en_GB": "Starburst by Starburst",
+                      "en": "Starburst by Starburst",
+                      "ga": "Starburst by Starburst",
+                      "fr": "Starburst by Starburst",
+                      "pt": "Starburst by Starburst",
+                      "th": "Starburst by Starburst",
+                      "es": "Starburst by Starburst",
+                      "sv": "Starburst by Starburst",
+                      "ko": "Starburst by Starburst",
+                      "zh_TW": "Starburst by Starburst",
+                      "ja": "Starburst by Starburst",
+                      "nl": "Starburst by Starburst",
+                      "it": "Starburst by Starburst",
+                      "zh": "Starburst by Starburst",
+                      "de": "Starburst by Starburst",
+                      "fr_CA": "Starburst by Starburst"
+                    },
+                    "type": "trino_jdbc"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": true,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "de": "Palantir Foundry Datasets by Palantir",
+                      "sv": "Palantir Foundry Datasets by Palantir",
+                      "fr": "Palantir Foundry Datasets by Palantir",
+                      "zh_TW": "Palantir Foundry Datasets by Palantir",
+                      "en": "Palantir Foundry Datasets by Palantir",
+                      "zh": "Palantir Foundry Datasets by Palantir",
+                      "es": "Palantir Foundry Datasets by Palantir",
+                      "ga": "Palantir Foundry Datasets by Palantir",
+                      "pt": "Palantir Foundry Datasets by Palantir",
+                      "it": "Palantir Foundry Datasets by Palantir",
+                      "th": "Palantir Foundry Datasets by Palantir",
+                      "en_GB": "Palantir Foundry Datasets by Palantir",
+                      "nl": "Palantir Foundry Datasets by Palantir",
+                      "ja": "Palantir Foundry Datasets by Palantir",
+                      "ko": "Palantir Foundry Datasets by Palantir",
+                      "fr_CA": "Palantir Foundry Datasets by Palantir"
+                    },
+                    "type": "FoundryJdbc"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "quantumk_dev",
+                        "supportsCustomDomain": false,
+                        "configLabel": "QuantumK Dev"
+                      },
+                      {
+                        "oauthConfigId": "quantumk",
+                        "supportsCustomDomain": false,
+                        "configLabel": "QuantumK"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "ga": "Salesforce UIP",
+                      "ko": "Salesforce UIP",
+                      "th": "Salesforce UIP",
+                      "zh": "Salesforce UIP",
+                      "sv": "Salesforce UIP",
+                      "es": "Salesforce UIP",
+                      "it": "Salesforce UIP",
+                      "fr": "Salesforce UIP",
+                      "fr_CA": "Salesforce UIP",
+                      "ja": "Salesforce UIP",
+                      "nl": "Salesforce UIP",
+                      "zh_TW": "Salesforce UIP",
+                      "en_GB": "Salesforce UIP",
+                      "en": "Salesforce UIP",
+                      "de": "Salesforce UIP",
+                      "pt": "Salesforce UIP"
+                    },
+                    "type": "salesforce_uip"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "null-config-label"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "en": "Amazon Redshift",
+                      "zh": "Amazon Redshift",
+                      "pt": "Amazon Redshift",
+                      "sv": "Amazon Redshift",
+                      "es": "Amazon Redshift",
+                      "nl": "Amazon Redshift",
+                      "zh_TW": "Amazon Redshift",
+                      "fr": "Amazon Redshift",
+                      "en_GB": "Amazon Redshift",
+                      "it": "Amazon Redshift",
+                      "ko": "Amazon Redshift",
+                      "fr_CA": "Amazon Redshift",
+                      "de": "Amazon Redshift",
+                      "ga": "Amazon Redshift",
+                      "th": "Amazon Redshift",
+                      "ja": "Amazon Redshift"
+                    },
+                    "type": "redshift"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "null-config-label"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "ko": "SAP HANA",
+                      "zh_TW": "SAP HANA",
+                      "it": "SAP HANA",
+                      "ja": "SAP HANA",
+                      "es": "SAP HANA",
+                      "fr_CA": "SAP HANA",
+                      "de": "SAP HANA",
+                      "en_GB": "SAP HANA",
+                      "zh": "SAP HANA",
+                      "en": "SAP HANA",
+                      "fr": "SAP HANA",
+                      "nl": "SAP HANA",
+                      "sv": "SAP HANA",
+                      "pt": "SAP HANA",
+                      "ga": "SAP HANA",
+                      "th": "SAP HANA"
+                    },
+                    "type": "saphana"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": true,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "nl": "Azure SQL-database",
+                      "en_GB": "Azure SQL Database",
+                      "fr": "Base de données Azure SQL",
+                      "fr_CA": "Base de données Azure SQL",
+                      "es": "Azure SQL Database",
+                      "en": "Azure SQL Database",
+                      "de": "Azure SQL-Datenbank",
+                      "ja": "Azure SQL データベース",
+                      "zh": "Azure SQL 数据库",
+                      "th": "Azure SQL Database",
+                      "pt": "Banco de dados SQL do Azure",
+                      "zh_TW": "Azure SQL 資料庫",
+                      "it": "Database SQL di Azure",
+                      "sv": "Azure SQL-databas",
+                      "ko": "Azure SQL 데이터베이스",
+                      "ga": "Azure SQL Database"
+                    },
+                    "type": "azure_sqldb"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "zh_TW": "Google Analytics 4",
+                      "sv": "Google Analytics 4",
+                      "th": "Google Analytics 4",
+                      "fr_CA": "Google Analytics 4",
+                      "ja": "Google Analytics 4",
+                      "pt": "Google Analytics 4",
+                      "nl": "Google Analytics 4",
+                      "en": "Google Analytics 4",
+                      "de": "Google Analytics 4",
+                      "zh": "Google Analytics 4",
+                      "ga": "Google Analytics 4",
+                      "ko": "Google Analytics 4",
+                      "es": "Google Analytics 4",
+                      "en_GB": "Google Analytics 4",
+                      "fr": "Google Analytics 4",
+                      "it": "Google Analytics 4"
+                    },
+                    "type": "google_analytics_4"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "null-config-label"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "th": "Impala",
+                      "en": "Impala",
+                      "zh_TW": "Impala",
+                      "ga": "Impala",
+                      "zh": "Impala",
+                      "pt": "Impala",
+                      "es": "Impala",
+                      "ko": "Impala",
+                      "sv": "Impala",
+                      "fr_CA": "Impala",
+                      "en_GB": "Impala",
+                      "de": "Impala",
+                      "fr": "Impala",
+                      "ja": "Impala",
+                      "nl": "Impala",
+                      "it": "Impala"
+                    },
+                    "type": "impala"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "null-config-label"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "en": "Kyvos",
+                      "nl": "Kyvos",
+                      "pt": "Kyvos",
+                      "ga": "Kyvos",
+                      "it": "Kyvos",
+                      "zh_TW": "Kyvos",
+                      "sv": "Kyvos",
+                      "es": "Kyvos",
+                      "ko": "Kyvos",
+                      "ja": "Kyvos",
+                      "th": "Kyvos",
+                      "fr": "Kyvos",
+                      "fr_CA": "Kyvos",
+                      "en_GB": "Kyvos",
+                      "zh": "Kyvos",
+                      "de": "Kyvos"
+                    },
+                    "type": "kyvos"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": true,
+                    "displayNames": {
+                      "th": "อรรถศาสตร์ของ Tableau",
+                      "en": "Tableau Semantics",
+                      "de": "Tableau Semantics",
+                      "ga": "Tableau Semantics",
+                      "ko": "Tableau Semantics",
+                      "zh_TW": "Tableau Semantics",
+                      "it": "Semantica Tableau",
+                      "es": "Semánticas de Tableau",
+                      "fr_CA": "Sémantique Tableau",
+                      "pt": "Tableau Semantics",
+                      "fr": "Sémantique Tableau",
+                      "ja": "Tableau セマンティクス",
+                      "nl": "Tableau Semantiek",
+                      "zh": "Tableau Semantics",
+                      "en_GB": "Tableau Semantics",
+                      "sv": "Tableau-semantik"
+                    },
+                    "type": "tuaSemanticLayer"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "ko": "Google BigQuery(JDBC)",
+                      "zh_TW": "Google BigQuery (JDBC)",
+                      "en_GB": "Google BigQuery (JDBC)",
+                      "nl": "Google BigQuery (JDBC)",
+                      "fr": "Google BigQuery (JDBC)",
+                      "sv": "Google BigQuery (JDBC)",
+                      "en": "Google BigQuery (JDBC)",
+                      "th": "Google BigQuery (JDBC)",
+                      "ja": "Google BigQuery (JDBC)",
+                      "zh": "Google BigQuery (JDBC)",
+                      "it": "Google BigQuery (JDBC)",
+                      "es": "Google BigQuery (JDBC)",
+                      "de": "Google BigQuery (JDBC)",
+                      "ga": "Google BigQuery (JDBC)",
+                      "fr_CA": "Google BigQuery (JDBC)",
+                      "pt": "Google BigQuery (JDBC)"
+                    },
+                    "type": "googlebigquery"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": true,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": true,
+                    "displayNames": {
+                      "de": "Snowflake",
+                      "fr_CA": "Snowflake",
+                      "it": "Snowflake",
+                      "sv": "Snowflake",
+                      "th": "Snowflake",
+                      "pt": "Snowflake",
+                      "zh_TW": "Snowflake",
+                      "en_GB": "Snowflake",
+                      "ga": "Snowflake",
+                      "nl": "Snowflake",
+                      "en": "Snowflake",
+                      "ko": "Snowflake",
+                      "fr": "Snowflake",
+                      "es": "Snowflake",
+                      "zh": "Snowflake",
+                      "ja": "Snowflake"
+                    },
+                    "type": "snowflake"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "null-config-label"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "ga": "Cloudera",
+                      "ko": "Cloudera",
+                      "en_GB": "Cloudera",
+                      "nl": "Cloudera",
+                      "th": "Cloudera",
+                      "en": "Cloudera",
+                      "it": "Cloudera",
+                      "de": "Cloudera",
+                      "zh_TW": "Cloudera",
+                      "sv": "Cloudera",
+                      "fr_CA": "Cloudera",
+                      "pt": "Cloudera",
+                      "zh": "Cloudera",
+                      "fr": "Cloudera",
+                      "es": "Cloudera",
+                      "ja": "Cloudera"
+                    },
+                    "type": "hadoophive"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": true,
+                    "displayNames": {
+                      "ko": "Salesforce Data Cloud",
+                      "th": "Salesforce Data Cloud",
+                      "ga": "Salesforce Data Cloud",
+                      "en": "Salesforce Data Cloud",
+                      "de": "Salesforce Data Cloud",
+                      "fr_CA": "Salesforce Data Cloud",
+                      "pt": "Salesforce Data Cloud",
+                      "it": "Salesforce Data Cloud",
+                      "sv": "Salesforce Data Cloud",
+                      "zh_TW": "Salesforce Data Cloud",
+                      "es": "Salesforce Data Cloud",
+                      "zh": "Salesforce Data Cloud",
+                      "en_GB": "Salesforce Data Cloud",
+                      "ja": "Salesforce Data Cloud",
+                      "nl": "Salesforce Data Cloud",
+                      "fr": "Salesforce Data Cloud"
+                    },
+                    "type": "salesforce-genie"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": true,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "sv": "Databricks",
+                      "de": "Databricks",
+                      "en": "Databricks",
+                      "es": "Databricks",
+                      "ja": "Databricks",
+                      "it": "Databricks",
+                      "fr_CA": "Databricks",
+                      "nl": "Databricks",
+                      "zh_TW": "Databricks",
+                      "pt": "Databricks",
+                      "zh": "Databricks",
+                      "en_GB": "Databricks",
+                      "ga": "Databricks",
+                      "ko": "Databricks",
+                      "th": "Databricks",
+                      "fr": "Databricks"
+                    },
+                    "type": "databricks"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "null-config-label"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "ko": "Amazon Athena",
+                      "es": "Amazon Athena",
+                      "ga": "Amazon Athena",
+                      "th": "Amazon Athena",
+                      "zh": "Amazon Athena",
+                      "de": "Amazon Athena",
+                      "nl": "Amazon Athena",
+                      "en_GB": "Amazon Athena",
+                      "en": "Amazon Athena",
+                      "fr_CA": "Amazon Athena",
+                      "ja": "Amazon Athena",
+                      "zh_TW": "Amazon Athena",
+                      "it": "Amazon Athena",
+                      "sv": "Amazon Athena",
+                      "fr": "Amazon Athena",
+                      "pt": "Amazon Athena"
+                    },
+                    "type": "athena"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": true,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "ko": "Azure Synapse Analytics",
+                      "en": "Azure Synapse Analytics",
+                      "pt": "Azure Synapse Analytics",
+                      "fr": "Azure Synapse Analytics",
+                      "it": "Azure Synapse Analytics",
+                      "sv": "Azure Synapse-analys",
+                      "es": "Azure Synapse Analytics",
+                      "zh": "Azure Synapse Analytics",
+                      "ga": "Azure Synapse Analytics",
+                      "de": "Azure Synapse Analytics",
+                      "nl": "Azure Synapse Analytics",
+                      "fr_CA": "Azure Synapse Analytics",
+                      "zh_TW": "Azure Synapse Analytics",
+                      "ja": "Azure Synapse Analytics",
+                      "th": "Azure Synapse Analytics",
+                      "en_GB": "Azure Synapse Analytics"
+                    },
+                    "type": "azure_sql_dw"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": true,
+                    "oauthConfigInfoList": [
+                      {
+                        "oauthConfigId": "default",
+                        "supportsCustomDomain": false,
+                        "configLabel": "Default IDP"
+                      }
+                    ],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "en_GB": "Esri",
+                      "it": "Esri",
+                      "nl": "Esri",
+                      "pt": "Esri",
+                      "fr": "Esri",
+                      "es": "Esri",
+                      "ga": "Esri",
+                      "fr_CA": "Esri",
+                      "sv": "Esri",
+                      "th": "Esri",
+                      "de": "Esri",
+                      "ko": "Esri",
+                      "zh_TW": "Esri",
+                      "zh": "Esri",
+                      "ja": "Esri",
+                      "en": "Esri"
+                    },
+                    "type": "esri"
+                  },
+                  {
+                    "supportsGenericAuth": false,
+                    "supportsTestToken": false,
+                    "oauthConfigInfoList": [],
+                    "supportsCustomDomain": false,
+                    "displayNames": {
+                      "sv": "Slack",
+                      "es": "Slack",
+                      "fr_CA": "Slack",
+                      "th": "Slack",
+                      "en": "Slack",
+                      "it": "Slack",
+                      "zh_TW": "Slack",
+                      "de": "Slack",
+                      "zh": "Slack",
+                      "pt": "Slack",
+                      "fr": "Slack",
+                      "ja": "Slack",
+                      "nl": "Slack",
+                      "ga": "Slack",
+                      "ko": "Slack",
+                      "en_GB": "Slack"
+                    },
+                    "type": "slack"
+                  }
+                ],
+                "maxDescriptionLength": 4000,
+                "deleteCommentEnabled": true,
+                "sheetImageMaxAgeFloor": 1,
+                "sheetImageMaxAgeCeiling": 240,
+                "serverSiteCapacityInfo": {
+                  "hasCreatorCapacity": true,
+                  "hasViewerCapacity": true
+                },
+                "adminViewsDisabled": false,
+                "ignoreExtractTaskPriority": true,
+                "timeBasedGovernanceEnabled": true,
+                "personalSandboxByDefaultEnabled": true,
+                "defaultSubscriptionsEmail": "no-reply@tableausoftware.com",
+                "metricAutoUpdateTimeDelayMS": 5000,
+                "siteAdminSettingsEnabled": true,
+                "alertFailureCountThreshold": 5,
+                "displaySchedulesInClientTimezone": true,
+                "displayScheduleDescriptionAsName": true,
+                "offlineInteractionSupportedPhase": 2,
+                "siteInviteBasicEmailEnabled": true,
+                "flowShowAllowedPathsEnabled": true,
+                "flowFailureThresholdForRunPrevention": 5,
+                "siteInviteEmailCustomizationEnabled": false,
+                "extractEncryptionFeatureSupported": true,
+                "useAlternativeFederationEngine": true,
+                "catalogingOnServerEnabled": true,
+                "newServerBackgrounderViewEnabled": false,
+                "newSiteBackgrounderViewEnabled": false,
+                "shareProductUsageDataEnabled": true,
+                "dashboardExtensionsEnabled": true,
+                "linkedTasksSchedulingEnabled": true,
+                "userNotificationsPlatformEnabled": true,
+                "siteUserGroupCountEnabled": false,
+                "selfServiceSchedulesRefreshEnabled": true,
+                "doesTheServerHaveMoreThanOneSite": true,
+                "embeddedCredentialsEnabled": true,
+                "schedulingEnabled": true,
+                "recommendationsEnabled": true,
+                "notificationEnabledForServer": true,
+                "flowParametersEnabled": true,
+                "oauthGoogleEnabled": true,
+                "oauthSalesforceEnabled": true,
+                "oauthQuickBooksEnabled": true,
+                "genericWDCAuthEnabled": true,
+                "featureFlags": {
+                  "publishedConnectionContentManagementEnabled": true,
+                  "flowsFromCatalogEnabled": true,
+                  "tabGAITokenServiceEnterpriseRegistration": true,
+                  "syncToLinkEnabled": true,
+                  "suggestSingleColumnDescriptionsEnabled": true,
+                  "oauthMultipleIdpOnServer": true,
+                  "compactHeaderEnabled": false,
+                  "broadcastUIRest": true,
+                  "multipleScimConfigurationsEnabled": true,
+                  "serverOverviewAdminViewEnabled": false,
+                  "changeFlowOwnershipEnabled": true,
+                  "showMobileBiometricsSetting": true,
+                  "generativeAiSiteControl": true,
+                  "usernameEmailDecouplingEnabled": true,
+                  "databasesInProjectsEnabled": true,
+                  "broadcastUI": true,
+                  "emailCustomizationEnabled": true,
+                  "enableRunNowEnabled": true,
+                  "labelManagementEnabled": true,
+                  "inDatabaseProcessingEnabled": false,
+                  "guidedOnboardingWalkThroughsEnabled": false,
+                  "securitySettingsEnabled": false,
+                  "desktopReportingEnabled": false,
+                  "guidedOnboardingBannerEnabled": true,
+                  "vconnRevisionHistoryEnabled": true,
+                  "authorMetricsEnabled": true,
+                  "refreshTokenAbsoluteExpiryEnabled": true,
+                  "tabGAITokenServiceRegistration": true,
+                  "askDataUsageDashboardEnabled": true,
+                  "userVisibilityEnabled": true,
+                  "oauthBYOIdp": true,
+                  "allowNonAdminRefreshExtractsEnabled": true,
+                  "dataRolesEditValueSynonymsEnabled": true,
+                  "vconnIncrementalRefreshEnabled": true,
+                  "patCreationControlEnabled": true,
+                  "adminSelfServiceSchedulesEnabled": true,
+                  "workflowSiteControl": false,
+                  "recycleBinMetadataEnabled": true,
+                  "writableFieldDescriptionsEnabled": true,
+                  "analyticsAssistantCheckEntitlementsEnabled": false,
+                  "alternativeFederationEngineUserInterface": true,
+                  "databasesInProjectsPostMVPEnabled": true,
+                  "searchV2": true,
+                  "ntbue_CUSTOM_DIGEST_SCHEDULESEnabled": false,
+                  "requestAccessEnabled": true,
+                  "adminExpCustomDomainsEnabled": true,
+                  "vconnGoogleBigQueryServiceAccountEnabled": true,
+                  "connectedAppsMultiProjectEnabled": true,
+                  "mergeDedupeDatabasesEnabled": false,
+                  "slackIntegrationPlatformEnabled": true,
+                  "distributedCloudBridgeAsAServiceEnabled": false,
+                  "featureFlagForMultipleIDPSupportEnabled": true,
+                  "agentsDashboardInsightsEnabled": false,
+                  "suggestBulkColumnDescriptionsEnabled": true,
+                  "suggestDescriptionsEnabled": true,
+                  "jobManagementEnabled": true,
+                  "vizportalStaticAssetsEnabled": true,
+                  "tablesInProjectsEnabled": true,
+                  "toastAutoDismissSettingEnabled": true,
+                  "userAttributeFunctionsEnabled": true,
+                  "askDataLensesInCatalogEnabled": true,
+                  "pulseInDataCatalogEnabled": false,
+                  "hybridLiveExtractVConnsEnabled": true,
+                  "surfaceDescriptionsEnabled": true,
+                  "ipFilteringEnabled": false,
+                  "genericOIDCEnabled": true,
+                  "vconnColumnCaptionMetadataSanitizationEnabled": true,
+                  "addressGeocodingOnSiteEnabled": false,
+                  "recycleBinFlowsExpEnabled": false,
+                  "askDataLensFavoritingEnabled": true,
+                  "analyticsAssistantDashboardInsightsEnabled": false,
+                  "cardResizerEnabled": true,
+                  "askDataPerformanceDashboardEnabled": false,
+                  "allowNonAdminRefreshExtractNotificationsEnabled": true,
+                  "addressGeocodingEnabled": false,
+                  "ntbueAIEnhancedLanguage": false,
+                  "nlpviewerEnablementEnabled": true,
+                  "suggestColumnDescriptionsEnabled": true,
+                  "queryPipelineDataFreshnessUISupported": true,
+                  "cmekAvailableForSite": false,
+                  "customLabelCategoriesEnabled": true,
+                  "userNotificationSlackChannel": true,
+                  "agentsCatalogReadyForGroupsEnabled": false,
+                  "recycleBinExpEnabled": true,
+                  "fieldDescriptionInheritanceLineageEnabled": true,
+                  "blockNonExtractSiteControlEnabled": true,
+                  "tablesInProjectsUIEnabled": true,
+                  "localAuthPasswordExpirationEnabled": true,
+                  "viewerControlledThemesEnabled": false,
+                  "enableExternalKeyManagementEnabled": false,
+                  "workbookAccelerationUIEnabled": true,
+                  "snowflakeKeyPairAuth": true,
+                  "beaconSearchEnabled": true,
+                  "lowDiskSpaceEnabled": false,
+                  "viewAccelerationRecommendationEngineEnabled": true,
+                  "accelerationSiteAdminUIEnabled": true,
+                  "multiEASPerSiteEnabled": true,
+                  "enablePrivateConnect": true,
+                  "dataCloudInCatalogMVPEnabled": true,
+                  "passwordPoliciesEnabled": true,
+                  "jobManagement194UIEnabled": true,
+                  "agentsPulseGAIReadyForGroupsEnabled": false,
+                  "localAuthLoginRateLimitingEnabled": true,
+                  "selfServiceSchedulesForFlow": true,
+                  "tabGAITokenService": true,
+                  "broadcastEnabled": false,
+                  "siteLevelOAuthClient": true,
+                  "projectTreeEnabled": true,
+                  "treeWidgetInNestedProjectExplorerEnabled": true,
+                  "ntbueMultilingualAdHocQa": true,
+                  "autoQualityMonitoringEnabled": true,
+                  "searchAndFilterOnLineagePageEnabled": true,
+                  "modifiedByUserEnabled": false,
+                  "siteQuotaEnabled": true,
+                  "publishReducedDatasourceEnabled": false,
+                  "ntbueDiscoverFromHomepageGroup": true,
+                  "hyperOnServerEnabled": true,
+                  "instantAnalyticsOnPremEnabled": false,
+                  "dmawarenessInExploreEnabled": true,
+                  "agentPermissionsTableEnabled": true,
+                  "vizqlDataServicePermissionEnabled": true,
+                  "userTimeZoneEnabled": true,
+                  "multiSiteLoginErrorDialogEnabled": false,
+                  "selfServiceSchedulesEnabled": true,
+                  "ect_UseSharedOrgForTrialEnabled": true,
+                  "ntbue_Default_Send_TimeEnabled": true,
+                  "labelsInWebAuthoringEnabled": true,
+                  "semanticsServiceDataRoleConnectionsEnabled": false,
+                  "ntbue_ADMIN_SITE_DIGEST_TOGGLEEnabled": false,
+                  "mixedContentConnectToDialogEnabled": true,
+                  "uploadWorkbookFromWebEnabled": true,
+                  "signInNoteEnabled": true,
+                  "webAuthoringAISettingEnabled": true,
+                  "inAppNotificationEnabled": false,
+                  "autoSuspensionForAcceleratedViews": true,
+                  "ha2Enabled": false,
+                  "ha2FilestoreEnabled": false,
+                  "ibaReportingEnabled": true,
+                  "metricsProxyEnabled": false,
+                  "metricsSpaceEnabled": false,
+                  "metricsAutoUpdateEnabled": false,
+                  "metricsEmbeddingEnabled": false,
+                  "metricsDateWindowEnabled": false,
+                  "metricsEditingEnabled": false,
+                  "scimApiTokenEnabled": true,
+                  "maestroEarEnabled": true,
+                  "identityMigrationEnabled": false,
+                  "bridgeServerSideRefresh": false,
+                  "explainDataSiteControl": true,
+                  "dataSyncRefreshNowEnabled": false,
+                  "bridgeLiveDirectAssignEnabled": true,
+                  "whatIsNewMenuOptionEnabled": true,
+                  "metricsDataCatalogEnabled": false,
+                  "metricsReferenceLineEnabled": false,
+                  "metricsColorIndicatorsEnabled": false,
+                  "metricsHistoricalComparisonsEnabled": false,
+                  "personalAccessTokensEnabled": true,
+                  "metricsContentTypeSiteSettingEnabled": false,
+                  "publishedConnectionEditorEnabled": true,
+                  "webAuthoringAutoSaveEnabled": true,
+                  "onPremiseGovernanceEnabled": false,
+                  "explainDataPermissionEnabled": true,
+                  "enhancedAccelerationTooltip": true,
+                  "enableDataConnectFlatFile": false,
+                  "metricsSnapshottingEnabled": false,
+                  "addSupportUserEnabled": true,
+                  "identityPoolsEnabled": false
+                },
+                "linkedTaskRunNowEnabled": true,
+                "siteCustomizationEnabled": true,
+                "podId": "prod-in-a",
+                "flowParametersAnyTypeEnabled": false,
+                "flowParametersSystemTypeEnabled": true,
+                "groupAssertionsEnabled": false,
+                "explainDataEnabled": true,
+                "siteCapacityCheckEnabled": true,
+                "vizRecommendationsEnabled": true,
+                "personalSandboxEnabledOnServer": true,
+                "extractEncryptionEnabled": true,
+                "defaultDomain": "external",
+                "version": {
+                  "bitness": "64",
+                  "isReleaseStage": true,
+                  "fipsEnabled": false,
+                  "platform": "Linux",
+                  "containerDeploymentType": "",
+                  "externalVersion": {
+                    "patch": "0",
+                    "major": "2025",
+                    "minor": "3"
+                  },
+                  "build": "20253.25.1122.0246"
+                }
+              },
+              "site": {
+                "adminInsightsEnabled": false,
+                "askDataMode": "disabled_always",
+                "buyLicenseButtonDisplayType": "WEBSTORE-MODAL",
+                "buyLicensesEnabled": false,
+                "canOwnerAccelerate": true,
+                "collectionsEnabled": true,
+                "recycleBinEnabled": true,
+                "dataAlertsEnabled": true,
+                "dataManagementEnabled": true,
+                "editingFlowsEnabled": true,
+                "extractEncryptionMode": "disabled",
+                "flowAutoSaveEnabled": true,
+                "flowsOnSiteEnabled": true,
+                "id": "19212",
+                "isEditingFlowsEnabled": true,
+                "isSchedulingFlowsEnabled": true,
+                "isVirtualConnectionsEnabled": true,
+                "catalogingOnSiteEnabled": true,
+                "commentingEnabled": true,
+                "derivedPermissionsEnabled": true,
+                "notificationEnabled": true,
+                "remoteQueryingEnabled": true,
+                "requestAccessEnabled": true,
+                "schedulingFlowsEnabled": true,
+                "selfServiceSchedulesForFlowEnabled": true,
+                "logoutEnabled": true,
+                "luid": "4a37136e-8cd0-4b89-8cb7-2ac59ee8ec90",
+                "mobileBiometricsEnabled": false,
+                "name": "cca49542-0680f1e1d6",
+                "personalSpaceOnSiteEnabled": true,
+                "role": "SiteAdministratorCreator",
+                "runNowEnabled": true,
+                "serverSiteCapacityInfo": {
+                  "hasCreatorCapacity": true,
+                  "hasViewerCapacity": false
+                },
+                "settings": {
+                  "backgrounderGovernanceDefaultLimitEnabled": false,
+                  "metricsContentTypeEnabled": false,
+                  "metricsContentTypeSnapshottingEnabled": false,
+                  "commentingMentionsEnabled": true,
+                  "recycleBinEnabled": true,
+                  "webEditingEnabled": true,
+                  "flowAutoSaveEnabled": true,
+                  "flowParametersEnabled": true,
+                  "blockNonExtractEnabled": false,
+                  "collectionsEnabled": true,
+                  "dataAlertsEnabled": true,
+                  "tagLimit": 50,
+                  "catalogObfuscationEnabled": true,
+                  "autoExtractRefreshMonitoringEnabled": true,
+                  "autoFlowRunMonitoringEnabled": true,
+                  "publishToSalesforceEnabled": false,
+                  "linkedTaskRunNowEnabled": true,
+                  "pulsePersonalizedRankingEnabled": true,
+                  "dashboardInsightsEnabled": false,
+                  "einsteinInFlowEnabled": false,
+                  "dqwSubscriptionsEnabled": false,
+                  "pulseEnabled": true,
+                  "generativeAiDataCatalog": false,
+                  "generativeAiPrep": false,
+                  "generativeAiWebAuthoring": false,
+                  "generativeAiEnabled": false,
+                  "notifySiteAdminsOnThrottleEnabled": false,
+                  "generativeAiPulseDiscoverEnabled": false,
+                  "flowParametersAnyTypeEnabled": false,
+                  "flowParametersSystemTypeEnabled": true,
+                  "flowOutputSubscriptionsEnabled": false,
+                  "generativeAiWebAuthoringOnPremEnabled": false,
+                  "groupAssertionsSAMLEnabled": false,
+                  "groupAssertionsOIDCEnabled": false,
+                  "groupAssertionsConnectedAppsEnabled": false,
+                  "dashboardNarrativeEnabled": false,
+                  "unrestrictedEmbeddingEnabled": true,
+                  "generativeAiPulse": false,
+                  "groupAssertionsEnabled": false,
+                  "groupSetsEnabled": false,
+                  "exploreInTableauEnabled": false,
+                  "domainAllowlist": "",
+                  "adminInsightsPublishFrequency": "DAILY",
+                  "generativeAiLLMProviderAPIKey": "",
+                  "webZoneContentEnabled": true,
+                  "explainDataEnabled": true,
+                  "dataOrientationEnabled": true,
+                  "workflowExtensionEnabled": true,
+                  "flowOutputSubscriptionsDataAsEmailAttachmentEnabled": false,
+                  "flowOutputSubscriptionsDataInEmailBodyEnabled": false,
+                  "flowFederationStrategySelectedConnectionEnabled": false,
+                  "generativeAiPulseExternalEmbeddingsEnabled": false,
+                  "selfServiceSchedulesForFlowEnabled": true,
+                  "linkedTaskSchedulingEnabled": true,
+                  "selfServiceScheduleForRefreshEnabled": true
+                },
+                "sheetImageEnabled": true,
+                "showPersonalSpace": true,
+                "siteExpiring": true,
+                "siteExpiringDays": 7,
+                "siteNamedSharingSettings": {
+                  "namedSharingEnabled": true
+                },
+                "siteTypeName": "Trial",
+                "siteUuid": "4a37136e-8cd0-4b89-8cb7-2ac59ee8ec90",
+                "org62RecordId": "a1HQK00000AdKE22AN",
+                "isLinkSite": true,
+                "urlName": "cca49542-0680f1e1d6",
+                "userVisibility": "FULL",
+                "versioningEnabled": true,
+                "vizRecommendationsEnabled": true,
+                "subscribeNowEnabled": true,
+                "mfaEnabled": true,
+                "mfaRequired": true,
+                "inlineBannerEnabled": true,
+                "workbookAccelerationSettings": {
+                  "viewsLimitPerSiteForAccelerationEnabled": true,
+                  "viewsLimitPerSiteForAcceleration": 5000,
+                  "autoSuspendSettings": {
+                    "autoSuspendFailureLimitForAccelerationEnabled": true,
+                    "autoSuspendFailureLimitForAcceleration": 30,
+                    "autoSuspendFailureLimitForAccelerationTimePeriod": "Week",
+                    "autoSuspendAccelerationImprovementThresholdEnabled": true,
+                    "autoSuspendAccelerationImprovementThreshold": 35,
+                    "autoSuspendViewsLimitEnabled": true,
+                    "autoSuspendViewsLimit": 200,
+                    "autoSuspendViewsLimitTimePeriod": "Month"
+                  },
+                  "minDataFreshnessIntervalInMinutes": 120
+                },
+                "metricsEnabledOnSite": false,
+                "isLinkedTaskSchedulingEnabled": true,
+                "isLinkedTaskRunNowEnabled": true,
+                "isActivityLogEnabled": false,
+                "isExternalUserEnabledForSite": false,
+                "groupAssertionEnabledForSite": false,
+                "isPulseEnabled": true,
+                "pulseDigestStartTime": 0,
+                "pulseEmailNotificationsEnabled": true,
+                "pulseSlackNotificationsEnabled": true,
+                "pulseWeeklyDigestDay": 0,
+                "pulseMonthlyDigestDayOrWeek": 0,
+                "pulseMonthlyDigestDateOrDay": 1,
+                "groupAssertionsSAMLEnabled": false,
+                "groupAssertionsOIDCEnabled": false,
+                "groupAssertionsConnectedAppsEnabled": false,
+                "groupSetsEnabled": false,
+                "metadataSuggestionsEnabled": false,
+                "exploreInTableauEnabled": false,
+                "dashboardNarrativeEnabled": false,
+                "generativeAiQueryParsingModel": "",
+                "generativeAiVizAndCalcGenerationModel": "",
+                "generativeAiEmbeddingsModel": "",
+                "isDashboardInsightsEnabled": false,
+                "isGenerativeAiDataCatalog": false,
+                "isGenerativeAiPrep": false,
+                "isGenerativeAiWebAuthoring": false,
+                "isGenerativeAiPulseDiscoverEnabled": false,
+                "isGenerativeAiPulseExternalEmbeddingsEnabled": false,
+                "isGenerativeAiEnabled": false
+              }
+            }
+          },
+          "response_size_bytes": 38043,
+          "duration_ms": 175
+        }
+      ]
+    },
+    "server_metadata": {
+      "server_timestamp": "2025-12-01T13:16:43.272443",
+      "remote_addr": "127.0.0.1",
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36",
+      "referer": null
+    }
+  }
+]
