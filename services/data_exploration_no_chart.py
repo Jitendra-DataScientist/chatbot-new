@@ -32,6 +32,7 @@ from services.insight_generator import TableauInsightGenerator
 from services.NL_to_python import NLToPythonGenerator
 from services.enhanced_analysis_service import EnhancedAnalysisService
 from services.period_extraction_service import PeriodExtractionService
+from services.response_template_engine import ResponseTemplateEngine
 
 master_logger = setup_module_logger('services.data_exploration')
 master_logger.info("DATA EXPLORATION SERVICE MODULE INITIALIZATION STARTED")
@@ -60,6 +61,10 @@ class data_exploration:
         self.nl_to_python = NLToPythonGenerator(openai_client=llm_client)
         self.enhanced_analysis = EnhancedAnalysisService(self.data_processor, self.nl_to_python)
         self.fuzzy_matcher = FuzzyColumnMatcher(threshold=70)
+        
+        # Initialize template engine for professional response formatting
+        self.template_engine = ResponseTemplateEngine()
+        master_logger.info("✓ Response template engine initialized")
         
         # Initialize period extraction service
         self.period_extractor = PeriodExtractionService(
@@ -188,7 +193,7 @@ class data_exploration:
                     intent_result, {'pandas_execution': analysis_result}, analysis_data
                 )
             
-            response_dict = self._format_table_response({'pandas_execution': analysis_result})
+            response_dict = self._format_table_response({'pandas_execution': analysis_result}, query=query_text, intent_result=intent_result)
             
             return {
                 'success': True,
@@ -411,7 +416,7 @@ class data_exploration:
             # Step 5: Format response
             master_logger.info("STEP 5: Formatting table response")
             
-            response_dict = self._format_table_response(analysis_result)
+            response_dict = self._format_table_response(analysis_result, query=query_text, intent_result=intent_result)
             response_text = response_dict.get("response", "No response generated")
             table_data = response_dict.get("table_data", None)
             
@@ -593,6 +598,10 @@ class data_exploration:
             analysis_result["pandas_execution"] = pandas_result
             analysis_result["success"] = pandas_result.get('execution_status') == 'success'
             
+            # Pass through nl_result for template engine
+            if 'nl_result' in pandas_result:
+                analysis_result["nl_result"] = pandas_result['nl_result']
+            
             return analysis_result
             
         except Exception as e:
@@ -732,10 +741,16 @@ class data_exploration:
             master_logger.error(traceback.format_exc())
             return None
     
-    def _format_table_response(self, analysis_result, query: str = None) -> Dict[str, Any]:
-        """Format analysis result into table response - FIXED DataFrame ambiguity error"""
+    def _format_table_response(self, analysis_result, query: str = None, intent_result = None) -> Dict[str, Any]:
+        """Format analysis result into table response with template engine integration"""
         try:
             master_logger.info(f"[TABLE_FORMAT] Formatting result")
+            
+            # Extract intent type and nl_result for template engine
+            intent_type = intent_result.primary_intent if intent_result and hasattr(intent_result, 'primary_intent') else 'data_exploration'
+            nl_result = analysis_result.get('nl_result') if isinstance(analysis_result, dict) else None
+            
+            master_logger.info(f"[TABLE_FORMAT] Intent type: {intent_type}, Has NL result: {nl_result is not None}")
             
             # Extract result
             result_data = None
@@ -846,10 +861,24 @@ class data_exploration:
                 "truncated": original_row_count > displayed_rows
             }
             
-            # Create markdown
+            # Create markdown (fallback)
             markdown_table = self._dataframe_to_markdown(df)
             
+            # Try templated response first
             response_text = markdown_table
+            if query and self.template_engine.can_template_response(intent_type, query):
+                master_logger.info(f"[TABLE_FORMAT] Using template engine for {intent_type}")
+                templated_response = self.template_engine.format_templated_response(
+                    intent_type=intent_type,
+                    query=query,
+                    df=df,  # polars DataFrame (template engine will convert)
+                    fallback_markdown=markdown_table,
+                    nl_result=nl_result
+                )
+                response_text = templated_response
+            else:
+                master_logger.info(f"[TABLE_FORMAT] Using markdown fallback (query={query}, can_template={self.template_engine.can_template_response(intent_type, query) if query else False})")
+            
             if displayed_rows < original_row_count:
                 response_text += f"\n\nNote: Showing top {displayed_rows} of {original_row_count} results."
             
@@ -1363,7 +1392,8 @@ class data_exploration:
                 'explanation': nl_result.explanation,
                 'execution_status': status,
                 'result': formatted_result,
-                'result_type': type(result).__name__
+                'result_type': type(result).__name__,
+                'nl_result': nl_result  # Pass through for template engine
             }
             
         except Exception as e:

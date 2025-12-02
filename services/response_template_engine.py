@@ -6,8 +6,9 @@ while maintaining markdown table formatting as fallback.
 """
 
 import pandas as pd
+import polars as pl
 import numpy as np
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple, List, Union
 import re
 from master_logger import setup_module_logger
 
@@ -167,7 +168,7 @@ Here's the percentage breakdown across different {entity_name}:
     def format_templated_response(self, 
                                  intent_type: str, 
                                  query: str, 
-                                 df: pd.DataFrame, 
+                                 df: Union[pd.DataFrame, pl.DataFrame], 
                                  fallback_markdown: str,
                                  nl_result=None) -> str:
         """
@@ -176,14 +177,20 @@ Here's the percentage breakdown across different {entity_name}:
         Args:
             intent_type: The type of analysis (e.g., 'top_bottom_analysis')
             query: Original user query
-            df: Result DataFrame
+            df: Result DataFrame (pandas or polars)
             fallback_markdown: Fallback markdown table
+            nl_result: NL-to-Python extraction result (optional)
             
         Returns:
             Formatted templated response or fallback
         """
         try:
             master_logger.info(f"[TEMPLATE] Formatting {intent_type} response")
+            
+            # Convert polars DataFrame to pandas for template processing
+            if isinstance(df, pl.DataFrame):
+                master_logger.info("[TEMPLATE] Converting polars DataFrame to pandas for template processing")
+                df = df.to_pandas()
             
             if not self.can_template_response(intent_type, query):
                 master_logger.info(f"[TEMPLATE] No template available for {intent_type}, using fallback")

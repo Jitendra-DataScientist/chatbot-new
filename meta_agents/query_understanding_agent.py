@@ -803,9 +803,9 @@ class QueryAgent:
                     
                     # Create a minimal intent_result for the service (required parameter)
                     minimal_intent = QueryIntent(
-                        primary_intent='data_exploration',
-                        confidence=1.0,
-                        entities={'query': query}
+                        primary_intent=primary_intent,
+                        confidence=classification.get('confidence', 1.0),
+                        entities=classification.get('entities', {'query': query})
                     )
                     
                     # Get DataFrame from DataManager (already registered at line 717-722)
