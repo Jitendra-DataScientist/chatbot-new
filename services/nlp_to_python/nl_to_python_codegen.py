@@ -207,8 +207,9 @@ class PeriodComparisonCodeGen(OperationCodeGenerator):
         if group_by:
             # Grouped comparison
             code += f"""
-# Convert date column to datetime
-df = df.with_columns(pl.col('{date_column}').str.to_datetime())
+# Convert date column to datetime if it's a string
+if df['{date_column}'].dtype in [pl.String, pl.Utf8]:
+    df = df.with_columns(pl.col('{date_column}').str.to_datetime())
 
 # Group by period and additional dimensions
 """
@@ -245,8 +246,9 @@ result = result.sort('current_period')
         else:
             # Non-grouped comparison
             code += f"""
-# Convert date column to datetime
-df = df.with_columns(pl.col('{date_column}').str.to_datetime())
+# Convert date column to datetime if it's a string
+if df['{date_column}'].dtype in [pl.String, pl.Utf8]:
+    df = df.with_columns(pl.col('{date_column}').str.to_datetime())
 """
             if period_granularity == "season":
                 code += PeriodComparisonCodeGen._add_season_column(date_column)
@@ -327,8 +329,11 @@ result = result.with_columns((pl.col('{aggfunc}') / pl.col('previous_{period_gra
         code = f"""# Specific Period Comparison: {period1} vs {period2}
 """
         
-        # Convert date column
-        code += f"df = df.with_columns(pl.col('{date_column}').str.to_datetime())\n"
+        # Convert date column to datetime if it's a string
+        code += f"""# Convert date column to datetime if it's a string
+if df['{date_column}'].dtype in [pl.String, pl.Utf8]:
+    df = df.with_columns(pl.col('{date_column}').str.to_datetime())
+"""
         
         # Add period extraction based on granularity
         if granularity == "quarter":
@@ -509,7 +514,9 @@ class TimeSeriesCodeGen(OperationCodeGenerator):
             return "# ERROR: Time series analysis requires date_column\nresult = pl.DataFrame({'error': ['No date column specified']})\n"
         
         code = f"""# Time Series Analysis: {analysis_type}
-df = df.with_columns(pl.col('{date_column}').str.to_datetime())
+# Convert date column to datetime if it's a string
+if df['{date_column}'].dtype in [pl.String, pl.Utf8]:
+    df = df.with_columns(pl.col('{date_column}').str.to_datetime())
 
 """
         
@@ -1478,22 +1485,25 @@ class DateArithmeticCodeGen(OperationCodeGenerator):
             date_column2 = params.get("date_column2")
             unit = params.get("unit", "days")
             
-            # Polars date difference
-            code += f"""result = df.with_columns([
-    pl.col('{date_column}').str.to_datetime().alias('{date_column}'),
-    pl.col('{date_column2}').str.to_datetime().alias('{date_column2}')
-])
-result = result.with_columns(
+            # Polars date difference - convert date columns to datetime if they're strings
+            code += f"""# Convert date columns to datetime if they're strings
+if df['{date_column}'].dtype in [pl.String, pl.Utf8]:
+    df = df.with_columns(pl.col('{date_column}').str.to_datetime().alias('{date_column}'))
+if df['{date_column2}'].dtype in [pl.String, pl.Utf8]:
+    df = df.with_columns(pl.col('{date_column2}').str.to_datetime().alias('{date_column2}'))
+
+result = df.with_columns(
     (pl.col('{date_column2}') - pl.col('{date_column}')).dt.total_{unit}().alias('{result_column}')
 )
 """
         
         elif operation == "extract_component":
             component = params["component"]
-            code += f"""result = df.with_columns(
-    pl.col('{date_column}').str.to_datetime().alias('{date_column}')
-)
-result = result.with_columns(
+            code += f"""# Convert date column to datetime if it's a string
+if df['{date_column}'].dtype in [pl.String, pl.Utf8]:
+    df = df.with_columns(pl.col('{date_column}').str.to_datetime().alias('{date_column}'))
+
+result = df.with_columns(
     pl.col('{date_column}').dt.{component}().alias('{result_column}')
 )
 """
@@ -1540,7 +1550,11 @@ class TemporalFilterCodeGen(OperationCodeGenerator):
         date_column = params["date_column"]
         filter_type = params["filter_type"]
         
-        code = f"df = df.with_columns(pl.col('{date_column}').str.to_datetime())\n"
+        # Convert date column to datetime if it's a string
+        code = f"""# Convert date column to datetime if it's a string
+if df['{date_column}'].dtype in [pl.String, pl.Utf8]:
+    df = df.with_columns(pl.col('{date_column}').str.to_datetime())
+"""
         
         if filter_type == "last_n_days":
             n = params["n_value"]

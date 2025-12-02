@@ -1408,6 +1408,14 @@ Create execution plan:"""}
         elif not isinstance(group_by_columns, list):
             group_by_columns = [group_by_columns]
         
+        # 🔥 NEW: Remove date_column from group_by_columns ONLY for operations that concatenate them
+        # Operations like TimeSeriesCodeGen and PeriodComparisonCodeGen do [date_column] + group_by
+        # which causes duplicate column errors when date_column is also in group_by
+        operations_that_concatenate_date = ['time_series', 'period_comparison']
+        if primary_operation in operations_that_concatenate_date and date_column and group_by_columns and date_column in group_by_columns:
+            group_by_columns = [col for col in group_by_columns if col != date_column]
+            self.logger.info(f"[PARAM_BUILD] Removed date_column '{date_column}' from group_by_columns to avoid duplicate grouping in {primary_operation}")
+        
         if primary_operation == 'breakdown' and group_by_columns:
             column_param = group_by_columns[0]  # Use first group_by column for breakdown
         else:
