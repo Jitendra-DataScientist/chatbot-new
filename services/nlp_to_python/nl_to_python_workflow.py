@@ -627,7 +627,7 @@ class NLToPythonGeneratorV5:
                 stage1_grounded = stage1_result  # Fallback
             
             # Stage 2: Agentic Planning
-            stage2_result = self._stage2_agentic_planning(stage1_grounded, df_sample)
+            stage2_result = self._stage2_agentic_planning(stage1_grounded, df_sample, query)
             if not stage2_result:
                 self.logger.error("[GENERATE] Stage 2 failed")
                 return None
@@ -783,7 +783,7 @@ Column Description Queries:
         # For now, return the original result - value grounding can be enhanced later
         return stage1_result
     
-    def _stage2_agentic_planning(self, stage1_grounded, df_sample: pl.DataFrame):
+    def _stage2_agentic_planning(self, stage1_grounded, df_sample: pl.DataFrame, query: str = ""):
         """Stage 2: Agentic Planning"""
         # Let LLM handle all operations including column descriptions
         
@@ -822,8 +822,43 @@ Create a plan with:
 
 Special handling:
 - If operation_intent='column_description', use operations=['column_description'] with high confidence (0.95)
-- Column description queries don't need temporal filters or complex aggregations"""},
+- Column description queries don't need temporal filters or complex aggregations
+
+For period_comparison operations:
+- Extract specific periods being compared from temporal_intent (e.g., 'Q1 2025', 'Q2 2025', 'February 2025', 'March 2025')
+- Set compare_periods with the extracted periods as a list (e.g., ['Q1 2025', 'Q2 2025'])
+- Create temporal_filters array with one TemporalFilter object per period:
+  * For quarters: filter_type='specific_quarter', quarter=<number>, year=<year>
+  * For months: filter_type='specific_month', month=<number>, year=<year>
+  * For years: filter_type='specific_year', year=<year>
+- Do NOT rely on filter_column/filter_value from Stage 1 for temporal comparisons - they should be in temporal_filters instead
+
+CRITICAL - group_by_columns for period_comparison:
+- If comparing ONLY two time periods (e.g., "Q1 vs Q2", "January vs February", "2023 vs 2024") WITHOUT additional dimensions:
+  → Set group_by_columns = [] or null (to aggregate entire periods into single values)
+  → This ensures result has 2 rows: one for each period with totals
+  
+- If comparing periods WITH breakdown by a business dimension (e.g., "compare by country Q1 vs Q2", "product sales Q1 vs Q2"):
+  → Set group_by_columns = [dimension_column] (e.g., ['account_country'], ['product'])
+  → Remove any date-related columns from group_by_columns (month, week, day, create_month, etc.)
+  → This ensures result has one row per dimension value, with separate columns for each period
+  
+- ALWAYS remove date/time columns from group_by_columns for period_comparison operations:
+  → Date columns belong in temporal_filters, NOT group_by_columns
+  → Common date columns to remove: create_month, create_week, create_day, date, month, week, day, year, quarter
+  
+Examples:
+  Query: "compare ticket count Q1 vs Q2 2025"
+  → group_by_columns = [] (simple period comparison, no dimensions)
+  
+  Query: "compare sales by product Q1 vs Q2"
+  → group_by_columns = ['product'] (has business dimension)
+  
+  Query: "compare India tickets Q1 vs Q2" (if Stage 1 had group_by=['create_month'])
+  → group_by_columns = [] (override Stage 1, remove date column)"""},
                 {"role": "user", "content": f"""
+Original Query: {query}
+
 Stage 1 Results:
 - Filter: {stage1_grounded.filter_column} = {stage1_grounded.filter_value}
 - Group by: {stage1_grounded.group_by_columns}
@@ -844,6 +879,8 @@ Create execution plan:"""}
             
             result = response.choices[0].message.parsed
             self.logger.info(f"[STAGE2] ✅ Plan: operations={result.operations}, confidence={result.confidence}")
+            self.logger.info(f"[STAGE2_DEBUG] group_by_columns from Stage 2: {result.group_by_columns}")
+            self.logger.info(f"[STAGE2_DEBUG] compare_periods from Stage 2: {getattr(result, 'compare_periods', None)}")
             return result
             
         except Exception as e:
@@ -1400,7 +1437,17 @@ Create execution plan:"""}
             raise Exception("Column description operations should be handled directly, not through Stage 3")
         
         # For breakdown operations, 'column' should be the first group_by column
-        group_by_columns = getattr(stage2_result, 'group_by_columns', None) or stage1_result.group_by_columns or []
+        # 🔥 CRITICAL FIX: Check for None explicitly, not using 'or' (empty list [] is falsy!)
+        stage2_group_by = getattr(stage2_result, 'group_by_columns', None)
+        if stage2_group_by is not None:
+            group_by_columns = stage2_group_by  # Use Stage 2 result even if it's []
+        else:
+            group_by_columns = stage1_result.group_by_columns or []  # Fallback to Stage 1
+        
+        self.logger.info(f"[PARAM_BUILD_DEBUG] Stage 1 group_by: {stage1_result.group_by_columns}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG] Stage 2 group_by: {stage2_group_by}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG] Final group_by_columns (before cleanup): {group_by_columns}")
+        self.logger.info(f"[PARAM_BUILD_FIX] Used Stage 2: {stage2_group_by is not None}, Stage 2 was empty: {stage2_group_by == []}")
         
         # 🔥 SAFETY: Ensure it's always a list, never None
         if group_by_columns is None:
@@ -1412,9 +1459,18 @@ Create execution plan:"""}
         # Operations like TimeSeriesCodeGen and PeriodComparisonCodeGen do [date_column] + group_by
         # which causes duplicate column errors when date_column is also in group_by
         operations_that_concatenate_date = ['time_series', 'period_comparison']
+        
+        self.logger.info(f"[PARAM_BUILD_DEBUG] Checking date column removal:")
+        self.logger.info(f"[PARAM_BUILD_DEBUG]   primary_operation={primary_operation}, in list: {primary_operation in operations_that_concatenate_date}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG]   date_column={date_column}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG]   group_by_columns={group_by_columns}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG]   date in group_by: {date_column in group_by_columns if group_by_columns else False}")
+        
         if primary_operation in operations_that_concatenate_date and date_column and group_by_columns and date_column in group_by_columns:
             group_by_columns = [col for col in group_by_columns if col != date_column]
-            self.logger.info(f"[PARAM_BUILD] Removed date_column '{date_column}' from group_by_columns to avoid duplicate grouping in {primary_operation}")
+            self.logger.info(f"[PARAM_BUILD] ✅ Removed date_column '{date_column}' from group_by_columns to avoid duplicate grouping in {primary_operation}")
+        else:
+            self.logger.info(f"[PARAM_BUILD] ⚠️ Did NOT remove date_column - condition not met")
         
         if primary_operation == 'breakdown' and group_by_columns:
             column_param = group_by_columns[0]  # Use first group_by column for breakdown

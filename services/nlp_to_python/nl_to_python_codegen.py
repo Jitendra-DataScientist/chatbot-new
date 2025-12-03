@@ -7,7 +7,14 @@ This module contains:
 - Individual code generators for each operation type
 - Code generator registry for operation routing
 - Helper functions for code generation utilities
+
+FILE VERSION: 2024-12-03-V4
 """
+
+import sys
+print("="*80, file=sys.stderr)
+print("[CODEGEN_MODULE_V4] nl_to_python_codegen.py LOADED - FILE VERSION 2024-12-03-V4", file=sys.stderr)
+print("="*80, file=sys.stderr)
 
 import re
 from typing import Dict, List, Any, Optional
@@ -165,11 +172,19 @@ class PeriodComparisonCodeGen(OperationCodeGenerator):
     
     @staticmethod
     def generate(params: Dict[str, Any]) -> str:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info("="*100)
+        logger.info(f"[CODEGEN_V4_ENTRY] PeriodComparisonCodeGen.generate() - FILE VERSION 2024-12-03-V4")
+        logger.info("="*100)
+        
         comparison_type = params.get("comparison_type", "lag")
         period_granularity = params.get("period_granularity", "month")
         shift_periods = params.get("shift_periods")  # Can be None for specific period comparisons
         compare_periods = params.get("compare_periods")  # Specific periods
         output_format = params.get("output_format", "percentage")
+        
+        logger.info(f"[CODEGEN_ENTRY] compare_periods={compare_periods}, group_by_columns={params.get('group_by_columns')}")
         
         # 🔥 NEW: Get actual column to use (might be helper column)
         metric_column = params.get("metric_column") or params.get("values", "case_id")
@@ -178,16 +193,21 @@ class PeriodComparisonCodeGen(OperationCodeGenerator):
         group_by = params.get("group_by_columns", [])
         date_column = params.get("date_column")
         aggfunc = params.get("aggfunc", "count")
+        temporal_filters = params.get("temporal_filters", [])
         
         # 🔥 NEW: Adjust aggfunc if using helper column
         if has_helper_column and aggfunc == 'count':
             aggfunc = 'sum'  # Sum the helper column instead of counting
         
         # SPECIFIC PERIOD COMPARISON (Q3 vs Q4, Jan vs Feb)
+        logger.info(f"[CODEGEN_BRANCH] Checking: compare_periods={compare_periods}, len={len(compare_periods) if compare_periods else 0}")
         if compare_periods and len(compare_periods) >= 2:
+            logger.info(f"[CODEGEN_BRANCH] ✅ Taking SPECIFIC PERIODS path (calling _generate_specific_periods)")
             return PeriodComparisonCodeGen._generate_specific_periods(
-                compare_periods, metric_column, group_by, date_column, aggfunc, has_helper_column
+                compare_periods, metric_column, group_by, date_column, aggfunc, has_helper_column, temporal_filters
             )
+        else:
+            logger.info(f"[CODEGEN_BRANCH] ❌ Taking SHIFT-BASED path (NOT specific periods) - this is likely WRONG for Q1 vs Q2!")
         
         # For shift-based comparisons, default shift_periods to 1 if not provided
         if shift_periods is None:
@@ -311,39 +331,174 @@ result = result.with_columns((pl.col('{aggfunc}') / pl.col('previous_{period_gra
         return code
     
     @staticmethod
-    def _generate_specific_periods(compare_periods, metric_column, group_by, date_column, aggfunc, has_helper_column=False):
-        """Generate code for comparing specific periods (e.g., Q1 vs Q2 2025)"""
+    def _generate_specific_periods(compare_periods, metric_column, group_by, date_column, aggfunc, has_helper_column=False, temporal_filters=None):
+        """
+        Generate code for comparing specific periods (e.g., Q1 vs Q2 2025, Feb vs Mar 2025)
         
-        # Parse periods to determine granularity and year
-        period1 = compare_periods[0]
-        period2 = compare_periods[1]
+        Uses pre-built filter expressions from temporal_filters when available,
+        ensuring consistent column naming across aggregation and percentage calculations.
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"[CODEGEN] _generate_specific_periods called")
+        logger.info(f"[CODEGEN] compare_periods={compare_periods}, group_by={group_by}, aggfunc={aggfunc}")
         
-        # Detect granularity
-        if "Q" in period1.upper():
-            granularity = "quarter"
-        elif any(month in period1 for month in ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]):
-            granularity = "month"
-        else:
-            granularity = "year"
+        if temporal_filters is None:
+            temporal_filters = []
         
-        code = f"""# Specific Period Comparison: {period1} vs {period2}
-"""
+        # Normalize period labels for consistent column naming
+        period1_label = PeriodComparisonCodeGen._normalize_period_label(compare_periods[0])
+        period2_label = PeriodComparisonCodeGen._normalize_period_label(compare_periods[1]) if len(compare_periods) > 1 else None
         
-        # Convert date column to datetime if it's a string
-        code += f"""# Convert date column to datetime if it's a string
+        logger.info(f"[CODEGEN] period1_label={period1_label}, period2_label={period2_label}")
+        
+        code = f"""# Specific Period Comparison: {period1_label} vs {period2_label}
+# Convert date column to datetime if it's a string
 if df['{date_column}'].dtype in [pl.String, pl.Utf8]:
     df = df.with_columns(pl.col('{date_column}').str.to_datetime())
 """
         
-        # Add period extraction based on granularity
-        if granularity == "quarter":
-            code += f"df = df.with_columns(pl.col('{date_column}').dt.quarter().alias('quarter'))\n"
-            code += f"df = df.with_columns(pl.col('{date_column}').dt.year().alias('year'))\n"
+        logger.info(f"[CODEGEN_PATH] temporal_filters length: {len(temporal_filters)}")
+        logger.info(f"[CODEGEN_PATH] temporal_filters: {temporal_filters}")
+        
+        # Use pre-built filter expressions if available, otherwise fallback to manual parsing
+        if len(temporal_filters) >= 2:
+            # Use pre-built filter expressions (preferred - more reliable)
+            filter_expr1 = temporal_filters[0].get('filter_expression', '')
+            filter_expr2 = temporal_filters[1].get('filter_expression', '')
             
+            if filter_expr1 and filter_expr2:
+                # Extract just the condition part (remove "df.filter(" and trailing ")")
+                filter_expr1 = PeriodComparisonCodeGen._extract_filter_condition(filter_expr1)
+                filter_expr2 = PeriodComparisonCodeGen._extract_filter_condition(filter_expr2)
+                
+                code += f"""
+# Filter for the two periods using pre-built expressions
+df_p1 = df.filter({filter_expr1})
+df_p2 = df.filter({filter_expr2})
+"""
+            else:
+                # Fallback to manual parsing
+                code += PeriodComparisonCodeGen._generate_period_filters_fallback(
+                    compare_periods, date_column
+                )
+        else:
+            # Fallback to manual parsing
+            code += PeriodComparisonCodeGen._generate_period_filters_fallback(
+                compare_periods, date_column
+            )
+        
+        # Aggregate for each period
+        agg_expr = PeriodComparisonCodeGen._get_polars_agg(aggfunc, metric_column)
+        
+        logger.info(f"[CODEGEN] group_by is {'EMPTY' if not group_by else f'NOT EMPTY: {group_by}'}")
+        
+        if group_by:
+            # Grouped comparison - result will have dimensions + two period columns
+            logger.info(f"[CODEGEN] Taking GROUPED branch - will create columns '{period1_label}' and '{period2_label}'")
+            code += f"""
+# Aggregate by groups
+agg_p1 = df_p1.group_by({group_by}).agg({agg_expr}.alias('{period1_label}'))
+agg_p2 = df_p2.group_by({group_by}).agg({agg_expr}.alias('{period2_label}'))
+
+# Merge results
+result = agg_p1.join(agg_p2, on={group_by}, how='outer')
+
+# Calculate percentage change
+result = result.with_columns(
+    ((pl.col('{period2_label}') - pl.col('{period1_label}')) / pl.col('{period1_label}') * 100).round(2).alias('percentage_change')
+)
+"""
+        else:
+            # Non-grouped comparison - result will have two period columns in separate rows
+            logger.info(f"[CODEGEN] Taking NON-GROUPED branch - will create 'period' and 'value' columns")
+            code += f"""
+# Aggregate totals
+val_p1 = df_p1.select({agg_expr}).item()
+val_p2 = df_p2.select({agg_expr}).item()
+
+# Create result with consistent column naming
+result = pl.DataFrame({{
+    'period': ['{period1_label}', '{period2_label}'],
+    'value': [val_p1, val_p2]
+}})
+
+# Calculate percentage change (from period1 to period2)
+pct_change = ((val_p2 - val_p1) / val_p1 * 100) if val_p1 != 0 else 0.0
+result = result.with_columns(pl.lit(pct_change).round(2).alias('percentage_change'))
+"""
+        
+        logger.info(f"[CODEGEN] Generated code length: {len(code)} chars")
+        logger.info(f"[CODEGEN_RESULT] Returning from _generate_specific_periods()")
+        logger.info(f"[CODEGEN_RESULT] Code contains 'value' column: {'value' in code}")
+        logger.info(f"[CODEGEN_RESULT] Code contains '{aggfunc}' column: {'{aggfunc}' in code}")
+        logger.info(f"[CODEGEN_RESULT] Last 600 chars of code:\n{code[-600:]}")
+        
+        return code
+    
+    @staticmethod
+    def _normalize_period_label(period_str):
+        """
+        Normalize period labels for consistent naming.
+        Examples: 'Q1 2025' -> 'Q1 2025', 'february 2025' -> 'February 2025'
+        """
+        import re
+        
+        # Capitalize first letter of month names
+        month_names = {
+            'january': 'January', 'february': 'February', 'march': 'March',
+            'april': 'April', 'may': 'May', 'june': 'June',
+            'july': 'July', 'august': 'August', 'september': 'September',
+            'october': 'October', 'november': 'November', 'december': 'December'
+        }
+        
+        period_lower = period_str.lower()
+        for month_lower, month_proper in month_names.items():
+            if month_lower in period_lower:
+                return period_str.replace(month_lower, month_proper).replace(month_lower.capitalize(), month_proper)
+        
+        # Handle quarter abbreviations (Q1, q1 -> Q1)
+        period_str = re.sub(r'q(\d)', r'Q\1', period_str, flags=re.IGNORECASE)
+        
+        return period_str
+    
+    @staticmethod
+    def _extract_filter_condition(filter_expression):
+        """
+        Extract or validate the filter condition.
+        The pre-built expressions are already just conditions (no df.filter wrapper),
+        so this mainly validates and returns them as-is.
+        """
+        # Pre-built expressions from _build_temporal_filter_expression are already conditions
+        # They look like: "((df['date'].dt.month() == 2) & (df['date'].dt.year() == 2025))"
+        # We just need to ensure they're ready to use in df.filter()
+        return filter_expression
+    
+    @staticmethod
+    def _generate_period_filters_fallback(compare_periods, date_column):
+        """
+        Generate period filters by parsing period strings (fallback when pre-built expressions unavailable).
+        """
+        period1 = compare_periods[0]
+        period2 = compare_periods[1] if len(compare_periods) > 1 else compare_periods[0]
+        
+        # Detect granularity
+        if "Q" in period1.upper():
+            granularity = "quarter"
+        elif any(month.lower() in period1.lower() for month in ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"]):
+            granularity = "month"
+        else:
+            granularity = "year"
+        
+        code = ""
+        
+        if granularity == "quarter":
             # Parse quarters and years
             q1, y1 = PeriodComparisonCodeGen._parse_quarter(period1)
             q2, y2 = PeriodComparisonCodeGen._parse_quarter(period2)
             
+            code += f"df = df.with_columns(pl.col('{date_column}').dt.quarter().alias('quarter'))\n"
+            code += f"df = df.with_columns(pl.col('{date_column}').dt.year().alias('year'))\n"
             code += f"""
 # Filter for the two quarters
 df_p1 = df.filter((pl.col('quarter') == {q1}) & (pl.col('year') == {y1}))
@@ -351,13 +506,12 @@ df_p2 = df.filter((pl.col('quarter') == {q2}) & (pl.col('year') == {y2}))
 """
         
         elif granularity == "month":
-            code += f"df = df.with_columns(pl.col('{date_column}').dt.month().alias('month'))\n"
-            code += f"df = df.with_columns(pl.col('{date_column}').dt.year().alias('year'))\n"
-            
             # Parse months and years
             m1, y1 = PeriodComparisonCodeGen._parse_month(period1)
             m2, y2 = PeriodComparisonCodeGen._parse_month(period2)
             
+            code += f"df = df.with_columns(pl.col('{date_column}').dt.month().alias('month'))\n"
+            code += f"df = df.with_columns(pl.col('{date_column}').dt.year().alias('year'))\n"
             code += f"""
 # Filter for the two months
 df_p1 = df.filter((pl.col('month') == {m1}) & (pl.col('year') == {y1}))
@@ -365,57 +519,43 @@ df_p2 = df.filter((pl.col('month') == {m2}) & (pl.col('year') == {y2}))
 """
         
         else:  # year
-            code += f"df = df.with_columns(pl.col('{date_column}').dt.year().alias('year'))\n"
-            
             y1 = PeriodComparisonCodeGen._parse_year(period1)
             y2 = PeriodComparisonCodeGen._parse_year(period2)
             
+            code += f"df = df.with_columns(pl.col('{date_column}').dt.year().alias('year'))\n"
             code += f"""
 # Filter for the two years
 df_p1 = df.filter(pl.col('year') == {y1})
 df_p2 = df.filter(pl.col('year') == {y2})
 """
         
-        # Aggregate for each period
-        if group_by:
-            agg_expr = PeriodComparisonCodeGen._get_polars_agg(aggfunc, metric_column)
-            code += f"""
-# Aggregate by groups
-agg_p1 = df_p1.group_by({group_by}).agg({agg_expr}.alias('{period1}'))
-agg_p2 = df_p2.group_by({group_by}).agg({agg_expr}.alias('{period2}'))
-
-# Merge results
-result = agg_p1.join(agg_p2, on={group_by}, how='outer')
-"""
-        else:
-            agg_expr = PeriodComparisonCodeGen._get_polars_agg(aggfunc, metric_column)
-            code += f"""
-# Aggregate totals
-val_p1 = df_p1.select({agg_expr}).item()
-val_p2 = df_p2.select({agg_expr}).item()
-
-# Create result
-result = pl.DataFrame({{
-    'period': ['{period1}', '{period2}'],
-    '{aggfunc}': [val_p1, val_p2]
-}})
-"""
-        
-        # Add comparison metrics
-        code += f"""
-# Calculate percentage change
-result = result.with_columns(
-    ((pl.col('{period2}') - pl.col('{period1}')) / pl.col('{period1}') * 100).round(2).alias('percentage_change')
-)
-"""
-        
         return code
     
     @staticmethod
     def _parse_quarter(period_str):
-        """Parse quarter string like 'Q1 2025' into (quarter, year)"""
+        """Parse quarter string like 'Q1 2025', 'first quarter', '1st quarter' into (quarter, year)"""
+        period_lower = period_str.lower()
+        
+        # Handle written quarter names
+        quarter_names = {
+            'first': 1, '1st': 1,
+            'second': 2, '2nd': 2,
+            'third': 3, '3rd': 3,
+            'fourth': 4, '4th': 4
+        }
+        
+        quarter = 1  # default
+        
+        # Check for written quarter names
+        for name, num in quarter_names.items():
+            if name in period_lower and 'quarter' in period_lower:
+                quarter = num
+                break
+        
+        # Check for Q1, Q2, etc. format
         match = re.search(r'Q(\d)', period_str, re.IGNORECASE)
-        quarter = int(match.group(1)) if match else 1
+        if match:
+            quarter = int(match.group(1))
         
         year_match = re.search(r'(\d{4})', period_str)
         year = int(year_match.group(1)) if year_match else datetime.now().year
@@ -424,16 +564,30 @@ result = result.with_columns(
     
     @staticmethod
     def _parse_month(period_str):
-        """Parse month string like 'Jan 2025' into (month, year)"""
+        """Parse month string like 'Jan 2025', 'February 2025', 'march 2025' into (month, year)"""
+        # Full month names and abbreviations
         month_map = {
-            'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
-            'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12
+            'january': 1, 'jan': 1,
+            'february': 2, 'feb': 2,
+            'march': 3, 'mar': 3,
+            'april': 4, 'apr': 4,
+            'may': 5,
+            'june': 6, 'jun': 6,
+            'july': 7, 'jul': 7,
+            'august': 8, 'aug': 8,
+            'september': 9, 'sep': 9, 'sept': 9,
+            'october': 10, 'oct': 10,
+            'november': 11, 'nov': 11,
+            'december': 12, 'dec': 12
         }
         
+        period_lower = period_str.lower()
         month = 1
-        for month_name, month_num in month_map.items():
-            if month_name in period_str.lower():
-                month = month_num
+        
+        # Check full names first (longer matches have priority)
+        for month_name in sorted(month_map.keys(), key=len, reverse=True):
+            if month_name in period_lower:
+                month = month_map[month_name]
                 break
         
         year_match = re.search(r'(\d{4})', period_str)
@@ -1219,12 +1373,29 @@ df_filtered = df.clone()
 """
             
             # Use len() to avoid collision
-            return f"""{filter_code}
+            base_code = f"""{filter_code}
 # Grouped Aggregation (collision avoided - using len instead of count)
 result = df_filtered.group_by({group_by}).agg([
     pl.len().alias('count')
 ])
 """
+            
+            # Add sorting and limiting if requested (for top/bottom N queries)
+            limit_results = params.get("limit_results") or params.get("top_n")
+            if limit_results:
+                is_bottom_query = params.get("is_bottom_query", False)
+                # For collision case, we always use 'count' as the sort column
+                sort_column = "count"
+                descending = not is_bottom_query  # Top = descending (largest first), Bottom = ascending (smallest first)
+                
+                limit_code = f"""
+# Sort and limit to {'bottom' if is_bottom_query else 'top'} {limit_results}
+result = result.sort('{sort_column}', descending={descending})
+result = result.head({limit_results})
+"""
+                return base_code + limit_code
+            
+            return base_code
         
         # Build aggregation expressions
         agg_exprs = []
@@ -1291,6 +1462,25 @@ result = df_filtered.select([
     {agg_list}
 ])
 """
+        
+        # Add sorting and limiting if requested (for top/bottom N queries)
+        limit_results = params.get("limit_results") or params.get("top_n")
+        if limit_results and group_by:  # Only apply limit for grouped aggregations (not simple aggregations)
+            is_bottom_query = params.get("is_bottom_query", False)
+            
+            # Determine sort column from the first aggregation function
+            # The alias is the function name itself (e.g., 'sum', 'mean', 'count')
+            sort_column = adjusted_agg_functions[0] if adjusted_agg_functions else "sum"
+            
+            # Top = descending (largest first), Bottom = ascending (smallest first)
+            descending = not is_bottom_query
+            
+            limit_code = f"""
+# Sort and limit to {'bottom' if is_bottom_query else 'top'} {limit_results}
+result = result.sort('{sort_column}', descending={descending})
+result = result.head({limit_results})
+"""
+            return filter_code + agg_code + limit_code
         
         return filter_code + agg_code
     

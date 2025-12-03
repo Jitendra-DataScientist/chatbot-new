@@ -165,11 +165,15 @@ class PeriodComparisonNode(BaseOperationNode):
                 if filter_entry is not None
             ],
 
-            # NEW: Extract limit and query type information for ranking operations
-            # 🔥 FIX BY JITENDRA: Extract limit directly from query text, ignore Stage 2 limit (returns wrong default of 10)
-            'limit_results': self._extract_top_n_limit_simple(state.get("query", "")),
-            'is_top_query': RankingCodeGen._detect_top_query(state.get("query", "")),
-            'is_bottom_query': RankingCodeGen._detect_bottom_query(state.get("query", ""))
+            # NEW: Extract limit and query type information for ranking/aggregation operations
+            # These are extracted by _build_operation_params in nl_to_python_workflow.py
+            # and stored in state['operation_params'] - we pass them through here
+            'limit_results': state.get("operation_params", {}).get("limit_results") or getattr(stage2_result, "limit_results", None),
+            'top_n': state.get("operation_params", {}).get("top_n") or getattr(stage2_result, "top_n", None),
+            'is_top_query': state.get("operation_params", {}).get("is_top_query", False),
+            'is_bottom_query': state.get("operation_params", {}).get("is_bottom_query", False),
+            # Helper column flag (for identifier column counting)
+            'has_helper_column': state.get("operation_params", {}).get("has_helper_column", False)
 
         }
         
