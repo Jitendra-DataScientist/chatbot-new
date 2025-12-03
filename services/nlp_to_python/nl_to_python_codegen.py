@@ -423,11 +423,11 @@ result = pl.DataFrame({{
     'value': [val_p1, val_p2]
 }})
 
-# Calculate percentage change (from period1 to period2)
-pct_change = ((val_p2 - val_p1) / val_p1 * 100) if val_p1 != 0 else 0.0
-result = result.with_columns(pl.lit(pct_change).round(2).alias('percentage_change'))
+# Calculate percentage change (from previous period to current)
+result = result.with_columns(
+    (pl.col('value').pct_change() * 100).round(2).fill_null('').alias('percentage_change')
+)
 """
-        
         logger.info(f"[CODEGEN] Generated code length: {len(code)} chars")
         logger.info(f"[CODEGEN_RESULT] Returning from _generate_specific_periods()")
         logger.info(f"[CODEGEN_RESULT] Code contains 'value' column: {'value' in code}")
