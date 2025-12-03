@@ -479,7 +479,7 @@ class NLToPythonGeneratorV5:
             df_sample: Sample dataframe for statistical checks
             
         Returns:
-            True if column is an identifier (case ID, ticket number, etc.)
+            True if column is an identifier (record ID, transaction number, etc.)
         """
         # Get metadata for this specific workbook
         self.logger.info(f"🔍 DEBUG: _is_identifier_column called with column='{column_name}', workbook='{workbook_name}'")
@@ -745,7 +745,7 @@ Column Description Queries:
             self.logger.info("[FALLBACK_STAGE1] 🔥 Detected composition/breakdown query - Collision detection by Aniket")
             
             # For composition queries, find the grouping column (usually after "by")
-            # e.g., "percentage composition by account status" -> group_by = ['account_status']
+            # e.g., "percentage composition by [dimension]" -> group_by = ['dimension_column']
             
             # Simple heuristic: look for column names in the query
             found_columns = [col for col in df_columns if col.lower() in query_lower]
@@ -839,7 +839,7 @@ CRITICAL - group_by_columns for period_comparison:
   → This ensures result has 2 rows: one for each period with totals
   
 - If comparing periods WITH breakdown by a business dimension (e.g., "compare by country Q1 vs Q2", "product sales Q1 vs Q2"):
-  → Set group_by_columns = [dimension_column] (e.g., ['account_country'], ['product'])
+  → Set group_by_columns = [dimension_column] (e.g., ['dimension_col_1'], ['dimension_col_2'])
   → Remove any date-related columns from group_by_columns (month, week, day, create_month, etc.)
   → This ensures result has one row per dimension value, with separate columns for each period
   
@@ -848,13 +848,13 @@ CRITICAL - group_by_columns for period_comparison:
   → Common date columns to remove: create_month, create_week, create_day, date, month, week, day, year, quarter
   
 Examples:
-  Query: "compare ticket count Q1 vs Q2 2025"
+  Query: "compare [metric_column] [period1] vs [period2]"
   → group_by_columns = [] (simple period comparison, no dimensions)
   
-  Query: "compare sales by product Q1 vs Q2"
-  → group_by_columns = ['product'] (has business dimension)
+  Query: "compare [metric_column] by [dimension] [period1] vs [period2]"
+  → group_by_columns = [dimension_column] (has business dimension)
   
-  Query: "compare India tickets Q1 vs Q2" (if Stage 1 had group_by=['create_month'])
+  Query: "compare [filter_value] [metric_column] [period1] vs [period2]" (if Stage 1 had group_by=['date_column'])
   → group_by_columns = [] (override Stage 1, remove date column)"""},
                 {"role": "user", "content": f"""
 Original Query: {query}
@@ -1705,7 +1705,7 @@ if '{date_column}' in df.columns:
 """
         
         # 🆕 IDENTIFIER DETECTION: Check if metric column is an identifier BEFORE processing
-        # This handles columns like "Number of Tickets" which return case IDs
+        # This handles columns like count/number columns which return record IDs
         workbook_name = getattr(self, '_current_workbook_name', None)
         
         self.logger.info(f"🔍 DEBUG: In _generate_data_cleaning_code:")
@@ -1727,7 +1727,7 @@ if '{date_column}' in df.columns:
                 self.logger.info(f"   → Using helper column for row counting instead of summing identifier values")
                 
                 cleaning_code += f"""# ⚡ IDENTIFIER COLUMN DETECTED: '{metric_column}'
-# Metadata indicates this column contains identifiers (case IDs, ticket numbers, etc.)
+# Metadata indicates this column contains identifiers (record IDs, transaction numbers, etc.)
 # Using helper column for row counting instead of summing identifier values
 df = df.with_columns(pl.lit(1).alias('_count_helper'))
 

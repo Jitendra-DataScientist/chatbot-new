@@ -187,7 +187,7 @@ class PeriodComparisonCodeGen(OperationCodeGenerator):
         logger.info(f"[CODEGEN_ENTRY] compare_periods={compare_periods}, group_by_columns={params.get('group_by_columns')}")
         
         # 🔥 NEW: Get actual column to use (might be helper column)
-        metric_column = params.get("metric_column") or params.get("values", "case_id")
+        metric_column = params.get("metric_column") or params.get("values")
         has_helper_column = params.get("has_helper_column", False)
         
         group_by = params.get("group_by_columns", [])
@@ -655,7 +655,7 @@ class TimeSeriesCodeGen(OperationCodeGenerator):
     def generate(params: Dict[str, Any]) -> str:
         analysis_type = params.get("analysis_type", "trend")
         date_column = params.get("date_column")
-        metric_column = params.get("metric_column", "case_id")
+        metric_column = params.get("metric_column")
         has_helper_column = params.get("has_helper_column", False)
         group_by = params.get("group_by_columns", [])
         aggfunc = params.get("aggfunc", "count")
@@ -676,7 +676,7 @@ if df['{date_column}'].dtype in [pl.String, pl.Utf8]:
         
         # Add type conversion for numeric operations if needed
         numeric_ops = ['sum', 'mean', 'avg', 'median', 'std', 'var', 'min', 'max']
-        if aggfunc in numeric_ops and metric_column and metric_column != 'case_id':
+        if aggfunc in numeric_ops and metric_column and not params.get('has_helper_column', False):
             code += f"""# Convert {metric_column} to numeric type if it's a string
 if df['{metric_column}'].dtype == pl.String or df['{metric_column}'].dtype == pl.Utf8:
     df = df.with_columns(
@@ -808,7 +808,7 @@ class ComparisonCodeGen(OperationCodeGenerator):
     @staticmethod
     def generate(params: Dict[str, Any]) -> str:
         dimension = params["dimension"]
-        metric_column = params.get("metric_column", "case_id")
+        metric_column = params.get("metric_column")
         has_helper_column = params.get("has_helper_column", False)
         aggfunc = params.get("aggfunc", "count")
         filter_top_n = params.get("filter_top_n")
@@ -853,7 +853,7 @@ class PivotCodeGen(OperationCodeGenerator):
     def generate(params: Dict[str, Any]) -> str:
         index = params["index"]
         columns = params["columns"]
-        values = params.get("values", "case_id")
+        values = params.get("values")
         aggfunc = params.get("aggfunc", "count")
         has_helper_column = params.get("has_helper_column", False)
         
@@ -998,7 +998,7 @@ class BreakdownCodeGen(OperationCodeGenerator):
     @staticmethod
     def generate(params: Dict[str, Any]) -> str:
         dimensions = params["dimensions"]
-        metric_column = params.get("metric_column", "case_id")
+        metric_column = params.get("metric_column")
         has_helper_column = params.get("has_helper_column", False)
         aggfunc = params.get("aggfunc", "count")
         
@@ -1012,7 +1012,7 @@ class BreakdownCodeGen(OperationCodeGenerator):
         
         # Add type conversion for numeric operations if needed
         numeric_ops = ['sum', 'mean', 'avg', 'median', 'std', 'var', 'min', 'max']
-        if aggfunc in numeric_ops and metric_column and metric_column != 'case_id':
+        if aggfunc in numeric_ops and metric_column and not params.get('has_helper_column', False):
             code += f"""# Convert {metric_column} to numeric type if it's a string
 if df['{metric_column}'].dtype == pl.String or df['{metric_column}'].dtype == pl.Utf8:
     df = df.with_columns(
@@ -1149,7 +1149,7 @@ class RankingCodeGen(OperationCodeGenerator):
                 metric_col = column
                 # Add type conversion for numeric operations
                 numeric_ops = ['sum', 'mean', 'avg', 'median', 'std', 'var', 'min', 'max']
-                if aggfunc in numeric_ops and column and column != 'case_id':
+                if aggfunc in numeric_ops and column and not params.get('has_helper_column', False):
                     code += f"""# Convert {column} to numeric type if it's a string
 if df['{column}'].dtype == pl.String or df['{column}'].dtype == pl.Utf8:
     df = df.with_columns(
@@ -1437,7 +1437,7 @@ df_filtered = df.clone()
         needs_numeric_conversion = any(func in numeric_ops for func in adjusted_agg_functions)
         
         type_conversion_code = ""
-        if needs_numeric_conversion and agg_column and agg_column != 'case_id':
+        if needs_numeric_conversion and agg_column and not params.get('has_helper_column', False):
             type_conversion_code = f"""# Convert {agg_column} to numeric type if it's a string
 if df_filtered['{agg_column}'].dtype == pl.String or df_filtered['{agg_column}'].dtype == pl.Utf8:
     df_filtered = df_filtered.with_columns(
