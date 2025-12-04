@@ -824,6 +824,46 @@ Special handling:
 - If operation_intent='column_description', use operations=['column_description'] with high confidence (0.95)
 - Column description queries don't need temporal filters or complex aggregations
 
+CRITICAL - Distinguishing Aggregation from Ranking:
+
+1. Ranking Queries (top/bottom/lowest/highest with comparative intent):
+   Query patterns:
+   - "[DIMENSION] with lowest [METRIC]"
+   - "[DIMENSION] with highest [METRIC]" 
+   - "top [N] [DIMENSION] by [METRIC]"
+   - "bottom [N] [DIMENSION] by [METRIC]"
+   - "which [DIMENSION] has most/least [METRIC]"
+   
+   Operation logic:
+   - Use operations=['grouped_aggregation']
+   - Set agg_functions=['count'] for counting metrics (identifiers, ticket numbers, case numbers, etc.)
+   - Set agg_functions=['sum']/['mean']/etc. for numeric metrics
+   - Do NOT set agg_functions=['min'] or ['max'] 
+   - The system handles sorting via is_top_query/is_bottom_query detection
+   
+2. Aggregation Queries (computing min/max/avg value within groups):
+   Query patterns:
+   - "minimum [METRIC] per [DIMENSION]"
+   - "maximum [METRIC] by [DIMENSION]"
+   - "average [METRIC] for each [DIMENSION]"
+   - "min/max/mean/median of [METRIC]"
+   
+   Operation logic:
+   - Use operations=['grouped_aggregation']
+   - Set agg_functions=['min'], ['max'], ['mean'], ['median'] etc.
+   - These compute statistical aggregates within groups
+
+Key Distinction:
+- "which [DIMENSION] has lowest [METRIC_COUNT]" → rank by count → agg_functions=['count']
+- "lowest [METRIC_VALUE] per [DIMENSION]" → min within group → agg_functions=['min']
+
+Examples:
+  Query: "which [dimension_col] has lowest [count_metric]"
+  → agg_functions=['count'] (NOT ['min'])
+  
+  Query: "minimum [value_metric] per [dimension_col]"
+  → agg_functions=['min']
+
 For period_comparison operations:
 - Extract specific periods being compared from temporal_intent (e.g., 'Q1 2025', 'Q2 2025', 'February 2025', 'March 2025')
 - Set compare_periods with the extracted periods as a list (e.g., ['Q1 2025', 'Q2 2025'])
@@ -881,11 +921,58 @@ Create execution plan:"""}
             self.logger.info(f"[STAGE2] ✅ Plan: operations={result.operations}, confidence={result.confidence}")
             self.logger.info(f"[STAGE2_DEBUG] group_by_columns from Stage 2: {result.group_by_columns}")
             self.logger.info(f"[STAGE2_DEBUG] compare_periods from Stage 2: {getattr(result, 'compare_periods', None)}")
+            
+            # Validate and correct Stage 2 results
+            result = self._validate_and_correct_stage2(result, query)
+            
             return result
             
         except Exception as e:
             self.logger.error(f"[STAGE2] Error: {e}")
             return self._fallback_stage2(stage1_grounded)
+    
+    def _validate_and_correct_stage2(self, stage2_result, query: str):
+        """
+        Validate and correct common Stage 2 LLM mistakes
+        
+        Detects ranking vs aggregation semantic mismatches using pattern analysis.
+        This is a defense-in-depth layer that catches cases where the LLM prompt
+        might not prevent the confusion between ranking and aggregation.
+        
+        Args:
+            stage2_result: Stage 2 plan from LLM
+            query: Original user query
+            
+        Returns:
+            Corrected Stage 2 plan
+        """
+        query_lower = query.lower()
+        
+        # Pattern 1: Ranking queries (comparative/superlative with dimension)
+        # Examples: "which X has", "X with most", "top N X", "bottom N X"
+        ranking_patterns = [
+            r'\b(which|what)\s+\w+\s+(has|have)\s+(most|least|highest|lowest|maximum|minimum)',
+            r'\b\w+\s+with\s+(most|least|highest|lowest|top|bottom)',
+            r'\b(top|bottom)\s+\d*\s*\w+',
+        ]
+        
+        is_ranking_query = any(
+            re.search(pattern, query_lower) 
+            for pattern in ranking_patterns
+        )
+        
+        # Check if agg_functions conflicts with ranking intent
+        agg_funcs = getattr(stage2_result, 'agg_functions', None) or []
+        group_by = getattr(stage2_result, 'group_by_columns', None)
+        
+        if is_ranking_query and group_by and ('min' in agg_funcs or 'max' in agg_funcs):
+            self.logger.warning(
+                f"[STAGE2_CORRECTION] Ranking query pattern detected but agg_functions={agg_funcs}. "
+                f"Query: '{query}'. Correcting to ['count'] for proper ranking."
+            )
+            stage2_result.agg_functions = ['count']
+            
+        return stage2_result
     
     def _fallback_stage2(self, stage1_grounded):
         """Fallback Stage 2 when LLM is not available"""
