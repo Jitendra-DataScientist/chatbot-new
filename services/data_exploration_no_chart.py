@@ -839,13 +839,22 @@ class data_exploration:
                     master_logger.info(f"[TABLE_FORMAT] ✅ Preserving time series chronological order for '{time_series_col}'")
                     df = df.head(max_display_rows)
                 else:
-                    # For other data, sort by last column if numeric
-                    value_col = df.columns[-1]
-                    master_logger.info(f"[TABLE_FORMAT] Not time series, sorting by last column '{value_col}' descending")
-                    if df[value_col].dtype in [pl.Int8, pl.Int16, pl.Int32, pl.Int64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64, pl.Float32, pl.Float64]:
-                        df = df.sort(value_col, descending=True).head(max_display_rows)
-                    else:
+                    # Extract ranking flags from nl_result to determine sorting
+                    is_bottom_query = getattr(nl_result, 'is_bottom_query', False) if nl_result else False
+                    is_top_query = getattr(nl_result, 'is_top_query', False) if nl_result else False
+                    
+                    # For ranking queries, preserve code-generated order; otherwise apply default sorting
+                    if is_bottom_query or is_top_query:
+                        master_logger.info(f"[TABLE_FORMAT] ✅ Preserving {'bottom' if is_bottom_query else 'top'} ranking order from generated code")
                         df = df.head(max_display_rows)
+                    else:
+                        # For non-ranking queries, sort by last column descending (default)
+                        value_col = df.columns[-1]
+                        master_logger.info(f"[TABLE_FORMAT] Not time series/ranking, sorting by last column '{value_col}' descending")
+                        if df[value_col].dtype in [pl.Int8, pl.Int16, pl.Int32, pl.Int64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64, pl.Float32, pl.Float64]:
+                            df = df.sort(value_col, descending=True).head(max_display_rows)
+                        else:
+                            df = df.head(max_display_rows)
             else:
                 df = df.head(max_display_rows)
 

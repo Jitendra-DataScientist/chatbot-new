@@ -145,7 +145,11 @@ class NLToPythonResult(BaseModel):
     # 🆕 Column extractions from Stage1 (for template engine)
     group_by_columns: Optional[List[str]] = Field(default=None, description="Columns used for grouping (extracted from Stage1)")
     metric_column: Optional[str] = Field(default=None, description="Main metric/aggregation column (extracted from Stage1)")
-    filter_column: Optional[str] = Field(default=None, description="Primary filter column (extracted from Stage1)") 
+    filter_column: Optional[str] = Field(default=None, description="Primary filter column (extracted from Stage1)")
+    
+    # 🆕 Ranking query flags (for proper display sorting)
+    is_bottom_query: bool = Field(default=False, description="True if query asks for lowest/bottom/least values")
+    is_top_query: bool = Field(default=False, description="True if query asks for highest/top/most values") 
 # ============================================================================
 # RAG and Vector Storage Models
 # ============================================================================

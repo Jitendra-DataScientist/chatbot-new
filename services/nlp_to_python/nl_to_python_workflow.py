@@ -649,13 +649,20 @@ class NLToPythonGeneratorV5:
             chart_type = self._suggest_chart_type(operation_type)
             confidence = stage2_result.confidence if hasattr(stage2_result, 'confidence') else 0.7
             
+            # Detect ranking query flags for proper display sorting
+            from services.nlp_to_python.nl_to_python_codegen import RankingCodeGen
+            is_top_query = RankingCodeGen._detect_top_query(query)
+            is_bottom_query = RankingCodeGen._detect_bottom_query(query)
+            
             final_result = NLToPythonResult(
                 original_query=query,
                 generated_code=generated_code,
                 operation_type=operation_type,
                 confidence=confidence,
                 suggested_chart_type=chart_type,
-                explanation=stage2_result.reasoning if hasattr(stage2_result, 'reasoning') else "Code generated successfully"
+                explanation=stage2_result.reasoning if hasattr(stage2_result, 'reasoning') else "Code generated successfully",
+                is_bottom_query=is_bottom_query,
+                is_top_query=is_top_query
             )
             
             self.logger.info(f"[GENERATE] ✅ Success - Generated {len(generated_code)} chars of code")
@@ -2174,7 +2181,9 @@ result = descriptions
                 operation_type='column_description',
                 confidence=confidence,
                 suggested_chart_type='table',  # Descriptions are best shown as tables
-                explanation=reasoning
+                explanation=reasoning,
+                is_bottom_query=False,  # Column descriptions are not ranking queries
+                is_top_query=False
             )
             
             self.logger.info(f"[COLUMN_DESC_DIRECT] ✅ Success - Generated descriptions for {len(describe_columns)} column(s)")
@@ -2741,7 +2750,9 @@ result = descriptions
             operation_type='column_description',
             confidence=0.0,
             suggested_chart_type='table',
-            explanation=f"Error: {error_message}"
+            explanation=f"Error: {error_message}",
+            is_bottom_query=False,
+            is_top_query=False
         )
 
     def _suggest_chart_type(self, operation_type: str) -> str:

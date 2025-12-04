@@ -1465,9 +1465,11 @@ result = df_filtered.select([
         
         # Add sorting and limiting if requested (for top/bottom N queries)
         limit_results = params.get("limit_results") or params.get("top_n")
-        if limit_results and group_by:  # Only apply limit for grouped aggregations (not simple aggregations)
-            is_bottom_query = params.get("is_bottom_query", False)
-            
+        is_bottom_query = params.get("is_bottom_query", False)
+        is_top_query = params.get("is_top_query", False)
+        
+        # Apply sorting for any ranking query (with or without limit)
+        if (is_bottom_query or is_top_query) and group_by:
             # Determine sort column from the first aggregation function
             # The alias is the function name itself (e.g., 'sum', 'mean', 'count')
             sort_column = adjusted_agg_functions[0] if adjusted_agg_functions else "sum"
@@ -1475,12 +1477,17 @@ result = df_filtered.select([
             # Top = descending (largest first), Bottom = ascending (smallest first)
             descending = not is_bottom_query
             
-            limit_code = f"""
-# Sort and limit to {'bottom' if is_bottom_query else 'top'} {limit_results}
+            sort_code = f"""
+# Sort by {sort_column} ({'descending' if descending else 'ascending'} for {'top' if is_top_query else 'bottom'} query)
 result = result.sort('{sort_column}', descending={descending})
-result = result.head({limit_results})
 """
-            return filter_code + agg_code + limit_code
+            
+            # Add limit if specified
+            if limit_results:
+                sort_code += f"""result = result.head({limit_results})
+"""
+            
+            return filter_code + agg_code + sort_code
         
         return filter_code + agg_code
     
