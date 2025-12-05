@@ -1336,9 +1336,53 @@ class data_exploration:
             master_logger.info(f"🔍 DEBUG: workbook_name extracted = {workbook_name}")
             master_logger.info(f"🔍 DEBUG: self.workbook_name = {getattr(self, 'workbook_name', 'NOT SET')}")
             
+            # 🆕 LAYER 0: Constrained parsing (always enabled)
+            try:
+                from services.layer0_constrained_parser import Layer0ConstrainedParser
+                
+                # Load calculated fields for this workbook from already-loaded metadata
+                calculated_fields = {}
+                if workbook_name and hasattr(self.nl_to_python, 'workbook_metadata'):
+                    calculated_fields = self.nl_to_python.workbook_metadata.get(workbook_name, {}).get('calculated_columns', {})
+                    master_logger.info(f"[LAYER0] Loaded {len(calculated_fields)} calculated fields from workbook metadata")
+                
+                master_logger.info("[LAYER0] Initializing constrained parser...")
+                layer0_parser = Layer0ConstrainedParser(
+                    df_sample=df_for_code,
+                    calculated_fields=calculated_fields,
+                    llm_client=self.llm_client
+                )
+                
+                master_logger.info(f"[LAYER0] Parsing query: '{query}'")
+                semantic_ir = layer0_parser.parse(query)
+                
+                master_logger.info(f"[LAYER0] ✅ Parsed to Semantic IR:")
+                master_logger.info(f"  - Intent: metric={semantic_ir.intent.metric}, "
+                                 f"aggregation={semantic_ir.intent.aggregation}, "
+                                 f"dimensions={semantic_ir.intent.dimensions}")
+                master_logger.info(f"  - Constraints: temporal={semantic_ir.constraints.temporal}, "
+                                 f"filters={len(semantic_ir.constraints.filters)}")
+                master_logger.info(f"  - Modifiers: ranking={semantic_ir.modifiers.ranking}, "
+                                 f"comparison={semantic_ir.modifiers.comparison}")
+                
+                # Convert Semantic IR to enhanced query hint for nl_to_python
+                # This guides nl_to_python without forcing specific behavior
+                query_with_hints = self._add_semantic_hints_to_query(query, semantic_ir)
+                master_logger.info(f"[LAYER0] Enhanced query: '{query_with_hints}'")
+                
+                # Use enhanced query
+                query_to_use = query_with_hints
+                
+            except Exception as layer0_error:
+                master_logger.error(f"[LAYER0] ❌ Parsing failed, falling back to original query")
+                master_logger.error(f"[LAYER0] Error: {type(layer0_error).__name__}: {layer0_error}")
+                import traceback
+                master_logger.error(f"[LAYER0] Traceback:\n{traceback.format_exc()}")
+                query_to_use = query
+            
             # Generate code using LangGraph workflow (using polars DataFrame directly)
             nl_result = self.nl_to_python.generate_python_code(
-                query=query,
+                query=query_to_use,
                 df_columns=list(df_for_code.columns),
                 df_sample=df_for_code,
                 workbook_name=workbook_name  # 🆕 Pass workbook_name for identifier detection
@@ -1461,3 +1505,66 @@ class data_exploration:
             
         except Exception as e:
             return None, f"Error executing code: {e}"
+    
+    def _add_semantic_hints_to_query(self, original_query: str, semantic_ir) -> str:
+        """
+        Convert Semantic IR to natural language hints that guide nl_to_python
+        
+        This doesn't force behavior, just provides clearer column names
+        and intent markers that help nl_to_python's existing logic
+        
+        Args:
+            original_query: Original user query
+            semantic_ir: Parsed semantic IR from Layer 0
+            
+        Returns:
+            Enhanced query with explicit column names
+        """
+        
+        # Build hint components
+        hints = []
+        
+        # Add metric hint with exact column name
+        metric = semantic_ir.intent.metric
+        agg = semantic_ir.intent.aggregation
+        hints.append(f"{agg} of {metric}")
+        
+        # Add grouping hint
+        if semantic_ir.intent.dimensions:
+            dimensions_str = ", ".join(semantic_ir.intent.dimensions)
+            hints.append(f"by {dimensions_str}")
+        
+        # Add temporal hint
+        if semantic_ir.constraints.temporal:
+            temporal = semantic_ir.constraints.temporal
+            if temporal.period == "month":
+                month_names = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+                             'July', 'August', 'September', 'October', 'November', 'December']
+                month_name = month_names[temporal.value] if isinstance(temporal.value, int) and 1 <= temporal.value <= 12 else str(temporal.value)
+                hints.append(f"for {month_name}")
+                if temporal.year:
+                    hints.append(str(temporal.year))
+            elif temporal.period == "quarter":
+                hints.append(f"for Q{temporal.value}")
+                if temporal.year:
+                    hints.append(str(temporal.year))
+            elif temporal.period == "year":
+                hints.append(f"for {temporal.value}")
+        
+        # Add ranking hint
+        if semantic_ir.modifiers.ranking:
+            ranking_type = semantic_ir.modifiers.ranking.get('type', 'top')
+            n = semantic_ir.modifiers.ranking.get('n', 10)
+            hints.append(f"{ranking_type} {n}")
+        
+        # Add comparison hint
+        if semantic_ir.modifiers.comparison:
+            hints.append(semantic_ir.modifiers.comparison.replace('_', ' '))
+        
+        # Combine hints into natural language
+        enhanced_query = " ".join(hints)
+        
+        master_logger.debug(f"[LAYER0_HINT] Original: '{original_query}'")
+        master_logger.debug(f"[LAYER0_HINT] Enhanced: '{enhanced_query}'")
+        
+        return enhanced_query
