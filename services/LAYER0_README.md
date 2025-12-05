@@ -1,187 +1,256 @@
-# Layer 0: Constrained Natural Language Parser
+# Layer 0: Query Normalizer with Driver-Aware Rephrasing
 
 ## Overview
 
-Layer 0 is a constrained NL-to-Semantic-IR parser that eliminates hallucination in column name and operation selection through:
-- **Constrained decoding** using Pydantic enums (forces exact column names)
-- **Spell checking** for column name typos and abbreviations
-- **Temporal keyword extraction** using regex (no LLM ambiguity)
-- **Generic semantic IR** output (dataset-agnostic, no hardcoding)
+Layer 0 is a reasoning-based query normalizer that uses GPT-4o mini with constrained decoding to:
+- **Reason about driver selection** - validates if driver requirements can be extracted from query
+- **Self-validate choices** - only selects drivers whose requirements are present/implied in query
+- **Make implicit facts explicit** - converts "trend" → "over time", adds clarifying context
+- **Select relevant drivers** from 16 predefined operation types (REQUIRED - not optional)
+- **Rephrase queries** to match patterns that already work in the system
+- **Fix grammar and spelling** without changing column names (e.g., "opn_volume" stays "opn_volume")
+- **Only pass normalized query forward** (driver hints stay internal)
 
 ## Architecture
 
 ```
-User Query
+User Query: "Weekly ticket volume trend"
     ↓
-[Pre-processing]
-  - Spell check column names (fuzzy matching)
-  - Extract temporal keywords (regex)
-  - Extract intent hints (keyword matching)
+[Layer 0: Query Normalizer]
+  GPT-4o mini + Constrained Decoding (instructor/Pydantic)
+  
+  Internal Processing:
+  1. Selects drivers: ["time_series"]
+  2. Knows time_series needs: metric + temporal dimension
+  3. Rephrases: "ticket volume trend by week"
+     (Shows metric + temporal structure for driver consumption)
+  
+  Output: "ticket volume trend by week"  ← Only this passes forward
     ↓
-[LLM with Constrained Decoding]
-  - Pydantic model with Literal[column_names]
-  - instructor library for auto-retry
-  - Forces exact column selection
+[Stage 1: Column Identification]
+  Sees normalized query
+  Maps: "ticket" → case_id, "week" → create_week
     ↓
-[Semantic IR]
-  - Intent: {metric, dimensions, aggregation}
-  - Constraints: {temporal, filters, limit}
-  - Modifiers: {comparison, ranking, calculation}
+[Stage 2: Operation Selection]
+  Independently decides operation based on structure + columns
+  (Does NOT see Layer 0's driver hints)
     ↓
-[nl_to_python]
-  - Receives enhanced query with exact column names
-  - Existing logic continues unchanged
+[Stage 3: Code Generation]
 ```
 
-## Key Features
+## Key Design Principles
 
-### 1. Zero Hallucination (Constrained Decoding)
+### 1. Reasoning-Based Driver Selection
+
+GPT-4o mini **reasons first** before selecting drivers:
+
+```
+Query: "weekly product sales trend"
+
+Step 1: Analyze
+- Intent: Show sales changes over weeks
+- Present: metric="sales", temporal="weekly", pattern="trend"
+- Implied: "trend" means time-based comparison
+
+Step 2: Validate Driver
+- time_series needs: metric + temporal
+- Can extract metric? YES ("sales")
+- Can extract temporal? YES ("weekly")
+- Conclusion: time_series is CORRECT
+
+Step 3: Normalize
+- Make "trend" explicit → "over time"
+- Output: "product sales by week over time"
+```
+
+**Key**: Only selects driver if ALL requirements can be extracted from query.
+
+### 2. Making Implicit Facts Explicit
+
+Layer 0 **can add facts** to clarify intent (not hallucination):
+
+```
+Input:  "weekly sales trend"
+Implied: "trend" = comparison over time
+Output: "sales by week over time"
+(Added "over time" to make temporal comparison explicit)
+
+Input:  "customer count growth"
+Implied: "growth" = change over periods
+Output: "customer count period over period"
+(Added "period over period" to clarify comparison intent)
+```
+
+**This helps Stage 1/Stage 2** understand the query structure better.
+
+### 3. Constrained Selection (MUST Choose Driver)
 ```python
-# Dynamic Pydantic model with column enums
-ColumnEnum = Literal[tuple(all_columns)]  # ONLY actual columns!
-
-class ParsedQuery(BaseModel):
-    metric: ColumnEnum  # ✅ Can ONLY be real column name
-    dimensions: List[ColumnEnum]  # ✅ Can ONLY be real column names
+class NormalizedQueryOutput(BaseModel):
+    selected_drivers: List[DriverType] = Field(
+        ...,
+        min_items=1,  # REQUIRED - must select at least 1
+        max_items=3
+    )
+    normalized_query: str
+    reasoning: Optional[str]  # Shows why drivers were selected
 ```
 
-**Result**: LLM **cannot** output non-existent column names.
+**GPT-4o mini cannot skip driver selection** - it MUST choose 1-3 from the 16 drivers after reasoning.
 
-### 2. Spell Checking (Pre-processing)
+### 4. Driver Hints Stay Internal
 ```python
-# Before LLM sees the query:
-"count of opn tickets" → "count of Open_Volume tickets"
-"tickts by cntry" → "tickets by account_country"
+# Layer 0 internally knows:
+{
+  "selected_drivers": ["time_series"],  # ← Not passed forward
+  "normalized_query": "ticket volume trend by week"  # ← Only this passes
+}
+
+# Stage 1 receives:
+"ticket volume trend by week"  # Clean, structured query
 ```
 
-**Strategies**:
-- Exact fuzzy matching (fuzzywuzzy)
-- Partial ratio matching
-- Acronym detection ("opn" → "O_pen_V_olume")
-- Substring matching
+**Why?**
+- Stage 2 makes final operation decision independently
+- Prevents bias from Layer 0's hints
+- If Layer 0 is slightly wrong, Stage 2 can correct it
 
-### 3. Temporal Extraction (Regex - No LLM)
+### 5. Preserves Column Names
 ```python
-# Extracted before LLM:
-"march 2025" → {"period": "month", "value": 3, "year": 2025}
-"Q2" → {"period": "quarter", "value": 2}
-"2024" → {"period": "year", "value": 2024}
+# ✅ Correct:
+"opn_volume by account_tier" → "opn_volume by account_tier"
+# Column names preserved exactly
+
+# ❌ Wrong:
+"opn_volume by account_tier" → "open_volume by account_tier"
+# DON'T change column names!
 ```
 
-**Benefits**: Prevents "March" from being matched to calculated fields.
+## The 16 Drivers
 
-### 4. Generic Semantic IR (No Hardcoding)
-```python
-# Works for ANY dataset:
-SemanticIR(
-    intent=Intent(metric="...", dimensions=[...], aggregation="..."),
-    constraints=Constraints(temporal=..., filters=[...]),
-    modifiers=Modifiers(ranking=..., comparison=...)
-)
-```
-
-**No references to**:
-- ❌ Specific column names ("Open_Volume", "create_week")
-- ❌ Specific workbooks ("FRO Dashboard")
-- ❌ Domain terminology ("SLA breach", "EMEA")
+| Driver | Requirements | Example |
+|--------|-------------|---------|
+| `time_series` | metric + temporal dimension | "sales trend by week" |
+| `comparison` | metric + 2+ categories/periods | "tickets USA vs India" |
+| `top_n` | metric + dimension + N | "top 5 regions by revenue" |
+| `bottom_n` | metric + dimension + N | "bottom 3 products by sales" |
+| `distribution` | metric + dimension | "ticket spread by priority" |
+| `aggregation` | metric + aggregation function | "sum of revenue" |
+| `filtering` | dimension + condition | "tickets where status=open" |
+| `ranking` | metric + dimension | "countries ordered by tickets" |
+| `correlation` | 2+ metrics | "revenue vs customer_count" |
+| `grouping` | metric + dimensions | "tickets by country and tier" |
+| `period_over_period` | metric + temporal + comparison | "sales this month vs last month" |
+| `cumulative` | metric + temporal | "running total of tickets" |
+| `moving_average` | metric + temporal + window | "7-day average tickets" |
+| `percentage` | metric + dimension | "ticket percentage by region" |
+| `conditional` | metric + threshold | "tickets above 100" |
+| `multi_metric` | 2+ metrics + dimension | "revenue and profit by country" |
 
 ## Usage
 
-### Layer 0 Integration
+### Integration in Code
 
-Layer 0 is **always enabled** by default. It runs automatically before nl_to_python for all data exploration queries.
+```python
+from services.layer0_constrained_parser import create_query_normalizer
 
-**Graceful Fallback:**
+# In data_exploration.execute_pandas_aggregation_with_codet5():
+layer0_normalizer = create_query_normalizer(self.llm_client)
+normalized_query = layer0_normalizer.normalize(query)
 
-If Layer 0 parsing fails for any reason, the system automatically falls back to the original query without Layer 0 enhancement.
+# Pass normalized_query to nl_to_python
+nl_result = self.nl_to_python.generate_python_code(
+    query=normalized_query,  # ← Use normalized query
+    df_columns=list(df_for_code.columns),
+    df_sample=df_for_code
+)
+```
 
 ### Example Flow
 
-**Query**: `"count of opn tickets in march"`
+**Query**: `"Weekly tickets week over week"`
 
-**Layer 0 Processing**:
-1. **Spell check**: `"opn"` → `"Open_Volume"` (fuzzy match + acronym)
-2. **Temporal extract**: `"march"` → `{"period": "month", "value": 3}`
-3. **LLM parse** (constrained):
-   ```json
-   {
-     "metric": "Open_Volume",  // ✅ Exact column name (from enum)
-     "aggregation": "sum",
-     "dimensions": [],
-     "temporal_period": "month",
-     "temporal_value": 3
-   }
-   ```
-4. **Convert to IR**:
-   ```python
-   SemanticIR(
-       intent=Intent(
-           metric="Open_Volume",
-           dimensions=[],
-           aggregation="sum"
-       ),
-       constraints=Constraints(
-           temporal=TemporalConstraint(period="month", value=3)
-       )
-   )
-   ```
-5. **Generate hint**: `"sum of Open_Volume for March"`
-6. **Pass to nl_to_python**: Continues with existing logic, but with exact column names
+**Layer 0 (internal)**:
+```json
+{
+  "selected_drivers": ["period_over_period"],
+  "reasoning": "Query mentions 'week over week' comparison of weekly tickets",
+  "normalized_query": "tickets week over week by week"
+}
+```
 
-## Benefits Over Current System
+**To Stage 1**: `"tickets week over week by week"`
 
-### Before (Current System)
-- Stage 1 might miss `date_column` for "trend" queries
-- "March" gets matched to "Primary", "Marketplace" calculated fields
-- Metric disambiguation overrides Stage 1's correct selection
+**Stage 1**: Identifies columns
+- "tickets" → case_id
+- "week" → create_week
+
+**Stage 2**: Decides operation
+- Sees week-over-week pattern + temporal column
+- Independently selects: period_over_period operation
+
+**Stage 3**: Generates code
+
+## Benefits
+
+### Before (Without Layer 0)
+```
+Query: "Weekly ticket volume trend"
+↓
+Stage 1: Struggles with ambiguous phrasing
+↓
+Result: ❌ "No date column specified"
+```
 
 ### After (With Layer 0)
-- ✅ Pre-processing extracts "March" as temporal (never reaches calculated field matching)
-- ✅ Spell checking maps "opn" → "Open_Volume" before ambiguity
-- ✅ Constrained decoding prevents hallucinated column names
-- ✅ Single-pass selection (no multi-stage override conflicts)
-
-## Dependencies
-
-```bash
-pip install instructor fuzzywuzzy python-Levenshtein pydantic
+```
+Query: "Weekly ticket volume trend"
+↓
+Layer 0: "ticket volume trend by week" (clear structure)
+↓
+Stage 1: Easily identifies temporal pattern
+↓
+Result: ✅ Works!
 ```
 
 ## Configuration
 
-Located in: `services/layer0_constrained_parser.py`
+### Location
+`services/layer0_constrained_parser.py`
 
 ### Tunable Parameters
-
 ```python
-# In QueryPreprocessor._spell_check_columns()
-FUZZY_THRESHOLD = 75  # Minimum score for spell correction
+# In Layer0QueryNormalizer.normalize()
+model="gpt-4o-mini",     # Fast & cheap
+temperature=0.1,         # Low = deterministic
+max_tokens=500          # Short output
+```
 
-# In Layer0ConstrainedParser.parse()
-LLM_TEMPERATURE = 0.1  # Low = deterministic
-MAX_RETRIES = 2  # instructor retry attempts
+### Driver Definitions
+Add/modify drivers in `DRIVER_REQUIREMENTS` dict:
+```python
+DRIVER_REQUIREMENTS = {
+    "new_driver": "Requires: X + Y. Shows Z.",
+    # ...
+}
 ```
 
 ## Error Handling
 
-### If Layer 0 Fails
-- Graceful fallback to original query
-- Warning logged, no crash
-- Existing nl_to_python continues normally
-
+### Graceful Fallback
 ```python
 try:
-    semantic_ir = layer0_parser.parse(query)
-    query_to_use = enhanced_query
-except Exception as layer0_error:
-    master_logger.warning(f"[LAYER0] Failed, using original: {layer0_error}")
-    query_to_use = original_query  # ✅ Fallback
+    normalized_query = layer0_normalizer.normalize(query)
+except Exception as e:
+    logger.warning(f"[LAYER0] Normalization failed: {e}")
+    normalized_query = query  # ✅ Use original query
 ```
 
+**No crashes** - always falls back to original query if Layer 0 fails.
+
 ### Common Failure Modes
-1. **instructor library not installed** → Falls back
-2. **LLM timeout** → Retries 2x, then falls back
-3. **Ambiguous abbreviation** → Uses best fuzzy match (logged)
+1. **instructor library missing** → Falls back
+2. **LLM timeout** → Falls back
+3. **Invalid API key** → Falls back
 
 ## Logs
 
@@ -191,107 +260,107 @@ import logging
 logging.getLogger('services.layer0_constrained_parser').setLevel(logging.DEBUG)
 ```
 
-**Log Examples**:
+**Example Output**:
 ```
-[LAYER0] Initializing constrained parser...
-[LAYER0] Parsing query: 'count of opn tickets in march'
-[SPELL_CHECK] 'opn' → 'Open_Volume' (confidence: 85%)
-[LAYER0] Pre-processed: temporal={'period': 'month', 'value': 3}
-[LAYER0] ✅ Parsed to Semantic IR:
-  - Intent: metric=Open_Volume, aggregation=sum, dimensions=[]
-  - Constraints: temporal=month=3, filters=0
-[LAYER0_HINT] Enhanced: 'sum of Open_Volume for March'
+[LAYER0] Normalizing query: 'Weekly ticket volume trend'
+[LAYER0] Selected drivers: ['time_series']
+[LAYER0] Reasoning: Query mentions weekly temporal pattern with trend keyword
+[LAYER0] Normalized query: 'ticket volume trend by week'
 ```
 
-## Future Enhancements
+## Dependencies
 
-### Potential Additions
-1. **User correction learning** - Build glossary from disambiguation choices
-2. **Multi-step query decomposition** - Handle "show X then Y" queries
-3. **Calculated filter support** - "where X > 2 * average"
-4. **Domain glossary builder** - Auto-learn "SLA breach" → `sla_status='Breached'`
+```bash
+pip install instructor pydantic openai
+```
 
-### Not Currently Supported
-- ❌ Nested boolean logic (`(A OR B) AND C`)
-- ❌ Subqueries (`WHERE country IN (SELECT ...)`)
-- ❌ Self-comparisons (`compare to average of same country`)
-- ❌ Window functions (`rank within partition`)
-
-For these patterns, queries must be simplified or broken into steps.
+**Note**: Uses the same LLM client (with SSL bypass) that's already configured across the application.
 
 ## Testing
 
-### Unit Tests
+### Unit Test
 ```python
-# Test spell checking
-assert preprocessor._spell_check_columns("opn tickets") == "Open_Volume tickets"
+from services.layer0_constrained_parser import create_query_normalizer
 
-# Test temporal extraction
-assert preprocessor._extract_temporal("march 2025") == {
-    "period": "month", "value": 3, "year": 2025
-}
+normalizer = create_query_normalizer(llm_client)
+result = normalizer.normalize("Weekly ticket volume trend")
 
-# Test constrained parsing
-ir = parser.parse("count of tickets by country")
-assert ir.intent.metric in all_valid_columns  # ✅ No hallucination
+assert "week" in result.lower()
+assert "ticket" in result.lower()
 ```
 
-### Integration Tests
+### Integration Test
 ```bash
-# Layer 0 is always enabled - just run queries
-python -c "
-from services.data_exploration_no_chart import data_exploration
-# Test with real queries...
-"
+# Test with Flask server running:
+curl -X POST http://localhost:5000/query \
+  -d '{"query": "Weekly ticket volume trend"}'
+  
+# Check logs for:
+# [LAYER0] Normalized: 'Weekly ticket volume trend' → 'ticket volume trend by week'
 ```
-
-## Troubleshooting
-
-### Issue: "Column not found" error
-
-**Cause**: Spell checker didn't find good match
-
-**Solution**:
-1. Check `FUZZY_THRESHOLD` (lower = more lenient)
-2. Add column aliases to metadata
-3. Use exact column name in query
-
-### Issue: Wrong temporal value
-
-**Cause**: Regex didn't match pattern
-
-**Solution**:
-1. Check `QueryPreprocessor.MONTHS` dict
-2. Add more temporal patterns to regex
-3. Use explicit format: "month=3" or "Q2"
-
-### Issue: Layer 0 not working
-
-**Cause**: Exception during Layer 0 parsing
-
-**Solution**:
-1. Check logs for `[LAYER0]` entries
-2. Look for error message: "Parsing failed, falling back to original"
-3. Fix the root cause (column mismatch, schema issue, etc.)
 
 ## Performance
 
 **Overhead per query**:
-- Spell checking: ~50ms (fuzzy matching all columns)
-- LLM call: ~500-1000ms (constrained decoding)
-- IR conversion: ~5ms
-
-**Total**: ~600ms additional latency
+- GPT-4o mini API call: ~200-500ms
+- Constrained decoding: ~50ms
+- Total: ~300ms average
 
 **Optimization**:
-- Cache spell corrections per session
-- Pre-compute column token IDs
-- Batch similar queries
+- Uses fast gpt-4o-mini (not gpt-4)
+- Low temperature (0.1) for speed
+- Small max_tokens (500)
+
+## What Layer 0 Does NOT Do
+
+❌ **Does NOT** identify actual column names (that's Stage 1's job)
+
+❌ **Does NOT** force Stage 2's operation decision (Stage 2 decides independently)
+
+❌ **Does NOT** pass driver hints forward (only normalized_query passes)
+
+❌ **Does NOT** do complex transformations (keeps query simple)
+
+## Future Enhancements
+
+### Potential Additions
+1. **Cache common normalizations** - Store frequent query patterns
+2. **Multi-language support** - Normalize queries in other languages
+3. **Query decomposition** - Split complex multi-part queries
+4. **Learning from corrections** - Track when Stage 2 overrides Layer 0
+
+### Not Currently Supported
+- ❌ Nested boolean logic
+- ❌ Subqueries
+- ❌ Custom driver definitions per dataset
+- ❌ User-specific query aliases
+
+## Troubleshooting
+
+### Issue: "No module named 'instructor'"
+
+**Solution**:
+```bash
+pip install instructor
+```
+
+### Issue: Layer 0 selects wrong driver
+
+**Check**:
+1. Review `DRIVER_REQUIREMENTS` - is description clear?
+2. Check logs for `reasoning` field - why did it choose that driver?
+3. Remember: Stage 2 can override! Not critical if Layer 0 is slightly wrong.
+
+### Issue: Normalized query looks wrong
+
+**Check**:
+1. Look at `selected_drivers` in logs - what drivers were chosen?
+2. Review rephrasing rules in system prompt
+3. Adjust temperature or add examples to prompt
 
 ## Contact
 
 Questions or issues? Check:
 1. This README
-2. Code comments in `services/layer0_constrained_parser.py`
-3. Integration code in `services/data_exploration_no_chart.py` (lines 1339-1384)
-
+2. Code: `services/layer0_constrained_parser.py`
+3. Integration: `services/data_exploration_no_chart.py` (lines ~1339-1358)
