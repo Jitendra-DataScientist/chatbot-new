@@ -76,7 +76,8 @@ class ConversationOrchestrator:
                            df_columns: List[str],
                            selected_chart: Optional[str] = None,
                            chart_context: Optional[Dict] = None,
-                           conversation_state: Optional[Dict] = None) -> Dict[str, Any]:
+                           conversation_state: Optional[Dict] = None,
+                           query_metadata: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Process a conversational query with context awareness
 
@@ -87,6 +88,7 @@ class ConversationOrchestrator:
             selected_chart: Selected chart name (if any)
             chart_context: Chart-specific context
             conversation_state: Previous conversation state
+            query_metadata: Query metadata (is_followup, merged_by, original_query, etc.)
 
         Returns:
             Dict with query result, conversation state, and metadata
@@ -114,8 +116,14 @@ class ConversationOrchestrator:
             normalized_query = query
             is_followup = False
             
-            # Check if this is a follow-up question
-            if conversation_state.get('history') and len(conversation_state['history']) > 0:
+            # 🆕 Check if query was already merged by query_understanding_agent
+            if query_metadata and query_metadata.get('merged_by') == 'query_understanding_agent':
+                self.logger.info(f"[CONVERSATION] ✅ Query already merged by query_understanding_agent")
+                self.logger.info(f"[CONVERSATION] Using pre-merged query: '{query}'")
+                normalized_query = query  # Already merged!
+                is_followup = query_metadata.get('is_followup', False)
+            # Otherwise, check if this is a follow-up question and merge here
+            elif conversation_state.get('history') and len(conversation_state['history']) > 0:
                 # Use our own ConversationMemory for follow-up detection
                 is_followup, prev_context = self.conversation_memory.detect_followup(
                     query, 

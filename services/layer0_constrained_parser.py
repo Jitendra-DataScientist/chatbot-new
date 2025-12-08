@@ -447,6 +447,8 @@ Output ONLY the merged query text, nothing else."""
             )
             
             enriched_query = response.choices[0].message.content.strip()
+            # Strip quotes if LLM wrapped the query in them
+            enriched_query = enriched_query.strip('"').strip("'").strip()
             logger.info(f"[LAYER0_FOLLOWUP] ✅ LLM merged query: '{enriched_query}'")
             
             return {

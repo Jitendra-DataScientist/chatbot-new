@@ -372,6 +372,19 @@ class QueryAgent:
         master_logger.info("✅ Session context manager initialized")
         master_logger.info("✅ Schema tracking initialized")
         
+        # 🆕 4. Add Layer 0 normalizer and ConversationMemory for follow-up detection
+        from services.layer0_constrained_parser import Layer0QueryNormalizer
+        from services.context_manager.conversation_memory import ConversationMemory
+        try:
+            self.layer0_normalizer = Layer0QueryNormalizer(llm_client=llm_client)
+            self.conversation_memory = ConversationMemory(llm_client=llm_client)
+            master_logger.info("✅ Layer 0 normalizer initialized for follow-up query merging")
+            master_logger.info("✅ ConversationMemory initialized for follow-up detection")
+        except Exception as e:
+            master_logger.error(f"Failed to initialize Layer 0 or ConversationMemory: {e}")
+            self.layer0_normalizer = None
+            self.conversation_memory = None
+        
         master_logger.info("QueryAgent initialized successfully with services")
         master_logger.debug(f"Initial metrics: {self.metrics}")
         
@@ -742,15 +755,81 @@ class QueryAgent:
         try:
             ## Jitendra: this is the intent classification step for routing to analysis or exloration service
             # ========== EARLY ROUTING - ALWAYS CHECK FOR ANALYSIS INTENT ==========
-            # Always classify intent first to detect analysis queries
+            
+            # 🆕 STEP 1: FOLLOW-UP DETECTION + LAYER 0 MERGE (BEFORE CLASSIFICATION!)
+            query_for_classification = query  # Default: use original query
+            query_metadata = {
+                'original_query': query,
+                'is_followup': False,
+                'merged_by': None,
+                'merged_query': None
+            }
+            
+            # Check if this is a follow-up question (BEFORE classification)
+            if conversation_state and conversation_state.get('history') and len(conversation_state['history']) > 0:
+                master_logger.info("="*80)
+                master_logger.info("🔍 CHECKING FOR FOLLOW-UP QUERY")
+                master_logger.info("="*80)
+                
+                if self.conversation_memory:
+                    try:
+                        is_followup, prev_context = self.conversation_memory.detect_followup(
+                            query, 
+                            conversation_state
+                        )
+                        
+                        if is_followup and prev_context:
+                            master_logger.info(f"[QUERY_AGENT] 🔗 FOLLOW-UP DETECTED")
+                            
+                            # Get Layer 0's previous NORMALIZED output (not raw query)
+                            last_entry = conversation_state['history'][-1]
+                            prev_normalized_query = last_entry.get('normalized_query', last_entry.get('query', ''))
+                            
+                            master_logger.info(f"[QUERY_AGENT] Previous normalized query: '{prev_normalized_query[:80]}...'")
+                            
+                            # Use Layer 0 to merge queries BEFORE classification
+                            if self.layer0_normalizer:
+                                try:
+                                    master_logger.info(f"[QUERY_AGENT] Using Layer 0 to merge follow-up with previous query")
+                                    followup_result = self.layer0_normalizer.normalize_with_context(
+                                        query=query,
+                                        previous_normalized_query=prev_normalized_query
+                                    )
+                                    
+                                    merged_query = followup_result['enriched_query']
+                                    query_for_classification = merged_query  # ✅ USE MERGED QUERY FOR CLASSIFICATION!
+                                    
+                                    query_metadata['is_followup'] = True
+                                    query_metadata['merged_by'] = 'query_understanding_agent'
+                                    query_metadata['merged_query'] = merged_query
+                                    
+                                    master_logger.info(f"[QUERY_AGENT] ✅ Merged query for classification: '{merged_query}'")
+                                    
+                                except Exception as layer0_error:
+                                    master_logger.error(f"[QUERY_AGENT] Layer 0 merge failed: {layer0_error}")
+                                    master_logger.warning(f"[QUERY_AGENT] Falling back to original query")
+                                    # Keep query_for_classification = query (original)
+                            else:
+                                master_logger.warning(f"[QUERY_AGENT] Layer 0 not available, cannot merge")
+                        else:
+                            master_logger.info(f"[QUERY_AGENT] Not a follow-up")
+                    except Exception as e:
+                        master_logger.error(f"[QUERY_AGENT] Follow-up detection failed: {e}")
+                        # Keep query_for_classification = query (original)
+                else:
+                    master_logger.warning(f"[QUERY_AGENT] ConversationMemory not available")
+            
+            # STEP 2: CLASSIFY INTENT (using merged query if follow-up, original otherwise)
             master_logger.info("="*80)
             master_logger.info("🔀 CLASSIFYING INTENT")
-            master_logger.info(f"   Query: {query}")
+            master_logger.info(f"   Original query: {query}")
+            master_logger.info(f"   Query for classification: {query_for_classification}")
+            master_logger.info(f"   Is follow-up: {query_metadata['is_followup']}")
             master_logger.info(f"   Selected chart: {selected_chart}")
             master_logger.info("="*80)
             
-            # Do intent classification
-            classification = await self._classify_intent(query, context)
+            # Do intent classification (on merged query if follow-up!)
+            classification = await self._classify_intent(query_for_classification, context)
             original_intent = classification.get('entities', {}).get('original_intent', '')
             primary_intent = classification.get('primary_intent', '')
             
@@ -819,15 +898,17 @@ class QueryAgent:
                     if context and isinstance(context, dict):
                         master_logger.info(f"  - workbook_name in context: {context.get('workbook_name')}")
                     
+                    # 🆕 Pass merged query and query_metadata
                     result = await exploration_service.process(
-                        query_text=query,
+                        query_text=query_for_classification,
                         csv_data=csv_data_from_manager,
                         selected_chart=None,
                         intent_result=minimal_intent,
                         chart_context=None,
                         context=context,  # 🆕 Pass context for workbook_name
                         conversation_state=conversation_state,  # 🆕 Pass conversation state
-                        use_conversation=True  # 🆕 Enable conversation mode
+                        use_conversation=True,  # 🆕 Enable conversation mode
+                        query_metadata=query_metadata  # 🆕 Pass query metadata (is_followup, merged_by, etc.)
                     )
                     
                     # Extract updated conversation_state from result

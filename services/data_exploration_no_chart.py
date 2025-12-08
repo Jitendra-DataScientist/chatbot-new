@@ -112,8 +112,22 @@ class data_exploration:
                 chart_context: Optional[Dict] = None,
                 conversation_state: Optional[Dict] = None,
                 use_conversation: bool = True,
-                context: Optional[Dict] = None) -> Dict[str, Any]:  # 🆕 Add context parameter
-        """Process exploration query"""
+                context: Optional[Dict] = None,
+                query_metadata: Optional[Dict] = None) -> Dict[str, Any]:  # 🆕 Add query_metadata parameter
+        """
+        Process exploration query
+        
+        Args:
+            query_text: User's natural language query
+            csv_data: DataFrame containing the data
+            selected_chart: Selected chart name
+            intent_result: Intent classification result
+            chart_context: Chart-specific context
+            conversation_state: Previous conversation state
+            use_conversation: Whether to use conversational mode
+            context: Additional context (e.g., workbook_name)
+            query_metadata: Metadata about query (is_followup, merged_by, etc.)
+        """
         master_logger.info("=" * 80)
         master_logger.info("=== PROCESSING DATA EXPLORATION QUERY ===")
         master_logger.info(f"Query: '{query_text}'")
@@ -134,7 +148,8 @@ class data_exploration:
         if use_conversation and self.has_conversation_support:
             return await self._process_with_orchestrator(
                 query_text, csv_data, selected_chart, 
-                intent_result, chart_context, conversation_state
+                intent_result, chart_context, conversation_state,
+                query_metadata  # 🆕 Pass query_metadata to orchestrator
             )
         else:
             return await self._process_single_turn(
@@ -148,7 +163,8 @@ class data_exploration:
                                         selected_chart: str,
                                         intent_result,
                                         chart_context: Optional[Dict],
-                                        conversation_state: Optional[Dict]) -> Dict[str, Any]:
+                                        conversation_state: Optional[Dict],
+                                        query_metadata: Optional[Dict] = None) -> Dict[str, Any]:
         # Convert pandas to polars if needed (DataManager returns pandas)
         if csv_data is not None and isinstance(csv_data, pd.DataFrame):
             csv_data = pl.from_pandas(csv_data)
@@ -166,7 +182,8 @@ class data_exploration:
                 df_columns=list(analysis_data.columns),
                 selected_chart=selected_chart,
                 chart_context=chart_context,
-                conversation_state=conversation_state
+                conversation_state=conversation_state,
+                query_metadata=query_metadata  # 🆕 Pass query_metadata from query_understanding_agent
             )
             
             if orchestrator_result.get('needs_clarification'):
