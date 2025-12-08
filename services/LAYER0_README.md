@@ -8,13 +8,13 @@ Layer 0 is a reasoning-based query normalizer that uses GPT-4o mini with constra
 - **Make implicit facts explicit** - converts "trend" → "over time", adds clarifying context
 - **Select relevant drivers** from 16 predefined operation types (REQUIRED - not optional)
 - **Rephrase queries** to match patterns that already work in the system
-- **Fix grammar and spelling** without changing column names (e.g., "opn_volume" stays "opn_volume")
+- **Fix grammar and spelling** without changing column names (e.g., "emp_sal" stays "emp_sal")
 - **Only pass normalized query forward** (driver hints stay internal)
 
 ## Architecture
 
 ```
-User Query: "Weekly ticket volume trend"
+User Query: "monthly sales trend"
     ↓
 [Layer 0: Query Normalizer]
   GPT-4o mini + Constrained Decoding (instructor/Pydantic)
@@ -22,14 +22,14 @@ User Query: "Weekly ticket volume trend"
   Internal Processing:
   1. Selects drivers: ["time_series"]
   2. Knows time_series needs: metric + temporal dimension
-  3. Rephrases: "ticket volume trend by week"
+  3. Rephrases: "sales trend by month"
      (Shows metric + temporal structure for driver consumption)
   
-  Output: "ticket volume trend by week"  ← Only this passes forward
+  Output: "sales trend by month"  ← Only this passes forward
     ↓
 [Stage 1: Column Identification]
   Sees normalized query
-  Maps: "ticket" → case_id, "week" → create_week
+  Maps actual columns from metadata
     ↓
 [Stage 2: Operation Selection]
   Independently decides operation based on structure + columns
@@ -59,29 +59,42 @@ Step 2: Validate Driver
 - Conclusion: time_series is CORRECT
 
 Step 3: Normalize
-- Make "trend" explicit → "over time"
-- Output: "product sales by week over time"
+- Reorder: "weekly" → "by week"
+- Output: "product sales trend by week"
 ```
 
 **Key**: Only selects driver if ALL requirements can be extracted from query.
 
-### 2. Making Implicit Facts Explicit
+### 2. Strict Preservation Rules
 
-Layer 0 **can add facts** to clarify intent (not hallucination):
+Layer 0 **ONLY changes structure, NOT content**:
 
+```
+✅ CAN DO:
+- Reorder words: "weekly sales" → "sales by week"
+- Change prepositions: "on" → "by"
+- Add structural words: add "by" for clarity
+- Fix spelling in regular words (NOT column names)
+
+❌ CANNOT DO:
+- Change content words: "trend" MUST stay "trend" (NOT "over time")
+- Replace with synonyms: "sales" MUST stay "sales"
+- Add content words that weren't in query
+- Remove any words from query
+```
+
+**Examples**:
 ```
 Input:  "weekly sales trend"
-Implied: "trend" = comparison over time
-Output: "sales by week over time"
-(Added "over time" to make temporal comparison explicit)
+Output: "sales trend by week"
+(Only reordered - kept "trend" exactly)
 
-Input:  "customer count growth"
-Implied: "growth" = change over periods
-Output: "customer count period over period"
-(Added "period over period" to clarify comparison intent)
+Input:  "top 5 regions on revenue"
+Output: "top 5 regions by revenue"
+(Only changed preposition "on" → "by")
 ```
 
-**This helps Stage 1/Stage 2** understand the query structure better.
+**This helps Stage 1/Stage 2** by making structure clearer without changing meaning.
 
 ### 3. Constrained Selection (MUST Choose Driver)
 ```python
@@ -102,11 +115,11 @@ class NormalizedQueryOutput(BaseModel):
 # Layer 0 internally knows:
 {
   "selected_drivers": ["time_series"],  # ← Not passed forward
-  "normalized_query": "ticket volume trend by week"  # ← Only this passes
+  "normalized_query": "sales trend by month"  # ← Only this passes
 }
 
 # Stage 1 receives:
-"ticket volume trend by week"  # Clean, structured query
+"sales trend by month"  # Clean, structured query
 ```
 
 **Why?**
@@ -117,11 +130,11 @@ class NormalizedQueryOutput(BaseModel):
 ### 5. Preserves Column Names
 ```python
 # ✅ Correct:
-"opn_volume by account_tier" → "opn_volume by account_tier"
+"emp_sal by dept_code" → "emp_sal by dept_code"
 # Column names preserved exactly
 
 # ❌ Wrong:
-"opn_volume by account_tier" → "open_volume by account_tier"
+"emp_sal by dept_code" → "employee_salary by dept_code"
 # DON'T change column names!
 ```
 
@@ -130,21 +143,21 @@ class NormalizedQueryOutput(BaseModel):
 | Driver | Requirements | Example |
 |--------|-------------|---------|
 | `time_series` | metric + temporal dimension | "sales trend by week" |
-| `comparison` | metric + 2+ categories/periods | "tickets USA vs India" |
+| `comparison` | metric + 2+ categories/periods | "revenue USA vs India" |
 | `top_n` | metric + dimension + N | "top 5 regions by revenue" |
 | `bottom_n` | metric + dimension + N | "bottom 3 products by sales" |
-| `distribution` | metric + dimension | "ticket spread by priority" |
+| `distribution` | metric + dimension | "orders spread by priority" |
 | `aggregation` | metric + aggregation function | "sum of revenue" |
-| `filtering` | dimension + condition | "tickets where status=open" |
-| `ranking` | metric + dimension | "countries ordered by tickets" |
-| `correlation` | 2+ metrics | "revenue vs customer_count" |
-| `grouping` | metric + dimensions | "tickets by country and tier" |
+| `filtering` | dimension + condition | "orders where status=open" |
+| `ranking` | metric + dimension | "regions ordered by sales" |
+| `correlation` | 2+ metrics | "revenue vs profit" |
+| `grouping` | metric + dimensions | "sales by region and category" |
 | `period_over_period` | metric + temporal + comparison | "sales this month vs last month" |
-| `cumulative` | metric + temporal | "running total of tickets" |
-| `moving_average` | metric + temporal + window | "7-day average tickets" |
-| `percentage` | metric + dimension | "ticket percentage by region" |
-| `conditional` | metric + threshold | "tickets above 100" |
-| `multi_metric` | 2+ metrics + dimension | "revenue and profit by country" |
+| `cumulative` | metric + temporal | "running total of sales" |
+| `moving_average` | metric + temporal + window | "7-day average sales" |
+| `percentage` | metric + dimension | "sales percentage by region" |
+| `conditional` | metric + threshold | "orders above 100" |
+| `multi_metric` | 2+ metrics + dimension | "revenue and profit by region" |
 
 ## Usage
 
@@ -167,22 +180,22 @@ nl_result = self.nl_to_python.generate_python_code(
 
 ### Example Flow
 
-**Query**: `"Weekly tickets week over week"`
+**Query**: `"weekly sales week over week"`
 
 **Layer 0 (internal)**:
 ```json
 {
   "selected_drivers": ["period_over_period"],
-  "reasoning": "Query mentions 'week over week' comparison of weekly tickets",
-  "normalized_query": "tickets week over week by week"
+  "reasoning": "Query mentions 'week over week' comparison of weekly sales",
+  "normalized_query": "sales week over week by week"
 }
 ```
 
-**To Stage 1**: `"tickets week over week by week"`
+**To Stage 1**: `"sales week over week by week"`
 
-**Stage 1**: Identifies columns
-- "tickets" → case_id
-- "week" → create_week
+**Stage 1**: Identifies columns from metadata
+- Maps "sales" to appropriate metric column
+- Maps "week" to appropriate temporal column
 
 **Stage 2**: Decides operation
 - Sees week-over-week pattern + temporal column
@@ -194,7 +207,7 @@ nl_result = self.nl_to_python.generate_python_code(
 
 ### Before (Without Layer 0)
 ```
-Query: "Weekly ticket volume trend"
+Query: "monthly sales trend"
 ↓
 Stage 1: Struggles with ambiguous phrasing
 ↓
@@ -203,9 +216,9 @@ Result: ❌ "No date column specified"
 
 ### After (With Layer 0)
 ```
-Query: "Weekly ticket volume trend"
+Query: "monthly sales trend"
 ↓
-Layer 0: "ticket volume trend by week" (clear structure)
+Layer 0: "sales trend by month" (clear structure)
 ↓
 Stage 1: Easily identifies temporal pattern
 ↓
@@ -262,10 +275,10 @@ logging.getLogger('services.layer0_constrained_parser').setLevel(logging.DEBUG)
 
 **Example Output**:
 ```
-[LAYER0] Normalizing query: 'Weekly ticket volume trend'
+[LAYER0] Normalizing query: 'monthly sales trend'
 [LAYER0] Selected drivers: ['time_series']
-[LAYER0] Reasoning: Query mentions weekly temporal pattern with trend keyword
-[LAYER0] Normalized query: 'ticket volume trend by week'
+[LAYER0] Reasoning: Query mentions monthly temporal pattern with trend keyword
+[LAYER0] Normalized query: 'sales trend by month'
 ```
 
 ## Dependencies
@@ -283,20 +296,21 @@ pip install instructor pydantic openai
 from services.layer0_constrained_parser import create_query_normalizer
 
 normalizer = create_query_normalizer(llm_client)
-result = normalizer.normalize("Weekly ticket volume trend")
+result = normalizer.normalize("monthly sales trend")
 
-assert "week" in result.lower()
-assert "ticket" in result.lower()
+assert "month" in result.lower()
+assert "sales" in result.lower()
+assert "trend" in result.lower()
 ```
 
 ### Integration Test
 ```bash
 # Test with Flask server running:
 curl -X POST http://localhost:5000/query \
-  -d '{"query": "Weekly ticket volume trend"}'
+  -d '{"query": "monthly sales trend"}'
   
 # Check logs for:
-# [LAYER0] Normalized: 'Weekly ticket volume trend' → 'ticket volume trend by week'
+# [LAYER0] Normalized: 'monthly sales trend' → 'sales trend by month'
 ```
 
 ## Performance

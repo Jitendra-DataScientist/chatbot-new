@@ -1605,6 +1605,17 @@ Create execution plan:"""}
         if group_by_columns is None:
             group_by_columns = []
         
+        # 🆕 SAFETY: Auto-set date_column for time_series with temporal grouping
+        if primary_operation == 'time_series' and group_by_columns and not date_column:
+            # Check if any group_by column is temporal (generic keywords)
+            temporal_keywords = ['day', 'week', 'month', 'quarter', 'year', 'date', 'time', 'timestamp']
+            for col in group_by_columns:
+                col_lower = col.lower()
+                if any(keyword in col_lower for keyword in temporal_keywords):
+                    date_column = col
+                    self.logger.info(f"[SAFETY] Auto-set date_column={col} for time_series with temporal grouping")
+                    break
+        
         # Build operation parameters dict
         operation_params = {
             'numerator_column': actual_metric_column if use_helper_column else (getattr(stage2_result, 'numerator_column', None) or metric_column),
