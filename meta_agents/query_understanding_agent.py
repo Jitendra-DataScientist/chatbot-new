@@ -671,7 +671,8 @@ class QueryAgent:
         selected_chart: str = None, 
         source_id: str = "default",  # 🆕 NEW
         session_id: str = None,      # 🆕 NEW
-        context: Dict = None
+        context: Dict = None,
+        conversation_state: Optional[Dict] = None  # 🆕 Conversation state for multi-turn
     ) -> Dict[str, Any]:
         # 🔧 FIX: Handle ChatContext object
         if source_id and hasattr(source_id, '__dict__'):  # If it's an object, not a string
@@ -824,8 +825,15 @@ class QueryAgent:
                         selected_chart=None,
                         intent_result=minimal_intent,
                         chart_context=None,
-                        context=context  # 🆕 Pass context for workbook_name
+                        context=context,  # 🆕 Pass context for workbook_name
+                        conversation_state=conversation_state,  # 🆕 Pass conversation state
+                        use_conversation=True  # 🆕 Enable conversation mode
                     )
+                    
+                    # Extract updated conversation_state from result
+                    if 'conversation_state' in result and result['conversation_state']:
+                        conversation_state = result['conversation_state']
+                        master_logger.info(f"[CONVERSATION] Updated conversation_state from data_exploration, history_size={len(conversation_state.get('history', []))}")
                     
                     master_logger.info("✅ data_exploration_no_chart service completed")
                     master_logger.info("="*80)
@@ -841,7 +849,8 @@ class QueryAgent:
                             'chart_image': result.get('chart_image')
                         },
                         "execution_time": result.get('execution_time', 0),
-                        "routed_to": "services.data_exploration_no_chart.data_exploration"
+                        "routed_to": "services.data_exploration_no_chart.data_exploration",
+                        "conversation_state": conversation_state  # 🆕 Return updated conversation state
                     }
                     
                 except Exception as e:

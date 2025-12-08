@@ -295,6 +295,9 @@ class ChatState:
     workbook_name: Optional[str] = None
     dashboard_name: Optional[str] = None
     
+    # Session tracking
+    session_id: Optional[str] = None
+    
     # Data
     available_views: List[dict] = field(default_factory=list)
     raw_data: Optional[pd.DataFrame] = None
@@ -303,6 +306,9 @@ class ChatState:
     chart_interactions: List[Dict] = field(default_factory=list)
     active_worksheet: Optional[str] = None
     selected_data: Optional[List[Dict]] = None
+    
+    # Conversation state (for multi-turn conversations)
+    conversation_state: Optional[Dict] = None
     
     # Metadata
     connection_timestamp: Optional[datetime] = None
@@ -313,7 +319,19 @@ class ChatState:
             self.connection_timestamp = datetime.utcnow()
         self.last_activity = datetime.utcnow()
         
-        master_logger.debug(f"ChatState initialized - connection_timestamp: {self.connection_timestamp}")
+        # Initialize session_id if not provided
+        if self.session_id is None:
+            self.session_id = f"session_{int(self.connection_timestamp.timestamp())}"
+        
+        # Initialize conversation_state if not provided
+        if self.conversation_state is None:
+            self.conversation_state = {
+                'history': [],
+                'context': {},
+                'session_id': self.session_id
+            }
+        
+        master_logger.debug(f"ChatState initialized - session_id: {self.session_id}, connection_timestamp: {self.connection_timestamp}")
     
     def update_activity(self):
         """Update last activity timestamp"""

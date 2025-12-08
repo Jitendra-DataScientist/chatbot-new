@@ -13,9 +13,10 @@ Date: 2025-12-05
 """
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from enum import Enum
+import re
 
 try:
     import instructor
@@ -107,6 +108,42 @@ class NormalizedQueryOutput(BaseModel):
     
     class Config:
         use_enum_values = True
+
+
+class FollowupQueryOutput(BaseModel):
+    """
+    Output for follow-up query normalization
+    Contains both the enriched query and detected changes
+    """
+    original_query: str = Field(
+        ...,
+        description="The original follow-up query from user"
+    )
+    
+    enriched_query: str = Field(
+        ...,
+        description="Complete query reconstructed by merging with previous context"
+    )
+    
+    detected_changes: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="What changed compared to previous query (e.g., {'limit': 20, 'direction': 'top'})"
+    )
+    
+    merged_entities: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Complete entity structure after merging previous + current"
+    )
+    
+    is_followup: bool = Field(
+        default=True,
+        description="Always True for this output type"
+    )
+    
+    previous_query: Optional[str] = Field(
+        None,
+        description="The previous query being referenced"
+    )
 
 
 # ============================================================================
@@ -345,6 +382,195 @@ Do NOT output "[metric]" literally - use the real words from the query!"""
             logger.error(f"[LAYER0] Normalization failed: {e}")
             logger.warning(f"[LAYER0] Falling back to original query")
             return query  # Fallback to original if normalization fails
+    
+    def normalize_with_context(
+        self, 
+        query: str, 
+        previous_normalized_query: str, 
+        previous_entities: Dict[str, Any] = None
+    ) -> Dict[str, Any]:
+        """
+        Normalize a follow-up query using LLM to merge with previous normalized query
+        
+        Args:
+            query: Current follow-up query (e.g., "now 20")
+            previous_normalized_query: Previous Layer 0 normalized output (e.g., "bottom 5 countries on ticket counts")
+            previous_entities: Optional entities (for backward compatibility, not used)
+            
+        Returns:
+            Dict with: original_query, enriched_query, is_followup, previous_query
+        """
+        try:
+            logger.info(f"[LAYER0_FOLLOWUP] Processing follow-up query: '{query}'")
+            logger.info(f"[LAYER0_FOLLOWUP] Previous normalized query: '{previous_normalized_query}'")
+            
+            # Use LLM to merge queries
+            system_prompt = """You are a query normalization assistant. Your task is to merge a follow-up query with context from the previous query.
+
+The user previously asked a complete query. Now they're asking a follow-up query that references or modifies the previous one.
+
+Your job: Produce a single, complete, normalized query that combines:
+- Context from the previous query (entity, metric, filters)
+- Changes indicated in the current query (new limit, different direction, etc.)
+
+Rules:
+1. Identify what changed (e.g., number changed from 5 to 20)
+2. Keep what didn't change (e.g., entity "countries", metric "ticket counts")
+3. Return a complete, standalone query that doesn't need context to understand
+4. Preserve exact wording for entities and metrics from previous query
+5. Apply the modification from current query
+
+Examples:
+Previous: "bottom 5 countries on ticket counts"
+Current: "now 20"
+Output: "bottom 20 countries on ticket counts"
+
+Previous: "top 10 products by revenue"
+Current: "what about customers"
+Output: "top 10 customers by revenue"
+
+Previous: "sales by month"
+Current: "now show by week"
+Output: "sales by week"
+
+Output ONLY the merged query text, nothing else."""
+
+            # Call GPT-4o to merge queries
+            response = self.llm_client.chat.completions.create(
+                model="gpt-4o-mini",  # Fast and cheap for this task
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"Previous query: \"{previous_normalized_query}\"\nCurrent query: \"{query}\"\n\nMerge these into a complete query:"}
+                ],
+                temperature=0.1,  # Low temperature for consistency
+                max_tokens=200
+            )
+            
+            enriched_query = response.choices[0].message.content.strip()
+            logger.info(f"[LAYER0_FOLLOWUP] ✅ LLM merged query: '{enriched_query}'")
+            
+            return {
+                'original_query': query,
+                'enriched_query': enriched_query,
+                'is_followup': True,
+                'previous_query': previous_normalized_query
+            }
+            
+        except Exception as e:
+            logger.error(f"[LAYER0_FOLLOWUP] LLM merge failed: {e}", exc_info=True)
+            logger.warning(f"[LAYER0_FOLLOWUP] Falling back to original query")
+            return {
+                'original_query': query,
+                'enriched_query': query,
+                'is_followup': True,
+                'previous_query': previous_normalized_query
+            }
+    
+    def _detect_query_changes(self, query: str, prev_entities: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Detect what changed between current and previous query
+        
+        Args:
+            query: Current follow-up query
+            prev_entities: Entities from previous query
+            
+        Returns:
+            Dict of detected changes
+        """
+        changes = {}
+        query_lower = query.lower()
+        
+        # Extract numbers from query
+        numbers = re.findall(r'\b(\d+)\b', query)
+        
+        # Check for limit/number change
+        if numbers:
+            new_limit = int(numbers[0])
+            if new_limit != prev_entities.get('limit'):
+                changes['limit'] = new_limit
+                logger.debug(f"[LAYER0_FOLLOWUP] Detected limit change: {prev_entities.get('limit')} → {new_limit}")
+        
+        # Check for direction change (top/bottom)
+        if 'top' in query_lower or 'highest' in query_lower:
+            if prev_entities.get('direction') != 'top':
+                changes['direction'] = 'top'
+                logger.debug(f"[LAYER0_FOLLOWUP] Detected direction change: {prev_entities.get('direction')} → top")
+        elif 'bottom' in query_lower or 'lowest' in query_lower:
+            if prev_entities.get('direction') != 'bottom':
+                changes['direction'] = 'bottom'
+                logger.debug(f"[LAYER0_FOLLOWUP] Detected direction change: {prev_entities.get('direction')} → bottom")
+        
+        # Check for entity change ("what about X", "show me X")
+        entity_patterns = [
+            r'(?:what about|how about|show me|show)\s+(\w+)',
+            r'(?:for|with)\s+(\w+)'
+        ]
+        for pattern in entity_patterns:
+            match = re.search(pattern, query_lower)
+            if match:
+                new_entity = match.group(1)
+                # Check if it's a different entity
+                prev_entity_label = prev_entities.get('primary_entity_label', '').lower()
+                if new_entity not in prev_entity_label:
+                    changes['primary_entity_label'] = new_entity
+                    logger.debug(f"[LAYER0_FOLLOWUP] Detected entity change: {prev_entity_label} → {new_entity}")
+                    break
+        
+        # Check for filter/status changes
+        if 'closed' in query_lower and 'closed' not in prev_entities.get('filters', []):
+            changes['filter_status'] = 'closed'
+            logger.debug(f"[LAYER0_FOLLOWUP] Detected filter addition: status=closed")
+        elif 'open' in query_lower and 'open' not in prev_entities.get('filters', []):
+            changes['filter_status'] = 'open'
+            logger.debug(f"[LAYER0_FOLLOWUP] Detected filter addition: status=open")
+        
+        return changes
+    
+    def _reconstruct_query(self, entities: Dict[str, Any]) -> str:
+        """
+        Reconstruct human-readable query from entity structure
+        
+        Args:
+            entities: Complete entity dictionary
+            
+        Returns:
+            Reconstructed query string
+        """
+        parts = []
+        
+        # Add direction (top/bottom)
+        direction = entities.get('direction')
+        if direction:
+            parts.append(direction)
+        
+        # Add limit/number
+        limit = entities.get('limit')
+        if limit:
+            parts.append(str(limit))
+        
+        # Add entity/dimension
+        entity_label = entities.get('primary_entity_label', '')
+        if entity_label:
+            parts.append(entity_label)
+        
+        # Add "on" or "by" connector
+        if entity_label and entities.get('metric'):
+            parts.append('on')
+        
+        # Add metric
+        metric = entities.get('metric', '')
+        if metric:
+            parts.append(metric)
+        
+        # Add filters if present
+        filter_status = entities.get('filter_status')
+        if filter_status:
+            parts.append(f'with status {filter_status}')
+        
+        reconstructed = ' '.join(parts)
+        logger.debug(f"[LAYER0_FOLLOWUP] Reconstructed query: '{reconstructed}'")
+        
+        return reconstructed if reconstructed else entities.get('primary_entity_label', 'data')
     
     def _build_driver_context(self) -> str:
         """Build formatted driver context for GPT-4o"""

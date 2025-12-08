@@ -1945,6 +1945,18 @@ async def handle_enhanced_query_processing(msg, state, selected_chart, chart_con
                     "error": True
                 })
             
+            # Initialize conversation_state if not present in ChatState
+            if not hasattr(state, 'conversation_state') or state.conversation_state is None:
+                # Initialize with session_id from ChatState
+                state.conversation_state = {
+                    'history': [],
+                    'context': {},
+                    'session_id': state.session_id if hasattr(state, 'session_id') else f"session_{int(time.time())}"
+                }
+                debug_log("Initialized conversation_state in ChatState", {
+                    "session_id": state.conversation_state['session_id']
+                })
+            
             # Process query with services integration
             # Pass workbook_name as source_id for data registration
             response = await query_agent.process_with_services(
@@ -1953,8 +1965,17 @@ async def handle_enhanced_query_processing(msg, state, selected_chart, chart_con
                 selected_chart,
                 source_id=state.workbook_name or "default",
                 session_id=state.session_id if hasattr(state, 'session_id') else None,
-                context=chat_request.context
+                context=chat_request.context,
+                conversation_state=state.conversation_state  # 🆕 Pass conversation state
             )
+            
+            # Update conversation_state in ChatState from response
+            if 'conversation_state' in response and response['conversation_state']:
+                state.conversation_state = response['conversation_state']
+                debug_log("Updated conversation_state in ChatState", {
+                    "history_size": len(state.conversation_state.get('history', []))
+                })
+                # ChatStateManager will persist this automatically on next store_state call
         
         debug_log("Enhanced query agent response received", {
             "success": response.get("success", False),
