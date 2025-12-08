@@ -52,6 +52,10 @@ class data_exploration:
         self.smart_aggregation_decider = smart_agg_decider
         self.cache_path = cache_path
         
+        # Initialize data attributes
+        self.original_csv_data = None
+        self.workbook_name = None
+        
         # Initialize services
         self.llm_service = LLMService(openai_client=llm_client)
         self.data_processor = TableauDataProcessor()
@@ -189,11 +193,20 @@ class data_exploration:
             is_scalar_result = self._check_if_scalar(analysis_result)
             
             if not is_scalar_result and self._requires_visualization(intent_result, {'pandas_execution': analysis_result}):
+                # Convert result dict to DataFrame for visualization
+                result_df = self._result_dict_to_dataframe(analysis_result)
+                viz_data = result_df if result_df is not None else analysis_data
+                
                 visualization = await self._create_visualization_for_intent(
-                    intent_result, {'pandas_execution': analysis_result}, analysis_data
+                    intent_result, {'pandas_execution': analysis_result}, viz_data
                 )
             
-            response_dict = self._format_table_response({'pandas_execution': analysis_result}, query=query_text, intent_result=intent_result)
+            # Build analysis dict with nl_result for template engine and ranking flags
+            analysis_dict = {'pandas_execution': analysis_result}
+            if 'nl_result' in orchestrator_result:
+                analysis_dict['nl_result'] = orchestrator_result['nl_result']
+            
+            response_dict = self._format_table_response(analysis_dict, query=query_text, intent_result=intent_result)
             
             return {
                 'success': True,
@@ -456,10 +469,45 @@ class data_exploration:
     def _check_if_scalar(self, analysis_result: Any) -> bool:
         """Check if analysis result is scalar or singular value"""
         if isinstance(analysis_result, dict):
-            result_type = analysis_result.get('result', {}).get('type')
-            result_shape = analysis_result.get('result', {}).get('shape', (0, 0))
+            # Handle both nested {'result': {...}} and direct {...} structures
+            if 'type' in analysis_result:
+                # Direct structure (new orchestrator flow)
+                result_type = analysis_result.get('type')
+                result_shape = analysis_result.get('shape', (0, 0))
+            elif 'result' in analysis_result:
+                # Nested structure (old flow)
+                result_type = analysis_result.get('result', {}).get('type')
+                result_shape = analysis_result.get('result', {}).get('shape', (0, 0))
+            else:
+                return False
+            
             return (result_type == 'scalar') or (result_type == 'dataframe' and result_shape[0] == 1)
         return False
+    
+    def _result_dict_to_dataframe(self, analysis_result: dict):
+        """Convert result dict back to Polars DataFrame for visualization"""
+        if not isinstance(analysis_result, dict):
+            return None
+        
+        # Handle direct structure {'type': 'dataframe', 'data': [...], 'columns': [...]}
+        if 'type' in analysis_result and analysis_result.get('type') == 'dataframe':
+            data = analysis_result.get('data', [])
+            columns = analysis_result.get('columns', [])
+            if data and columns:
+                import polars as pl
+                return pl.DataFrame(data, schema=columns, orient='row')
+        
+        # Handle nested structure {'result': {'type': 'dataframe', ...}}
+        if 'result' in analysis_result:
+            result = analysis_result['result']
+            if isinstance(result, dict) and result.get('type') == 'dataframe':
+                data = result.get('data', [])
+                columns = result.get('columns', [])
+                if data and columns:
+                    import polars as pl
+                    return pl.DataFrame(data, schema=columns, orient='row')
+        
+        return None
     
     def _load_causal_cache(self, chart_name):
         """Load causal analysis cache"""
@@ -758,8 +806,18 @@ class data_exploration:
             if isinstance(analysis_result, dict):
                 if 'pandas_execution' in analysis_result:
                     pandas_exec = analysis_result['pandas_execution']
-                    if 'result' in pandas_exec:
+                    
+                    # Handle both structures:
+                    # 1. New flow (orchestrator): pandas_exec is already formatted dict with 'type' key
+                    # 2. Old flow: pandas_exec has 'result' key containing formatted dict
+                    if isinstance(pandas_exec, dict) and 'type' in pandas_exec:
+                        # New flow: already formatted
+                        result_data = pandas_exec
+                    elif isinstance(pandas_exec, dict) and 'result' in pandas_exec:
+                        # Old flow: extract result
                         result_data = pandas_exec['result']
+                    else:
+                        result_data = None
                 else:
                     result_data = analysis_result
             else:
@@ -1192,22 +1250,24 @@ class data_exploration:
         try:
             # Handle pandas DataFrame (from execute_code)
             if isinstance(result, pd.DataFrame):
-                return {
+                formatted = {
                     'type': 'dataframe',
                     'data': result.values.tolist(),
                     'columns': result.columns.tolist(),
                     'index': result.index.tolist(),
                     'shape': result.shape
                 }
+                return formatted
             # Handle polars DataFrame
             elif isinstance(result, pl.DataFrame):
-                return {
+                formatted = {
                     'type': 'dataframe',
                     'data': result.rows(),
                     'columns': result.columns,
                     'index': list(range(len(result))),
                     'shape': result.shape
                 }
+                return formatted
             # Handle pandas Series
             elif isinstance(result, pd.Series):
                 return {
@@ -1352,7 +1412,6 @@ class data_exploration:
             except Exception as layer0_error:
                 master_logger.error(f"[LAYER0] ❌ Normalization failed, falling back to original query")
                 master_logger.error(f"[LAYER0] Error: {type(layer0_error).__name__}: {layer0_error}")
-                import traceback
                 master_logger.error(f"[LAYER0] Traceback:\n{traceback.format_exc()}")
                 query_to_use = query
             
@@ -1395,6 +1454,7 @@ class data_exploration:
         
             # Execute with polars DataFrame
             result, status = self.execute_code(generated_code, df_for_code)
+
             
             if result is None or "Error" in status:
                 master_logger.error(f"[3-LAYER_AGGREGATION] Execution failed: {status}")
@@ -1461,6 +1521,7 @@ class data_exploration:
             elif 'result' in safe_globals:
                 result = safe_globals['result']
             else:
+                master_logger.error("Code did not produce a 'result' variable")
                 return None, "Error: Code did not produce a 'result' variable"
             
             # Handle polars Series - convert to DataFrame
@@ -1480,5 +1541,7 @@ class data_exploration:
             return result, "success"
             
         except Exception as e:
+            master_logger.error(f"Exception during code execution: {type(e).__name__}: {e}")
+            master_logger.error(traceback.format_exc())
             return None, f"Error executing code: {e}"
     

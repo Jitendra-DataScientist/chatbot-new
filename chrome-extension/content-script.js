@@ -4435,6 +4435,136 @@
         return handleChatSubmit(ev);
       }
 
+      // FIX FOR CONTEXT MANAGER: Handle disambiguation required
+      // Context Manager by Aniket 1/12/2025
+      if (data.status === 'disambiguation_required') {
+        debugLog('Disambiguation required:', data);
+
+        // Remove loading indicator
+        const loadingElement = document.getElementById(loadingId);
+        if (loadingElement) {
+          loadingElement.remove();
+        }
+
+        // Show disambiguation message
+        appendMessage(data.message || 'Please select the correct value:', 'bot');
+
+        // Create disambiguation buttons container
+        const disambiguationId = `disambiguation-${Date.now()}`;
+        const buttonContainer = document.createElement('div');
+        buttonContainer.id = disambiguationId;
+        buttonContainer.className = 'disambiguation-buttons';
+        buttonContainer.style.cssText = 'display: flex; gap: 10px; margin: 10px 0; flex-wrap: wrap;';
+
+        // Add buttons for each suggestion
+        (data.suggestions || []).forEach((suggestion, index) => {
+          const button = document.createElement('button');
+          button.textContent = suggestion.label;
+          button.className = 'disambiguation-button';
+          button.style.cssText = 'background: #28a745; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;';
+          button.disabled = false;
+
+          // Hover effect
+          button.onmouseover = () => {
+            if (!button.disabled) button.style.background = '#218838';
+          };
+          button.onmouseout = () => {
+            if (!button.disabled) button.style.background = '#28a745';
+          };
+
+          // Click handler
+          button.onclick = async () => {
+            debugLog(`User selected: ${suggestion.label}`);
+
+            // Disable all buttons
+            document.querySelectorAll('.disambiguation-button').forEach(btn => {
+              btn.disabled = true;
+              btn.style.opacity = '0.5';
+              btn.style.cursor = 'not-allowed';
+            });
+
+            // Update button text to show selection
+            button.textContent = `✓ ${suggestion.label} (processing...)`;
+
+            try {
+              // Send selection to backend
+              const disambiguationResponse = await proxyFetch(`${extensionState.backendUrl}/api/query/disambiguation`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  selected_value: suggestion.label,
+                  column_name: suggestion.column,
+                  original_value: data.context.original_value,
+                  session_id: data.context.session_id,
+                  source_id: data.context.source_id,
+                  original_query: data.context.original_query
+                })
+              });
+
+              if (!disambiguationResponse.ok) {
+                throw new Error(`HTTP ${disambiguationResponse.status}`);
+              }
+
+              const disambiguationData = await disambiguationResponse.json();
+              debugLog('Disambiguation response:', disambiguationData);
+
+              if (disambiguationData.success) {
+                // Remove button container
+                buttonContainer.remove();
+
+                // Show confirmation
+                appendMessage(`Using "${suggestion.label}" for your query...`, 'bot status');
+
+                // Re-send original query (backend will use cached choice)
+                if (disambiguationData.action === 'rerun_query') {
+                  debugLog('Re-running query with cached disambiguation choice');
+                  ui.chatInput.value = data.context.original_query;
+                  handleChatSubmit({ preventDefault: () => {} });
+                } else {
+                  // Show result directly if backend already executed
+                  appendMessage(disambiguationData.message || disambiguationData.reply, 'bot', disambiguationData);
+                }
+              } else {
+                throw new Error(disambiguationData.error || 'Disambiguation failed');
+              }
+            } catch (err) {
+              ContentLogger.error('Disambiguation selection error', err);
+              appendMessage(`Error: ${err.message}. Please try again.`, 'error');
+
+              // Re-enable buttons
+              document.querySelectorAll('.disambiguation-button').forEach(btn => {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.style.cursor = 'pointer';
+              });
+              button.textContent = suggestion.label;
+            }
+          };
+
+          buttonContainer.appendChild(button);
+        });
+
+        // Add "Other" button
+        const otherButton = document.createElement('button');
+        otherButton.textContent = 'Other (rephrase query)';
+        otherButton.className = 'disambiguation-button';
+        otherButton.style.cssText = 'background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px;';
+        otherButton.onclick = () => {
+          buttonContainer.remove();
+          appendMessage('Please rephrase your query with more specificity.', 'bot');
+        };
+        buttonContainer.appendChild(otherButton);
+
+        // Append to chat
+        const chatMessages = document.getElementById('chatMessages');
+        if (chatMessages) {
+          chatMessages.appendChild(buttonContainer);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        return; // Don't process normal response
+      }
+
       // Remove loading indicator and show result
       updateStatus('Analysis complete! ✅');
       

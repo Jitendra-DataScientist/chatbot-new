@@ -297,6 +297,12 @@ try:
     state_manager = ChatStateManager()
     master_logger.info("ChatStateManager initialized")
     
+    # FIX: Create global SessionContextManager for disambiguation cache
+    # Context Manager by Aniket 1/12/2025
+    from meta_agents.query_understanding_agent import SessionContextManager
+    global_session_manager = SessionContextManager()
+    master_logger.info("Global SessionContextManager initialized for disambiguation cache")
+    
     data_processor = TableauDataProcessor()
     master_logger.info("TableauDataProcessor initialized")
     
@@ -1976,7 +1982,33 @@ async def handle_enhanced_query_processing(msg, state, selected_chart, chart_con
         debug_log("Enhanced query processing completed successfully")
         return jsonify(formatted_response)
         
+    # Context Manager by Aniket 3/12/2025
+    # ============================================================================
     except Exception as e:
+        # Check if this is a UserDisambiguationRequired exception
+        # Import here to avoid circular dependency
+        from services.context_manager import UserDisambiguationRequired
+        
+        if isinstance(e, UserDisambiguationRequired):
+            master_logger.info("[CONTEXT_MGR] 🔘 User disambiguation required")
+            master_logger.info(f"[CONTEXT_MGR] Message: {e.message}")
+            master_logger.info(f"[CONTEXT_MGR] Suggestions: {e.suggestions}")
+            master_logger.info(f"[CONTEXT_MGR] Context: {e.context}")
+            
+            # Add session and query info to context
+            disambiguation_response = e.to_dict()
+            disambiguation_response['context']['original_query'] = msg
+            disambiguation_response['context']['session_id'] = state.session_id if hasattr(state, 'session_id') else f"session_{state.workbook_name}"
+            disambiguation_response['context']['source_id'] = state.workbook_name or "default"
+            
+            debug_log("[CONTEXT_MGR] Returning disambiguation UI to user", {
+                "suggestions_count": len(e.suggestions),
+                "original_value": e.context.get('original_value')
+            })
+            
+            # Return disambiguation response (not an error - expected flow)
+            return jsonify(disambiguation_response), 200
+        
         # Log full error details to master_debug.log
         master_logger.error(f"ERROR in enhanced query processing: {type(e).__name__}: {str(e)}")
         master_logger.error(f"Full traceback:\n{traceback.format_exc()}")
@@ -4078,6 +4110,117 @@ def get_google_sheets_status():
         return jsonify({
             "success": False,
             "error": str(e)
+        }), 500
+
+
+# ============================================================================
+# CONTEXT MANAGER - USER DISAMBIGUATION ENDPOINT
+# Context Manager by Aniket 1/12/2025
+# ============================================================================
+
+@app.route("/api/query/disambiguation", methods=["POST"])
+def handle_user_disambiguation():
+    """
+    Handle user's selection from disambiguation UI (3-button flow)
+
+    When multiple column/value matches are found, user is presented with 3 buttons.
+    This endpoint receives the user's choice and caches it for future queries.
+
+    Context Manager by Aniket 1/12/2025
+    """
+    try:
+        data = request.json
+        master_logger.info("[CONTEXT_MGR] User disambiguation received")
+        master_logger.info(f"[CONTEXT_MGR] Data: {json.dumps(data, indent=2)}")
+
+        # Extract parameters
+        selected_value = data.get('selected_value')
+        column_name = data.get('column_name')
+        original_value = data.get('original_value')
+        session_id = data.get('session_id')
+        source_id = data.get('source_id')
+        original_query = data.get('original_query')  # The query that triggered disambiguation
+
+        if not all([selected_value, column_name, original_value, session_id, source_id]):
+            return jsonify({
+                'success': False,
+                'error': 'Missing required parameters'
+            }), 400
+
+        # 🆕 NORMALIZE the original_value for consistent cache keys
+        # This ensures "March", "march", "  March  " all map to same cache entry
+        def normalize_cache_key(value):
+            """Normalize cache key: lowercase, trim, remove extra spaces"""
+            if not isinstance(value, str):
+                value = str(value)
+            normalized = value.lower().strip()
+            normalized = ' '.join(normalized.split())  # Remove extra internal spaces
+            return normalized
+
+        normalized_original = normalize_cache_key(original_value)
+        master_logger.info(f"[CACHE_NORM_WRITE] Original: '{original_value}' → Normalized: '{normalized_original}'")
+
+        # 🆕 LANGGRAPH APPROACH: Write to class-level cache in NLToPythonGeneratorV5
+        # Context Manager by Aniket 1/12/2025
+        from services.nlp_to_python.nl_to_python_workflow import NLToPythonGeneratorV5
+
+        # Write to the global class-level cache (with normalized key)
+        import time
+        cache_key = (session_id, source_id, column_name, normalized_original)
+        NLToPythonGeneratorV5._global_disambiguation_cache[cache_key] = selected_value
+        NLToPythonGeneratorV5._cache_timestamps[cache_key] = time.time()  # Track timestamp for re-run detection
+        master_logger.info(f"[LANGGRAPH_CACHE] 💾 WRITE: {cache_key} → {selected_value}")
+
+        # ALSO: Write to legacy session manager for backward compatibility (with normalized key)
+        global_session_manager.update_disambiguation_cache(
+            session_id,
+            source_id,
+            column_name,
+            normalized_original,
+            selected_value
+        )
+
+        master_logger.info(f"[CONTEXT_MGR] ✅ Cached user choice: '{original_value}' → '{selected_value}'")
+        master_logger.info(f"[CONTEXT_MGR] Column: {column_name}, Session: {session_id}, Source: {source_id}")
+
+        # Re-run the original query with cached disambiguation
+        # The query will now find the cached value and proceed without raising exception
+        if original_query:
+            master_logger.info(f"[CONTEXT_MGR] Re-running query: {original_query}")
+
+            # TODO: Re-execute the NL to Python workflow with the cached choice
+            # This will be implemented when the main query endpoint is identified
+            # For now, return success and let the client re-send the query
+
+            return jsonify({
+                'success': True,
+                'message': f"Using '{selected_value}' for your query",
+                'cached_choice': {
+                    'original_value': original_value,
+                    'selected_value': selected_value,
+                    'column_name': column_name
+                },
+                'action': 'rerun_query',  # Signal to client to re-send the query
+                'session_id': session_id,
+                'source_id': source_id
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'message': f"Choice cached. Your next query will use '{selected_value}'",
+                'cached_choice': {
+                    'original_value': original_value,
+                    'selected_value': selected_value,
+                    'column_name': column_name
+                }
+            })
+
+    except Exception as e:
+        master_logger.error(f"[CONTEXT_MGR] Error handling user disambiguation: {e}")
+        master_logger.error(traceback.format_exc())
+        return jsonify({
+            'success': False,
+            'error': str(e)
         }), 500
 
 
