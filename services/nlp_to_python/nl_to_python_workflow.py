@@ -662,10 +662,19 @@ class NLToPythonGeneratorV5:
                 suggested_chart_type=chart_type,
                 explanation=stage2_result.reasoning if hasattr(stage2_result, 'reasoning') else "Code generated successfully",
                 is_bottom_query=is_bottom_query,
-                is_top_query=is_top_query
+                is_top_query=is_top_query,
+                # 🆕 POPULATE METADATA FROM STAGE1 (for entity extraction & conversation memory)
+                group_by_columns=stage1_grounded.group_by_columns if stage1_grounded.group_by_columns else None,
+                metric_column=stage1_grounded.metric_column if stage1_grounded.metric_column else None,
+                filter_column=stage1_grounded.filter_column if stage1_grounded.filter_column else None
             )
             
+            # Log metadata that was captured from Stage1
             self.logger.info(f"[GENERATE] ✅ Success - Generated {len(generated_code)} chars of code")
+            self.logger.info(f"[GENERATE] 📊 Metadata captured from Stage1:")
+            self.logger.info(f"  - group_by_columns: {final_result.group_by_columns}")
+            self.logger.info(f"  - metric_column: {final_result.metric_column}")
+            self.logger.info(f"  - filter_column: {final_result.filter_column}")
             return final_result
             
         except Exception as e:
