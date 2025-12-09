@@ -835,35 +835,34 @@ class QueryAgent:
             
             master_logger.info(f"Intent classified: original={original_intent}, primary={primary_intent}")
             
-            # COMMENTED OUT: Chart selection requirement (routing all to data_exploration_no_chart)
-            # # If intent is 'analysis' AND no chart is in THIS request, require chart selection
-            # # Note: selected_chart here comes from the current request, not from session
-            # if original_intent == 'analysis' and not selected_chart:
-            #     master_logger.info("🔀 ANALYSIS INTENT DETECTED - Chart selection required")
-            #     master_logger.info("="*80)
-            #     
-            #     # Return immediately with chart selection requirement
-            #     # This will be caught by app.py and trigger the dropdown
-            #     minimal_intent = QueryIntent(
-            #         primary_intent=primary_intent,
-            #         confidence=classification.get('confidence', 0.8),
-            #         entities=classification.get('entities', {})
-            #     )
-            #     
-            #     return {
-            #         "success": True,
-            #         "reply": "I can analyze that for you! Please select a chart to analyze.",
-            #         "intent": minimal_intent,
-            #         "requires_chart_selection": True,
-            #         "execution_time": 0,
-            #         "routed_to": "requires_chart_selection"
-            #     }
-            
-            # MODIFIED: Route ALL queries to data_exploration_no_chart (regardless of chart or intent)
-            if True:  # Always route to data_exploration_no_chart
+            # If intent is 'analysis' AND no chart is in THIS request, require chart selection
+            # Note: selected_chart here comes from the current request, not from session
+            if original_intent == 'analysis' and not selected_chart:
+                master_logger.info("🔀 ANALYSIS INTENT DETECTED - Chart selection required")
+                master_logger.info("="*80)
                 
-                # Route all queries to data_exploration_no_chart
-                master_logger.info("🔀 ROUTING TO DATA_EXPLORATION_NO_CHART (all queries)")
+                # Return immediately with chart selection requirement
+                # This will be caught by app.py and trigger the dropdown
+                minimal_intent = QueryIntent(
+                    primary_intent=primary_intent,
+                    confidence=classification.get('confidence', 0.8),
+                    entities=classification.get('entities', {})
+                )
+                
+                return {
+                    "success": True,
+                    "reply": "I can analyze that for you! Please select a chart to analyze.",
+                    "intent": minimal_intent,
+                    "requires_chart_selection": True,
+                    "execution_time": 0,
+                    "routed_to": "requires_chart_selection"
+                }
+            
+            # If no chart is selected and not an analysis query, continue with exploration
+            if selected_chart is None:
+                
+                # If intent is 'exploration', route to data_exploration_no_chart
+                master_logger.info("🔀 ROUTING TO DATA_EXPLORATION_NO_CHART (exploration intent)")
                 master_logger.info("="*80)
                 
                 try:
@@ -936,37 +935,33 @@ class QueryAgent:
                     
                 except Exception as e:
                     master_logger.error(f"❌ Error in data_exploration_no_chart service: {e}", exc_info=True)
-                    master_logger.info("⚠️  Falling back to LangGraph workflow...")
+                    master_logger.info("⚠️  Falling back to original flow with intent...")
+                    # Fall through to original flow (with intent classification) if there's an error
             
-            # COMMENTED OUT: Full intent classification (not needed when routing all to data_exploration_no_chart)
-            # # ========== FULL INTENT CLASSIFICATION (for chart-based routing) ==========## Jitendra
-            # # Step 1: Get full intent using existing process method
-            # master_logger.info("="*80)
-            # master_logger.info("STEP 1: Full intent classification for chart-based routing")
-            # master_logger.info("="*80)
-            # intent_response = await self.process(query, context)
-            # 
-            # if not intent_response.success:
-            #     master_logger.error(f"Intent classification failed: {intent_response.message}")
-            #     master_logger.info("Falling back to LangGraph workflow")
-            #     # Fall through to LangGraph (will reach line 937)
-            # else:
-            #     intent_result = intent_response.data
-            #     master_logger.info(f"Intent determined: {intent_result.primary_intent} (confidence: {intent_result.confidence})")
-            #     
-            #     # Update original_intent from full classification
-            #     original_intent = intent_result.entities.get('original_intent', original_intent)
-
+            # Step 1: Get intent using existing process method
+            master_logger.info("STEP 1: Intent classification")
+            intent_response = await self.process(query, context)
             
-            # COMMENTED OUT: SHAP_ANALYSIS SERVICE routing
-            # # ========== ROUTING TO SHAP_ANALYSIS SERVICE (if analysis with chart) ==========
-            # # If this is an analysis query WITH chart, route to shap_analysis service
-            if False:  # original_intent == 'analysis' and selected_chart:
+            if not intent_response.success:
+                master_logger.error(f"Intent classification failed: {intent_response.message}")
+                return {
+                    "success": False,
+                    "reply": f"Failed to understand query: {intent_response.message}",
+                    "error": True
+                }
+            
+            intent_result = intent_response.data
+            master_logger.info(f"Intent determined: {intent_result.primary_intent} (confidence: {intent_result.confidence})")
+            
+            # ========== ROUTING TO SHAP_ANALYSIS SERVICE ==========
+            # If this is a shap_analysis query, route to the shap_analysis service
+            original_intent = intent_result.entities.get('original_intent', '')
+            # if intent_result.primary_intent == 'shap_analysis' and original_intent == 'analysis':
+            if original_intent == 'analysis':
                 master_logger.info("="*80)
                 master_logger.info("🔀 ROUTING TO SHAP_ANALYSIS SERVICE")
                 master_logger.info(f"   Original Intent: {original_intent}")
-                master_logger.info(f"   Primary Intent: {primary_intent}")
-                master_logger.info(f"   Chart: {selected_chart}")
+                master_logger.info(f"   Primary Intent: {intent_result.primary_intent}")
                 master_logger.info("="*80)
                 
                 try:
@@ -980,62 +975,28 @@ class QueryAgent:
                     if not smart_agg_decider:
                         master_logger.warning("smart_agg_decider not available, proceeding without it")
                     
-                    # Get intent_result properly
-                    intent_response = await self.process(query, context)
-                    if intent_response.success:
-                        intent_result = intent_response.data
-                    else:
-                        # Fallback intent
-                        intent_result = QueryIntent(
-                            primary_intent=primary_intent,
-                            confidence=classification.get('confidence', 0.8),
-                            entities=classification.get('entities', {})
-                        )
-                    
                     # Initialize the analysis service
                     analysis_service = shap_analysis(
-                        llm_client=self.llm_client, 
+                        llm_client=self.llm_client,
                         smart_agg_decider=smart_agg_decider,
                         causal_cache_path="causal_analysis_cache.json"
                     )
                     
-                    # Get workbook_id and csv_file_path from context (passed from app.py)
-                    workbook_id = None
-                    csv_file_path = None
-                    if context:
-                        # DEBUG: Log what context actually is
-                        master_logger.info(f"[SHAP_ANALYSIS] Context type: {type(context)}")
-                        master_logger.info(f"[SHAP_ANALYSIS] Context value: {context}")
-                        
-                        # Handle both dict and ChatContext object
-                        if isinstance(context, dict):
-                            workbook_id = context.get('workbook_id')
-                            csv_file_path = context.get('csv_file_path')
-                            master_logger.info(f"[SHAP_ANALYSIS] Context is dict, extracted csv_file_path: {csv_file_path}")
-                        else:
-                            workbook_id = getattr(context, 'workbook_id', None)
-                            csv_file_path = getattr(context, 'csv_file_path', None)
-                            master_logger.info(f"[SHAP_ANALYSIS] Context is object, extracted csv_file_path: {csv_file_path}")
-                        master_logger.info(f"[SHAP_ANALYSIS] Retrieved workbook_id from context: {workbook_id}")
-                        master_logger.info(f"[SHAP_ANALYSIS] Retrieved csv_file_path from context: {csv_file_path}")
-                    else:
-                        master_logger.warning(f"[SHAP_ANALYSIS] No context provided, workbook_id and csv_file_path will be None")
-                    
-                    # Process the query with DataManager reference pattern
+                    # Process the query
                     result = analysis_service.process(
                         query_text=query,
-                        data_id=data_id,  # Pass data_id instead of csv_data
-                        connection_key=source_id or "default",
+                        data_id=data_id,
+                        connection_key=connection_key,
                         selected_chart=selected_chart,
                         intent_result=intent_result,  # Pass the intent_result
-                        chart_context={"workbook_id": workbook_id, "csv_file_path": csv_file_path}  # Pass workbook_id and csv_file_path for cache
+                        chart_context=None  # Will be loaded internally
                     )
                     
                     # Return the result directly
                     master_logger.info("✅ shap_analysis service completed successfully")
                     master_logger.info("="*80)
                     
-                    # Extract seven_layer_analysis if present
+                    # Extract seven_layer_analysis if present (result IS final_result)
                     seven_layer = result.get('seven_layer_analysis')
                     if seven_layer:
                         master_logger.info("✅ 7-layer analysis found in result, adding to response")
@@ -1059,102 +1020,63 @@ class QueryAgent:
                     if seven_layer:
                         response_dict["seven_layer_analysis"] = seven_layer
                     
-                    # 🆕 Update schema if analysis produced new columns (Ashish's feature)
-                    try:
-                        self._update_schema_from_result({"analysis_result": result}, session_id, source_id)
-                    except Exception as schema_err:
-                        master_logger.warning(f"Schema update failed: {schema_err}")
-                    
-                    # 🆕 Save query to history (Ashish's feature)
-                    try:
-                        self.session_manager.add_query_to_history(
-                            session_id,
-                            query,
-                            source_id,
-                            resolved_entities={'intent': intent_result.primary_intent}
-                        )
-                    except Exception as history_err:
-                        master_logger.warning(f"History update failed: {history_err}")
-                    
                     return response_dict
                     
                 except Exception as e:
                     master_logger.error(f"❌ Error in shap_analysis service: {e}", exc_info=True)
-                    master_logger.info("⚠️  Falling back to LangGraph workflow...")
-                    # Fall through to LangGraph if there's an error
+                    master_logger.info("⚠️  Falling back to original flow...")
+                    # Fall through to original flow if there's an error
             
-            # COMMENTED OUT: DATA_EXPLORATION (with chart) SERVICE routing
-            # # ========== ROUTING TO DATA_EXPLORATION SERVICE ==========
-            # # If original_intent is exploration WITH chart, route to data_exploration service
-            if False:  # 'intent_result' in locals() and intent_result is not None:
-                current_original_intent = intent_result.entities.get('original_intent', original_intent)
+            # ========== ROUTING TO DATA_EXPLORATION SERVICE ==========
+            # If original_intent is exploration, route to data_exploration service
+            if original_intent == 'exploration':
+                master_logger.info("="*80)
+                master_logger.info("🔀 ROUTING TO DATA_EXPLORATION SERVICE")
+                master_logger.info(f"   Original Intent: {original_intent}")
+                master_logger.info(f"   Primary Intent: {intent_result.primary_intent}")
+                master_logger.info("="*80)
                 
-                if current_original_intent == 'exploration' and selected_chart:
-                    master_logger.info("="*80)
-                    master_logger.info("🔀 ROUTING TO DATA_EXPLORATION SERVICE (with chart)")
-                    master_logger.info(f"   Original Intent: {current_original_intent}")
-                    master_logger.info(f"   Primary Intent: {intent_result.primary_intent}")
-                    master_logger.info(f"   Chart: {selected_chart}")
-                    master_logger.info("="*80)
+                try:
+                    from services.data_exploration import data_exploration
                     
-                    try:
-                        from services.data_exploration import data_exploration
-                        
-                        import app
-                        smart_agg_decider = getattr(app, 'smart_agg_decider', None)
-                        
-                        if not smart_agg_decider:
-                            master_logger.warning("smart_agg_decider not available, proceeding without it")
-                        
-                        exploration_service = data_exploration(
-                            llm_client=self.llm_client,
-                            smart_agg_decider=smart_agg_decider,
-                            cache_path="causal_analysis_cache.json"
-                        )
-                        
-                        result = await exploration_service.process(
-                            query_text=query,
-                            csv_data=csv_data,
-                            selected_chart=selected_chart,
-                            intent_result=intent_result,
-                            chart_context=None
-                        )
-                        
-                        # 🆕 Update schema if exploration produced new columns (Ashish's feature)
-                        try:
-                            self._update_schema_from_result({"analysis_result": result}, session_id, source_id)
-                        except Exception as schema_err:
-                            master_logger.warning(f"Schema update failed: {schema_err}")
-                        
-                        # 🆕 Save query to history (Ashish's feature)
-                        try:
-                            self.session_manager.add_query_to_history(
-                                session_id,
-                                query,
-                                source_id,
-                                resolved_entities={'intent': intent_result.primary_intent}
-                            )
-                        except Exception as history_err:
-                            master_logger.warning(f"History update failed: {history_err}")
-                        
-                        return {
-                            "success": result.get('success', False),
-                            "reply": result.get('response', 'Exploration completed'),
-                            "intent": intent_result,
-                            "analysis_result": result.get('computational_results', {}),
-                            "visualization": {
-                                'needs_visualization': result.get('needs_visualization', False),
-                                'chart_type': result.get('chart_type'),
-                                'chart_image': result.get('chart_image')
-                            },
-                            "execution_time": result.get('execution_time', 0),
-                            "routed_to": "services.data_exploration.data_exploration"
-                        }
-                        
-                    except Exception as e:
-                        master_logger.error(f"❌ Error in data_exploration service: {e}", exc_info=True)
-                        master_logger.info("⚠️  Falling back to LangGraph workflow...")
-                        # Fall through to LangGraph if there's an error
+                    import app
+                    smart_agg_decider = getattr(app, 'smart_agg_decider', None)
+                    
+                    if not smart_agg_decider:
+                        master_logger.warning("smart_agg_decider not available, proceeding without it")
+                    
+                    exploration_service = data_exploration(
+                        llm_client=self.llm_client,
+                        smart_agg_decider=smart_agg_decider,
+                        cache_path="causal_analysis_cache.json"
+                    )
+                    
+                    result = await exploration_service.process(
+                        query_text=query,
+                        csv_data=csv_data,
+                        selected_chart=selected_chart,
+                        intent_result=intent_result,
+                        chart_context=None
+                    )
+                    
+                    return {
+                        "success": result.get('success', False),
+                        "reply": result.get('response', 'Exploration completed'),
+                        "intent": intent_result,
+                        "analysis_result": result.get('computational_results', {}),
+                        "visualization": {
+                            'needs_visualization': result.get('needs_visualization', False),
+                            'chart_type': result.get('chart_type'),
+                            'chart_image': result.get('chart_image')
+                        },
+                        "execution_time": result.get('execution_time', 0),
+                        "routed_to": "services.data_exploration.data_exploration"
+                    }
+                    
+                except Exception as e:
+                    master_logger.error(f"❌ Error in data_exploration service: {e}", exc_info=True)
+                    master_logger.info("⚠️  Falling back to original flow...")
+                    # Fall through to original flow if there's an error
 
         except Exception as intent_error:
             master_logger.error(f"Intent classification/routing failed: {intent_error}")
