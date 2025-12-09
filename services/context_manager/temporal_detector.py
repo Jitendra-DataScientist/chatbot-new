@@ -295,3 +295,4 @@ class TemporalDetector:
 
         return False
 
+
