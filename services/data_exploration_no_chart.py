@@ -32,6 +32,7 @@ from services.insight_generator import TableauInsightGenerator
 from services.NL_to_python import NLToPythonGenerator
 from services.enhanced_analysis_service import EnhancedAnalysisService
 from services.period_extraction_service import PeriodExtractionService
+from services.response_template_engine import ResponseTemplateEngine
 
 master_logger = setup_module_logger('services.data_exploration')
 master_logger.info("DATA EXPLORATION SERVICE MODULE INITIALIZATION STARTED")
@@ -51,6 +52,10 @@ class data_exploration:
         self.smart_aggregation_decider = smart_agg_decider
         self.cache_path = cache_path
         
+        # Initialize data attributes
+        self.original_csv_data = None
+        self.workbook_name = None
+        
         # Initialize services
         self.llm_service = LLMService(openai_client=llm_client)
         self.data_processor = TableauDataProcessor()
@@ -60,6 +65,10 @@ class data_exploration:
         self.nl_to_python = NLToPythonGenerator(openai_client=llm_client)
         self.enhanced_analysis = EnhancedAnalysisService(self.data_processor, self.nl_to_python)
         self.fuzzy_matcher = FuzzyColumnMatcher(threshold=70)
+        
+        # Initialize template engine for professional response formatting
+        self.template_engine = ResponseTemplateEngine()
+        master_logger.info("✓ Response template engine initialized")
         
         # Initialize period extraction service
         self.period_extractor = PeriodExtractionService(
@@ -103,8 +112,22 @@ class data_exploration:
                 chart_context: Optional[Dict] = None,
                 conversation_state: Optional[Dict] = None,
                 use_conversation: bool = True,
-                context: Optional[Dict] = None) -> Dict[str, Any]:  # 🆕 Add context parameter
-        """Process exploration query"""
+                context: Optional[Dict] = None,
+                query_metadata: Optional[Dict] = None) -> Dict[str, Any]:  # 🆕 Add query_metadata parameter
+        """
+        Process exploration query
+        
+        Args:
+            query_text: User's natural language query
+            csv_data: DataFrame containing the data
+            selected_chart: Selected chart name
+            intent_result: Intent classification result
+            chart_context: Chart-specific context
+            conversation_state: Previous conversation state
+            use_conversation: Whether to use conversational mode
+            context: Additional context (e.g., workbook_name)
+            query_metadata: Metadata about query (is_followup, merged_by, etc.)
+        """
         master_logger.info("=" * 80)
         master_logger.info("=== PROCESSING DATA EXPLORATION QUERY ===")
         master_logger.info(f"Query: '{query_text}'")
@@ -125,7 +148,8 @@ class data_exploration:
         if use_conversation and self.has_conversation_support:
             return await self._process_with_orchestrator(
                 query_text, csv_data, selected_chart, 
-                intent_result, chart_context, conversation_state
+                intent_result, chart_context, conversation_state,
+                query_metadata  # 🆕 Pass query_metadata to orchestrator
             )
         else:
             return await self._process_single_turn(
@@ -139,7 +163,8 @@ class data_exploration:
                                         selected_chart: str,
                                         intent_result,
                                         chart_context: Optional[Dict],
-                                        conversation_state: Optional[Dict]) -> Dict[str, Any]:
+                                        conversation_state: Optional[Dict],
+                                        query_metadata: Optional[Dict] = None) -> Dict[str, Any]:
         # Convert pandas to polars if needed (DataManager returns pandas)
         if csv_data is not None and isinstance(csv_data, pd.DataFrame):
             csv_data = pl.from_pandas(csv_data)
@@ -157,7 +182,8 @@ class data_exploration:
                 df_columns=list(analysis_data.columns),
                 selected_chart=selected_chart,
                 chart_context=chart_context,
-                conversation_state=conversation_state
+                conversation_state=conversation_state,
+                query_metadata=query_metadata  # 🆕 Pass query_metadata from query_understanding_agent
             )
             
             if orchestrator_result.get('needs_clarification'):
@@ -184,11 +210,20 @@ class data_exploration:
             is_scalar_result = self._check_if_scalar(analysis_result)
             
             if not is_scalar_result and self._requires_visualization(intent_result, {'pandas_execution': analysis_result}):
+                # Convert result dict to DataFrame for visualization
+                result_df = self._result_dict_to_dataframe(analysis_result)
+                viz_data = result_df if result_df is not None else analysis_data
+                
                 visualization = await self._create_visualization_for_intent(
-                    intent_result, {'pandas_execution': analysis_result}, analysis_data
+                    intent_result, {'pandas_execution': analysis_result}, viz_data
                 )
             
-            response_dict = self._format_table_response({'pandas_execution': analysis_result})
+            # Build analysis dict with nl_result for template engine and ranking flags
+            analysis_dict = {'pandas_execution': analysis_result}
+            if 'nl_result' in orchestrator_result:
+                analysis_dict['nl_result'] = orchestrator_result['nl_result']
+            
+            response_dict = self._format_table_response(analysis_dict, query=query_text, intent_result=intent_result)
             
             return {
                 'success': True,
@@ -411,7 +446,7 @@ class data_exploration:
             # Step 5: Format response
             master_logger.info("STEP 5: Formatting table response")
             
-            response_dict = self._format_table_response(analysis_result)
+            response_dict = self._format_table_response(analysis_result, query=query_text, intent_result=intent_result)
             response_text = response_dict.get("response", "No response generated")
             table_data = response_dict.get("table_data", None)
             
@@ -451,10 +486,45 @@ class data_exploration:
     def _check_if_scalar(self, analysis_result: Any) -> bool:
         """Check if analysis result is scalar or singular value"""
         if isinstance(analysis_result, dict):
-            result_type = analysis_result.get('result', {}).get('type')
-            result_shape = analysis_result.get('result', {}).get('shape', (0, 0))
+            # Handle both nested {'result': {...}} and direct {...} structures
+            if 'type' in analysis_result:
+                # Direct structure (new orchestrator flow)
+                result_type = analysis_result.get('type')
+                result_shape = analysis_result.get('shape', (0, 0))
+            elif 'result' in analysis_result:
+                # Nested structure (old flow)
+                result_type = analysis_result.get('result', {}).get('type')
+                result_shape = analysis_result.get('result', {}).get('shape', (0, 0))
+            else:
+                return False
+            
             return (result_type == 'scalar') or (result_type == 'dataframe' and result_shape[0] == 1)
         return False
+    
+    def _result_dict_to_dataframe(self, analysis_result: dict):
+        """Convert result dict back to Polars DataFrame for visualization"""
+        if not isinstance(analysis_result, dict):
+            return None
+        
+        # Handle direct structure {'type': 'dataframe', 'data': [...], 'columns': [...]}
+        if 'type' in analysis_result and analysis_result.get('type') == 'dataframe':
+            data = analysis_result.get('data', [])
+            columns = analysis_result.get('columns', [])
+            if data and columns:
+                import polars as pl
+                return pl.DataFrame(data, schema=columns, orient='row')
+        
+        # Handle nested structure {'result': {'type': 'dataframe', ...}}
+        if 'result' in analysis_result:
+            result = analysis_result['result']
+            if isinstance(result, dict) and result.get('type') == 'dataframe':
+                data = result.get('data', [])
+                columns = result.get('columns', [])
+                if data and columns:
+                    import polars as pl
+                    return pl.DataFrame(data, schema=columns, orient='row')
+        
+        return None
     
     def _load_causal_cache(self, chart_name):
         """Load causal analysis cache"""
@@ -592,6 +662,10 @@ class data_exploration:
             pandas_result = self.execute_pandas_aggregation_with_codet5(query, data, intent_result, chart_context)
             analysis_result["pandas_execution"] = pandas_result
             analysis_result["success"] = pandas_result.get('execution_status') == 'success'
+            
+            # Pass through nl_result for template engine
+            if 'nl_result' in pandas_result:
+                analysis_result["nl_result"] = pandas_result['nl_result']
             
             return analysis_result
             
@@ -732,10 +806,16 @@ class data_exploration:
             master_logger.error(traceback.format_exc())
             return None
     
-    def _format_table_response(self, analysis_result, query: str = None) -> Dict[str, Any]:
-        """Format analysis result into table response - FIXED DataFrame ambiguity error"""
+    def _format_table_response(self, analysis_result, query: str = None, intent_result = None) -> Dict[str, Any]:
+        """Format analysis result into table response with template engine integration"""
         try:
             master_logger.info(f"[TABLE_FORMAT] Formatting result")
+            
+            # Extract intent type and nl_result for template engine
+            intent_type = intent_result.primary_intent if intent_result and hasattr(intent_result, 'primary_intent') else 'data_exploration'
+            nl_result = analysis_result.get('nl_result') if isinstance(analysis_result, dict) else None
+            
+            master_logger.info(f"[TABLE_FORMAT] Intent type: {intent_type}, Has NL result: {nl_result is not None}")
             
             # Extract result
             result_data = None
@@ -743,8 +823,18 @@ class data_exploration:
             if isinstance(analysis_result, dict):
                 if 'pandas_execution' in analysis_result:
                     pandas_exec = analysis_result['pandas_execution']
-                    if 'result' in pandas_exec:
+                    
+                    # Handle both structures:
+                    # 1. New flow (orchestrator): pandas_exec is already formatted dict with 'type' key
+                    # 2. Old flow: pandas_exec has 'result' key containing formatted dict
+                    if isinstance(pandas_exec, dict) and 'type' in pandas_exec:
+                        # New flow: already formatted
+                        result_data = pandas_exec
+                    elif isinstance(pandas_exec, dict) and 'result' in pandas_exec:
+                        # Old flow: extract result
                         result_data = pandas_exec['result']
+                    else:
+                        result_data = None
                 else:
                     result_data = analysis_result
             else:
@@ -824,13 +914,22 @@ class data_exploration:
                     master_logger.info(f"[TABLE_FORMAT] ✅ Preserving time series chronological order for '{time_series_col}'")
                     df = df.head(max_display_rows)
                 else:
-                    # For other data, sort by last column if numeric
-                    value_col = df.columns[-1]
-                    master_logger.info(f"[TABLE_FORMAT] Not time series, sorting by last column '{value_col}' descending")
-                    if df[value_col].dtype in [pl.Int8, pl.Int16, pl.Int32, pl.Int64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64, pl.Float32, pl.Float64]:
-                        df = df.sort(value_col, descending=True).head(max_display_rows)
-                    else:
+                    # Extract ranking flags from nl_result to determine sorting
+                    is_bottom_query = getattr(nl_result, 'is_bottom_query', False) if nl_result else False
+                    is_top_query = getattr(nl_result, 'is_top_query', False) if nl_result else False
+                    
+                    # For ranking queries, preserve code-generated order; otherwise apply default sorting
+                    if is_bottom_query or is_top_query:
+                        master_logger.info(f"[TABLE_FORMAT] ✅ Preserving {'bottom' if is_bottom_query else 'top'} ranking order from generated code")
                         df = df.head(max_display_rows)
+                    else:
+                        # For non-ranking queries, sort by last column descending (default)
+                        value_col = df.columns[-1]
+                        master_logger.info(f"[TABLE_FORMAT] Not time series/ranking, sorting by last column '{value_col}' descending")
+                        if df[value_col].dtype in [pl.Int8, pl.Int16, pl.Int32, pl.Int64, pl.UInt8, pl.UInt16, pl.UInt32, pl.UInt64, pl.Float32, pl.Float64]:
+                            df = df.sort(value_col, descending=True).head(max_display_rows)
+                        else:
+                            df = df.head(max_display_rows)
             else:
                 df = df.head(max_display_rows)
 
@@ -846,10 +945,24 @@ class data_exploration:
                 "truncated": original_row_count > displayed_rows
             }
             
-            # Create markdown
+            # Create markdown (fallback)
             markdown_table = self._dataframe_to_markdown(df)
             
+            # Try templated response first
             response_text = markdown_table
+            if query and self.template_engine.can_template_response(intent_type, query):
+                master_logger.info(f"[TABLE_FORMAT] Using template engine for {intent_type}")
+                templated_response = self.template_engine.format_templated_response(
+                    intent_type=intent_type,
+                    query=query,
+                    df=df,  # polars DataFrame (template engine will convert)
+                    fallback_markdown=markdown_table,
+                    nl_result=nl_result
+                )
+                response_text = templated_response
+            else:
+                master_logger.info(f"[TABLE_FORMAT] Using markdown fallback (query={query}, can_template={self.template_engine.can_template_response(intent_type, query) if query else False})")
+            
             if displayed_rows < original_row_count:
                 response_text += f"\n\nNote: Showing top {displayed_rows} of {original_row_count} results."
             
@@ -1154,22 +1267,24 @@ class data_exploration:
         try:
             # Handle pandas DataFrame (from execute_code)
             if isinstance(result, pd.DataFrame):
-                return {
+                formatted = {
                     'type': 'dataframe',
                     'data': result.values.tolist(),
                     'columns': result.columns.tolist(),
                     'index': result.index.tolist(),
                     'shape': result.shape
                 }
+                return formatted
             # Handle polars DataFrame
             elif isinstance(result, pl.DataFrame):
-                return {
+                formatted = {
                     'type': 'dataframe',
                     'data': result.rows(),
                     'columns': result.columns,
                     'index': list(range(len(result))),
                     'shape': result.shape
                 }
+                return formatted
             # Handle pandas Series
             elif isinstance(result, pd.Series):
                 return {
@@ -1298,9 +1413,28 @@ class data_exploration:
             master_logger.info(f"🔍 DEBUG: workbook_name extracted = {workbook_name}")
             master_logger.info(f"🔍 DEBUG: self.workbook_name = {getattr(self, 'workbook_name', 'NOT SET')}")
             
+            # 🆕 LAYER 0: Query Normalization with Driver-Aware Rephrasing
+            try:
+                from services.layer0_constrained_parser import create_query_normalizer
+                
+                master_logger.info("[LAYER0] Normalizing query...")
+                layer0_normalizer = create_query_normalizer(self.llm_client)
+                
+                # Get normalized query (driver hints stay internal, not passed forward)
+                normalized_query = layer0_normalizer.normalize(query)
+                master_logger.info(f"[LAYER0] ✅ Normalized: '{query}' → '{normalized_query}'")
+                
+                query_to_use = normalized_query
+                
+            except Exception as layer0_error:
+                master_logger.error(f"[LAYER0] ❌ Normalization failed, falling back to original query")
+                master_logger.error(f"[LAYER0] Error: {type(layer0_error).__name__}: {layer0_error}")
+                master_logger.error(f"[LAYER0] Traceback:\n{traceback.format_exc()}")
+                query_to_use = query
+            
             # Generate code using LangGraph workflow (using polars DataFrame directly)
             nl_result = self.nl_to_python.generate_python_code(
-                query=query,
+                query=query_to_use,
                 df_columns=list(df_for_code.columns),
                 df_sample=df_for_code,
                 workbook_name=workbook_name  # 🆕 Pass workbook_name for identifier detection
@@ -1337,6 +1471,7 @@ class data_exploration:
         
             # Execute with polars DataFrame
             result, status = self.execute_code(generated_code, df_for_code)
+
             
             if result is None or "Error" in status:
                 master_logger.error(f"[3-LAYER_AGGREGATION] Execution failed: {status}")
@@ -1363,7 +1498,8 @@ class data_exploration:
                 'explanation': nl_result.explanation,
                 'execution_status': status,
                 'result': formatted_result,
-                'result_type': type(result).__name__
+                'result_type': type(result).__name__,
+                'nl_result': nl_result  # Pass through for template engine
             }
             
         except Exception as e:
@@ -1402,6 +1538,7 @@ class data_exploration:
             elif 'result' in safe_globals:
                 result = safe_globals['result']
             else:
+                master_logger.error("Code did not produce a 'result' variable")
                 return None, "Error: Code did not produce a 'result' variable"
             
             # Handle polars Series - convert to DataFrame
@@ -1421,4 +1558,7 @@ class data_exploration:
             return result, "success"
             
         except Exception as e:
+            master_logger.error(f"Exception during code execution: {type(e).__name__}: {e}")
+            master_logger.error(traceback.format_exc())
             return None, f"Error executing code: {e}"
+    

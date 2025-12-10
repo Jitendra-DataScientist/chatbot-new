@@ -6,8 +6,9 @@ while maintaining markdown table formatting as fallback.
 """
 
 import pandas as pd
+import polars as pl
 import numpy as np
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple, List, Union
 import re
 from master_logger import setup_module_logger
 
@@ -167,7 +168,7 @@ Here's the percentage breakdown across different {entity_name}:
     def format_templated_response(self, 
                                  intent_type: str, 
                                  query: str, 
-                                 df: pd.DataFrame, 
+                                 df: Union[pd.DataFrame, pl.DataFrame], 
                                  fallback_markdown: str,
                                  nl_result=None) -> str:
         """
@@ -176,14 +177,20 @@ Here's the percentage breakdown across different {entity_name}:
         Args:
             intent_type: The type of analysis (e.g., 'top_bottom_analysis')
             query: Original user query
-            df: Result DataFrame
+            df: Result DataFrame (pandas or polars)
             fallback_markdown: Fallback markdown table
+            nl_result: NL-to-Python extraction result (optional)
             
         Returns:
             Formatted templated response or fallback
         """
         try:
             master_logger.info(f"[TEMPLATE] Formatting {intent_type} response")
+            
+            # Convert polars DataFrame to pandas for template processing
+            if isinstance(df, pl.DataFrame):
+                master_logger.info("[TEMPLATE] Converting polars DataFrame to pandas for template processing")
+                df = df.to_pandas()
             
             if not self.can_template_response(intent_type, query):
                 master_logger.info(f"[TEMPLATE] No template available for {intent_type}, using fallback")
@@ -365,15 +372,38 @@ Here's the percentage breakdown across different {entity_name}:
             if not cat_col or not num_col or len(df) == 0:
                 return "Analysis completed successfully."
             
-            leader = df.iloc[0][cat_col]
             top_value = df.iloc[0][num_col]
             
-            if len(df) > 1:
-                second_value = df.iloc[1][num_col]
-                diff = top_value - second_value
-                return f"{leader} leads with {top_value:,.0f}, ahead by {diff:,.0f}."
+            # Check if multiple entities share the top value
+            top_entities = df[df[num_col] == top_value][cat_col].tolist()
+            num_tied = len(top_entities)
+            
+            # Single leader - use original template
+            if num_tied == 1:
+                leader = top_entities[0]
+                if len(df) > 1:
+                    second_value = df.iloc[1][num_col]
+                    diff = top_value - second_value
+                    return f"{leader} leads with {top_value:,.0f}, ahead by {diff:,.0f}."
+                else:
+                    return f"{leader} leads with {top_value:,.0f}."
+            
+            # Multiple entities tied at top - use new template
             else:
-                return f"{leader} leads with {top_value:,.0f}."
+                # Format entity names with commas and "and"
+                if num_tied == 2:
+                    entities_str = f"{top_entities[0]} and {top_entities[1]}"
+                else:
+                    entities_str = ", ".join(top_entities[:-1]) + f", and {top_entities[-1]}"
+                
+                # Find the next highest value (if exists) to calculate gap
+                non_tied_df = df[df[num_col] != top_value]
+                if len(non_tied_df) > 0:
+                    next_value = non_tied_df.iloc[0][num_col]
+                    diff = top_value - next_value
+                    return f"{entities_str} are tied at the top with {top_value:,.0f}, ahead by {diff:,.0f}."
+                else:
+                    return f"{entities_str} are tied with {top_value:,.0f}."
             
         except Exception as e:
             return "Analysis completed successfully."
@@ -387,10 +417,34 @@ Here's the percentage breakdown across different {entity_name}:
             if not cat_col or not num_col or len(df) == 0:
                 return "Analysis completed successfully."
             
-            bottom_entity = df.iloc[-1][cat_col]
-            bottom_value = df.iloc[-1][num_col]
+            # For bottom queries, data is sorted ascending, so lowest is at index 0
+            bottom_value = df.iloc[0][num_col]
             
-            return f"{bottom_entity} has the lowest {metric_name.lower()} at {bottom_value:,.0f}."
+            # Check if multiple entities share the bottom value
+            bottom_entities = df[df[num_col] == bottom_value][cat_col].tolist()
+            num_tied = len(bottom_entities)
+            
+            # Single entity at bottom - use original template
+            if num_tied == 1:
+                bottom_entity = bottom_entities[0]
+                return f"{bottom_entity} has the lowest {metric_name.lower()} at {bottom_value:,.0f}."
+            
+            # Multiple entities tied at bottom - use new template
+            else:
+                # Format entity names with commas and "and"
+                if num_tied == 2:
+                    entities_str = f"{bottom_entities[0]} and {bottom_entities[1]}"
+                else:
+                    entities_str = ", ".join(bottom_entities[:-1]) + f", and {bottom_entities[-1]}"
+                
+                # Find the next lowest value (if exists) to calculate gap
+                non_tied_df = df[df[num_col] != bottom_value]
+                if len(non_tied_df) > 0:
+                    next_value = non_tied_df.iloc[0][num_col]
+                    diff = next_value - bottom_value
+                    return f"{entities_str} are tied with the lowest {metric_name.lower()} at {bottom_value:,.0f}, {diff:,.0f} below the next."
+                else:
+                    return f"{entities_str} are tied with {bottom_value:,.0f}."
                 
         except Exception as e:
             return "Analysis completed successfully."
@@ -1085,26 +1139,47 @@ Here's the percentage breakdown across different {entity_name}:
             if len(df) == 0:
                 return "No data available for analysis."
             
-            # Get top categories by percentage
-            top_row = df.iloc[0]
-            top_category = str(top_row[group_col])
-            top_percentage = float(top_row['percentage'])
+            # Get top percentage value
+            top_percentage = float(df.iloc[0]['percentage'])
             
-            if len(df) > 1:
-                second_row = df.iloc[1]
-                second_category = str(second_row[group_col])
-                second_percentage = float(second_row['percentage'])
+            # Check if multiple categories share the top percentage
+            top_categories = df[df['percentage'] == top_percentage][group_col].tolist()
+            num_tied = len(top_categories)
+            
+            # Single top category - use original template
+            if num_tied == 1:
+                top_category = str(top_categories[0])
                 
-                # Use composition insight template  
-                insight_template = self._templates["composition_percentage"]["composition_insight_template"]
-                return insight_template.format(
-                    top_category=top_category,
-                    top_percentage=f"{top_percentage:.1f}%",
-                    second_category=second_category,
-                    second_percentage=f"{second_percentage:.1f}%"
-                )
+                if len(df) > 1:
+                    second_row = df.iloc[1]
+                    second_category = str(second_row[group_col])
+                    second_percentage = float(second_row['percentage'])
+                    
+                    # Use composition insight template  
+                    insight_template = self._templates["composition_percentage"]["composition_insight_template"]
+                    return insight_template.format(
+                        top_category=top_category,
+                        top_percentage=f"{top_percentage:.1f}%",
+                        second_category=second_category,
+                        second_percentage=f"{second_percentage:.1f}%"
+                    )
+                else:
+                    return f"{top_category} represents {top_percentage:.1f}% of the total composition."
+            
+            # Multiple categories tied at top percentage
             else:
-                return f"{top_category} represents {top_percentage:.1f}% of the total composition."
+                # Format category names with commas and "and"
+                if num_tied == 2:
+                    categories_str = f"{top_categories[0]} and {top_categories[1]}"
+                else:
+                    categories_str = ", ".join(str(c) for c in top_categories[:-1]) + f", and {top_categories[-1]}"
+                
+                non_tied_df = df[df['percentage'] != top_percentage]
+                if len(non_tied_df) > 0:
+                    next_percentage = float(non_tied_df.iloc[0]['percentage'])
+                    return f"{categories_str} are tied at the top with {top_percentage:.1f}% each, above the next at {next_percentage:.1f}%."
+                else:
+                    return f"{categories_str} are tied with {top_percentage:.1f}% each."
             
         except Exception as e:
             return "Composition analysis completed successfully."

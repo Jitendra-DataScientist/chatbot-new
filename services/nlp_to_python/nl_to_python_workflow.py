@@ -479,7 +479,7 @@ class NLToPythonGeneratorV5:
             df_sample: Sample dataframe for statistical checks
             
         Returns:
-            True if column is an identifier (case ID, ticket number, etc.)
+            True if column is an identifier (record ID, transaction number, etc.)
         """
         # Get metadata for this specific workbook
         self.logger.info(f"🔍 DEBUG: _is_identifier_column called with column='{column_name}', workbook='{workbook_name}'")
@@ -627,7 +627,7 @@ class NLToPythonGeneratorV5:
                 stage1_grounded = stage1_result  # Fallback
             
             # Stage 2: Agentic Planning
-            stage2_result = self._stage2_agentic_planning(stage1_grounded, df_sample)
+            stage2_result = self._stage2_agentic_planning(stage1_grounded, df_sample, query)
             if not stage2_result:
                 self.logger.error("[GENERATE] Stage 2 failed")
                 return None
@@ -649,16 +649,32 @@ class NLToPythonGeneratorV5:
             chart_type = self._suggest_chart_type(operation_type)
             confidence = stage2_result.confidence if hasattr(stage2_result, 'confidence') else 0.7
             
+            # Detect ranking query flags for proper display sorting
+            from services.nlp_to_python.nl_to_python_codegen import RankingCodeGen
+            is_top_query = RankingCodeGen._detect_top_query(query)
+            is_bottom_query = RankingCodeGen._detect_bottom_query(query)
+            
             final_result = NLToPythonResult(
                 original_query=query,
                 generated_code=generated_code,
                 operation_type=operation_type,
                 confidence=confidence,
                 suggested_chart_type=chart_type,
-                explanation=stage2_result.reasoning if hasattr(stage2_result, 'reasoning') else "Code generated successfully"
+                explanation=stage2_result.reasoning if hasattr(stage2_result, 'reasoning') else "Code generated successfully",
+                is_bottom_query=is_bottom_query,
+                is_top_query=is_top_query,
+                # 🆕 POPULATE METADATA FROM STAGE1 (for entity extraction & conversation memory)
+                group_by_columns=stage1_grounded.group_by_columns if stage1_grounded.group_by_columns else None,
+                metric_column=stage1_grounded.metric_column if stage1_grounded.metric_column else None,
+                filter_column=stage1_grounded.filter_column if stage1_grounded.filter_column else None
             )
             
+            # Log metadata that was captured from Stage1
             self.logger.info(f"[GENERATE] ✅ Success - Generated {len(generated_code)} chars of code")
+            self.logger.info(f"[GENERATE] 📊 Metadata captured from Stage1:")
+            self.logger.info(f"  - group_by_columns: {final_result.group_by_columns}")
+            self.logger.info(f"  - metric_column: {final_result.metric_column}")
+            self.logger.info(f"  - filter_column: {final_result.filter_column}")
             return final_result
             
         except Exception as e:
@@ -745,7 +761,7 @@ Column Description Queries:
             self.logger.info("[FALLBACK_STAGE1] 🔥 Detected composition/breakdown query - Collision detection by Aniket")
             
             # For composition queries, find the grouping column (usually after "by")
-            # e.g., "percentage composition by account status" -> group_by = ['account_status']
+            # e.g., "percentage composition by [dimension]" -> group_by = ['dimension_column']
             
             # Simple heuristic: look for column names in the query
             found_columns = [col for col in df_columns if col.lower() in query_lower]
@@ -783,7 +799,7 @@ Column Description Queries:
         # For now, return the original result - value grounding can be enhanced later
         return stage1_result
     
-    def _stage2_agentic_planning(self, stage1_grounded, df_sample: pl.DataFrame):
+    def _stage2_agentic_planning(self, stage1_grounded, df_sample: pl.DataFrame, query: str = ""):
         """Stage 2: Agentic Planning"""
         # Let LLM handle all operations including column descriptions
         
@@ -822,8 +838,83 @@ Create a plan with:
 
 Special handling:
 - If operation_intent='column_description', use operations=['column_description'] with high confidence (0.95)
-- Column description queries don't need temporal filters or complex aggregations"""},
+- Column description queries don't need temporal filters or complex aggregations
+
+CRITICAL - Distinguishing Aggregation from Ranking:
+
+1. Ranking Queries (top/bottom/lowest/highest with comparative intent):
+   Query patterns:
+   - "[DIMENSION] with lowest [METRIC]"
+   - "[DIMENSION] with highest [METRIC]" 
+   - "top [N] [DIMENSION] by [METRIC]"
+   - "bottom [N] [DIMENSION] by [METRIC]"
+   - "which [DIMENSION] has most/least [METRIC]"
+   
+   Operation logic:
+   - Use operations=['grouped_aggregation']
+   - Set agg_functions=['count'] for counting metrics (identifiers, ticket numbers, case numbers, etc.)
+   - Set agg_functions=['sum']/['mean']/etc. for numeric metrics
+   - Do NOT set agg_functions=['min'] or ['max'] 
+   - The system handles sorting via is_top_query/is_bottom_query detection
+   
+2. Aggregation Queries (computing min/max/avg value within groups):
+   Query patterns:
+   - "minimum [METRIC] per [DIMENSION]"
+   - "maximum [METRIC] by [DIMENSION]"
+   - "average [METRIC] for each [DIMENSION]"
+   - "min/max/mean/median of [METRIC]"
+   
+   Operation logic:
+   - Use operations=['grouped_aggregation']
+   - Set agg_functions=['min'], ['max'], ['mean'], ['median'] etc.
+   - These compute statistical aggregates within groups
+
+Key Distinction:
+- "which [DIMENSION] has lowest [METRIC_COUNT]" → rank by count → agg_functions=['count']
+- "lowest [METRIC_VALUE] per [DIMENSION]" → min within group → agg_functions=['min']
+
+Examples:
+  Query: "which [dimension_col] has lowest [count_metric]"
+  → agg_functions=['count'] (NOT ['min'])
+  
+  Query: "minimum [value_metric] per [dimension_col]"
+  → agg_functions=['min']
+
+For period_comparison operations:
+- Extract specific periods being compared from temporal_intent (e.g., 'Q1 2025', 'Q2 2025', 'February 2025', 'March 2025')
+- Set compare_periods with the extracted periods as a list (e.g., ['Q1 2025', 'Q2 2025'])
+- Create temporal_filters array with one TemporalFilter object per period:
+  * For quarters: filter_type='specific_quarter', quarter=<number>, year=<year>
+  * For months: filter_type='specific_month', month=<number>, year=<year>
+  * For years: filter_type='specific_year', year=<year>
+- Do NOT rely on filter_column/filter_value from Stage 1 for temporal comparisons - they should be in temporal_filters instead
+
+CRITICAL - group_by_columns for period_comparison:
+- If comparing ONLY two time periods (e.g., "Q1 vs Q2", "January vs February", "2023 vs 2024") WITHOUT additional dimensions:
+  → Set group_by_columns = [] or null (to aggregate entire periods into single values)
+  → This ensures result has 2 rows: one for each period with totals
+  
+- If comparing periods WITH breakdown by a business dimension (e.g., "compare by country Q1 vs Q2", "product sales Q1 vs Q2"):
+  → Set group_by_columns = [dimension_column] (e.g., ['dimension_col_1'], ['dimension_col_2'])
+  → Remove any date-related columns from group_by_columns (month, week, day, create_month, etc.)
+  → This ensures result has one row per dimension value, with separate columns for each period
+  
+- ALWAYS remove date/time columns from group_by_columns for period_comparison operations:
+  → Date columns belong in temporal_filters, NOT group_by_columns
+  → Common date columns to remove: create_month, create_week, create_day, date, month, week, day, year, quarter
+  
+Examples:
+  Query: "compare [metric_column] [period1] vs [period2]"
+  → group_by_columns = [] (simple period comparison, no dimensions)
+  
+  Query: "compare [metric_column] by [dimension] [period1] vs [period2]"
+  → group_by_columns = [dimension_column] (has business dimension)
+  
+  Query: "compare [filter_value] [metric_column] [period1] vs [period2]" (if Stage 1 had group_by=['date_column'])
+  → group_by_columns = [] (override Stage 1, remove date column)"""},
                 {"role": "user", "content": f"""
+Original Query: {query}
+
 Stage 1 Results:
 - Filter: {stage1_grounded.filter_column} = {stage1_grounded.filter_value}
 - Group by: {stage1_grounded.group_by_columns}
@@ -844,11 +935,60 @@ Create execution plan:"""}
             
             result = response.choices[0].message.parsed
             self.logger.info(f"[STAGE2] ✅ Plan: operations={result.operations}, confidence={result.confidence}")
+            self.logger.info(f"[STAGE2_DEBUG] group_by_columns from Stage 2: {result.group_by_columns}")
+            self.logger.info(f"[STAGE2_DEBUG] compare_periods from Stage 2: {getattr(result, 'compare_periods', None)}")
+            
+            # Validate and correct Stage 2 results
+            result = self._validate_and_correct_stage2(result, query)
+            
             return result
             
         except Exception as e:
             self.logger.error(f"[STAGE2] Error: {e}")
             return self._fallback_stage2(stage1_grounded)
+    
+    def _validate_and_correct_stage2(self, stage2_result, query: str):
+        """
+        Validate and correct common Stage 2 LLM mistakes
+        
+        Detects ranking vs aggregation semantic mismatches using pattern analysis.
+        This is a defense-in-depth layer that catches cases where the LLM prompt
+        might not prevent the confusion between ranking and aggregation.
+        
+        Args:
+            stage2_result: Stage 2 plan from LLM
+            query: Original user query
+            
+        Returns:
+            Corrected Stage 2 plan
+        """
+        query_lower = query.lower()
+        
+        # Pattern 1: Ranking queries (comparative/superlative with dimension)
+        # Examples: "which X has", "X with most", "top N X", "bottom N X"
+        ranking_patterns = [
+            r'\b(which|what)\s+\w+\s+(has|have)\s+(most|least|highest|lowest|maximum|minimum)',
+            r'\b\w+\s+with\s+(most|least|highest|lowest|top|bottom)',
+            r'\b(top|bottom)\s+\d*\s*\w+',
+        ]
+        
+        is_ranking_query = any(
+            re.search(pattern, query_lower) 
+            for pattern in ranking_patterns
+        )
+        
+        # Check if agg_functions conflicts with ranking intent
+        agg_funcs = getattr(stage2_result, 'agg_functions', None) or []
+        group_by = getattr(stage2_result, 'group_by_columns', None)
+        
+        if is_ranking_query and group_by and ('min' in agg_funcs or 'max' in agg_funcs):
+            self.logger.warning(
+                f"[STAGE2_CORRECTION] Ranking query pattern detected but agg_functions={agg_funcs}. "
+                f"Query: '{query}'. Correcting to ['count'] for proper ranking."
+            )
+            stage2_result.agg_functions = ['count']
+            
+        return stage2_result
     
     def _fallback_stage2(self, stage1_grounded):
         """Fallback Stage 2 when LLM is not available"""
@@ -1400,13 +1540,40 @@ Create execution plan:"""}
             raise Exception("Column description operations should be handled directly, not through Stage 3")
         
         # For breakdown operations, 'column' should be the first group_by column
-        group_by_columns = getattr(stage2_result, 'group_by_columns', None) or stage1_result.group_by_columns or []
+        # 🔥 CRITICAL FIX: Check for None explicitly, not using 'or' (empty list [] is falsy!)
+        stage2_group_by = getattr(stage2_result, 'group_by_columns', None)
+        if stage2_group_by is not None:
+            group_by_columns = stage2_group_by  # Use Stage 2 result even if it's []
+        else:
+            group_by_columns = stage1_result.group_by_columns or []  # Fallback to Stage 1
+        
+        self.logger.info(f"[PARAM_BUILD_DEBUG] Stage 1 group_by: {stage1_result.group_by_columns}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG] Stage 2 group_by: {stage2_group_by}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG] Final group_by_columns (before cleanup): {group_by_columns}")
+        self.logger.info(f"[PARAM_BUILD_FIX] Used Stage 2: {stage2_group_by is not None}, Stage 2 was empty: {stage2_group_by == []}")
         
         # 🔥 SAFETY: Ensure it's always a list, never None
         if group_by_columns is None:
             group_by_columns = []
         elif not isinstance(group_by_columns, list):
             group_by_columns = [group_by_columns]
+        
+        # 🔥 NEW: Remove date_column from group_by_columns ONLY for operations that concatenate them
+        # Operations like TimeSeriesCodeGen and PeriodComparisonCodeGen do [date_column] + group_by
+        # which causes duplicate column errors when date_column is also in group_by
+        operations_that_concatenate_date = ['time_series', 'period_comparison']
+        
+        self.logger.info(f"[PARAM_BUILD_DEBUG] Checking date column removal:")
+        self.logger.info(f"[PARAM_BUILD_DEBUG]   primary_operation={primary_operation}, in list: {primary_operation in operations_that_concatenate_date}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG]   date_column={date_column}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG]   group_by_columns={group_by_columns}")
+        self.logger.info(f"[PARAM_BUILD_DEBUG]   date in group_by: {date_column in group_by_columns if group_by_columns else False}")
+        
+        if primary_operation in operations_that_concatenate_date and date_column and group_by_columns and date_column in group_by_columns:
+            group_by_columns = [col for col in group_by_columns if col != date_column]
+            self.logger.info(f"[PARAM_BUILD] ✅ Removed date_column '{date_column}' from group_by_columns to avoid duplicate grouping in {primary_operation}")
+        else:
+            self.logger.info(f"[PARAM_BUILD] ⚠️ Did NOT remove date_column - condition not met")
         
         if primary_operation == 'breakdown' and group_by_columns:
             column_param = group_by_columns[0]  # Use first group_by column for breakdown
@@ -1446,6 +1613,17 @@ Create execution plan:"""}
             temporal_filters = []
         if group_by_columns is None:
             group_by_columns = []
+        
+        # 🆕 SAFETY: Auto-set date_column for time_series with temporal grouping
+        if primary_operation == 'time_series' and group_by_columns and not date_column:
+            # Check if any group_by column is temporal (generic keywords)
+            temporal_keywords = ['day', 'week', 'month', 'quarter', 'year', 'date', 'time', 'timestamp']
+            for col in group_by_columns:
+                col_lower = col.lower()
+                if any(keyword in col_lower for keyword in temporal_keywords):
+                    date_column = col
+                    self.logger.info(f"[SAFETY] Auto-set date_column={col} for time_series with temporal grouping")
+                    break
         
         # Build operation parameters dict
         operation_params = {
@@ -1641,7 +1819,7 @@ if '{date_column}' in df.columns:
 """
         
         # 🆕 IDENTIFIER DETECTION: Check if metric column is an identifier BEFORE processing
-        # This handles columns like "Number of Tickets" which return case IDs
+        # This handles columns like count/number columns which return record IDs
         workbook_name = getattr(self, '_current_workbook_name', None)
         
         self.logger.info(f"🔍 DEBUG: In _generate_data_cleaning_code:")
@@ -1663,7 +1841,7 @@ if '{date_column}' in df.columns:
                 self.logger.info(f"   → Using helper column for row counting instead of summing identifier values")
                 
                 cleaning_code += f"""# ⚡ IDENTIFIER COLUMN DETECTED: '{metric_column}'
-# Metadata indicates this column contains identifiers (case IDs, ticket numbers, etc.)
+# Metadata indicates this column contains identifiers (record IDs, transaction numbers, etc.)
 # Using helper column for row counting instead of summing identifier values
 df = df.with_columns(pl.lit(1).alias('_count_helper'))
 
@@ -2023,7 +2201,9 @@ result = descriptions
                 operation_type='column_description',
                 confidence=confidence,
                 suggested_chart_type='table',  # Descriptions are best shown as tables
-                explanation=reasoning
+                explanation=reasoning,
+                is_bottom_query=False,  # Column descriptions are not ranking queries
+                is_top_query=False
             )
             
             self.logger.info(f"[COLUMN_DESC_DIRECT] ✅ Success - Generated descriptions for {len(describe_columns)} column(s)")
@@ -2590,7 +2770,9 @@ result = descriptions
             operation_type='column_description',
             confidence=0.0,
             suggested_chart_type='table',
-            explanation=f"Error: {error_message}"
+            explanation=f"Error: {error_message}",
+            is_bottom_query=False,
+            is_top_query=False
         )
 
     def _suggest_chart_type(self, operation_type: str) -> str:

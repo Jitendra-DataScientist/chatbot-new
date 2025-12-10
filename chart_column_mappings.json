@@ -14,5 +14,40 @@
     "CONTAINS": "str.contains() - Check if string contains substring",
     "DATEPART": "dt.year, dt.month, etc. - Extract date parts",
     "DATEDIFF": "(date2 - date1).dt.days - Calculate date difference"
+  },
+  "FRO Dashboard_new_updated": {
+    "last_updated": "2025-12-09T17:46:44.259269Z",
+    "chart_count": 1,
+    "charts": {
+      "Number of Tickets Line chart": {
+        "original_columns": [
+          "Month of Create Month",
+          "Count of Number of Tickets"
+        ],
+        "cleaned_columns": {
+          "Month of Create Month": "create_month",
+          "Count of Number of Tickets": "number_of_tickets"
+        },
+        "csv_matched_columns": {
+          "Month of Create Month": null,
+          "Count of Number of Tickets": null
+        },
+        "x_axis_detected": "Month of Create Month",
+        "x_axis_cleaned": "create_month",
+        "x_axis_csv_matched": null,
+        "y_axis_detected": "Count of Number of Tickets",
+        "y_axis_cleaned": "number_of_tickets",
+        "y_axis_csv_matched": null,
+        "hue_detected": [],
+        "hue_cleaned": [],
+        "hue_csv_matched": [],
+        "mapping_confidence": {
+          "x_axis": 0.0,
+          "y_axis": 0.0,
+          "csv_matching_success_rate": 0.0
+        },
+        "chart_timestamp": "2025-12-09T17:46:44.259269Z"
+      }
+    }
   }
 }

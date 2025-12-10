@@ -39,6 +39,15 @@ from models.schemas import NLToPythonResult, PandasOperation
 from services.fuzzy_column_matcher import FuzzyColumnMatcher
 from master_logger import setup_module_logger
 
+# Import Context Manager modules (Integration by Aniket 4/12/2025)
+from services.context_manager import (
+    DisambiguationManager,
+    ConversationMemory,
+    TemporalDetector,
+    UserDisambiguationRequired,
+    ContextManagerState
+)
+
 # Try to import OpenAI
 try:
     from openai import OpenAI
@@ -79,78 +88,158 @@ class UserInputRequiredException(Exception):
 
 class DefaultContextManager:
     """
-    Enhanced context manager with session-based disambiguation caching
-    Integrates with SessionContextManager from query_understanding_agent
+    Enhanced context manager adapter - integrates DisambiguationManager and ConversationMemory
+    Integration by Aniket 4/12/2025 - Uses services.context_manager modules
     """
-    
-    def __init__(self, session_manager=None, session_id: str = None, source_id: str = None):
+
+    def __init__(self, session_manager=None, session_id: str = None, source_id: str = None,
+                 disambiguation_cache: Optional[Dict[Tuple[str, str, str, str], str]] = None):
         """
-        Initialize context manager with session support
-        
+        Initialize context manager adapter with new context_manager modules
+
         Args:
-            session_manager: SessionContextManager instance for caching
+            session_manager: Legacy SessionContextManager (optional, for backward compatibility)
             session_id: Current session ID
             source_id: Current data source ID
+            disambiguation_cache: Dict from LangGraph state for caching disambiguation choices
         """
         self.session_manager = session_manager
-        self.session_id = session_id or f"session_{datetime.now().timestamp()}"
         self.source_id = source_id or "default"
-        self.logger = logging.getLogger(__name__)
+        self.session_id = session_id or f"session_{self.source_id}"
+        # Use setup_module_logger to ensure logs go to master log
+        self.logger = setup_module_logger('services.NL_to_python.context_manager')
+
+        # 🆕 INTEGRATE NEW CONTEXT MANAGER MODULES (Integration by Aniket 4/12/2025)
+        # Initialize TemporalDetector FIRST (shared by DisambiguationManager)
+        self.temporal_detector = TemporalDetector(use_bert_ner=True)
+
+        # Initialize DisambiguationManager for column/value disambiguation
+        # ⚠️ DisambiguationManager creates its own TemporalDetector internally
+        # We keep both for now (slight inefficiency but maintains compatibility)
+        self.disambiguation_manager = DisambiguationManager(
+            fuzzy_threshold=70,
+            use_bert_ner=True
+        )
+
+        # Initialize ConversationMemory for query history tracking
+        self.conversation_memory = ConversationMemory()
+
+        # Create LangGraph state for context manager integration
+        self._state: ContextManagerState = {
+            'query': '',
+            'session_id': self.session_id,
+            'source_id': self.source_id,
+            'workbook_name': None,
+            'disambiguation_cache': disambiguation_cache if disambiguation_cache is not None else {},
+            'conversation_history': [],
+            'current_entities': {},
+            'temporal_entities': [],
+            'is_followup': False,
+            'followup_context': None
+        }
+
+        # Legacy cache reference (for backward compatibility)
+        self.disambiguation_cache = self._state['disambiguation_cache']
+
+    def _normalize_cache_key(self, value: Any) -> str:
+        """
+        Normalize cache key for consistent lookups
+        Delegates to context_manager.schemas.normalize_cache_key
+
+        Integration by Aniket 4/12/2025
+        """
+        from services.context_manager import normalize_cache_key
+        return normalize_cache_key(value)
     
     def ask_user_for_column(self, filter_value, candidate_columns, query):
         """
         Ask user to select correct column for filter value
-        First checks disambiguation cache before prompting
-        
+        Delegates to DisambiguationManager with temporal detection
+
+        Integration by Aniket 4/12/2025
+
         Args:
             filter_value: The filter value (e.g., "usa")
             candidate_columns: List of dicts with 'column', 'actual_value', 'sample_values'
             query: Original query
-            
+
         Returns:
             Selected actual_value or None
         """
-        self.logger.info(f"[CONTEXT_MGR] Disambiguation needed for filter: {filter_value}")
-        self.logger.info(f"[CONTEXT_MGR] Candidates: {[c.get('actual_value') for c in candidate_columns]}")
-        
-        # 🆕 CHECK CACHE FIRST
-        if self.session_manager and candidate_columns:
-            # Try to find cached choice for this filter value
-            for candidate in candidate_columns:
-                column = candidate.get('column')
-                actual_value = candidate.get('actual_value')
-                
-                cached = self.session_manager.get_cached_disambiguation(
-                    self.session_id,
-                    self.source_id,
-                    column,
-                    filter_value
-                )
-                
-                if cached and cached == actual_value:
-                    self.logger.info(f"[CONTEXT_MGR] ✅ Found cached choice: '{filter_value}' → '{cached}'")
-                    return cached
-        
-        # 🆕 NO CACHE HIT - Need user input (or auto-select for testing)
+        self.logger.info(f"[CONTEXT_MGR] ━━━ Step 1: Value Disambiguation Request ━━━")
+        self.logger.info(f"[CONTEXT_MGR] Filter value: '{filter_value}'")
+        self.logger.info(f"[CONTEXT_MGR] {len(candidate_columns)} candidates: {[c.get('actual_value') for c in candidate_columns]}")
+        self.logger.info(f"[CONTEXT_MGR] Query: '{query[:80]}...'")
+
+        # Update state with current query
+        self._state['query'] = query
+
+        # Check if this is a temporal keyword (should skip disambiguation)
+        self.logger.info(f"[CONTEXT_MGR] Step 2: Checking if '{filter_value}' is temporal keyword...")
+        if self.temporal_detector.should_skip_disambiguation(filter_value, query):
+            self.logger.info(f"[CONTEXT_MGR] ✅ TEMPORAL: Skipping disambiguation for '{filter_value}'")
+            # Return the first candidate if available
+            if candidate_columns:
+                result = candidate_columns[0].get('actual_value')
+                self.logger.info(f"[CONTEXT_MGR] Returning first match: '{result}'")
+                return result
+            return filter_value
+
+        self.logger.info(f"[CONTEXT_MGR] Not temporal, proceeding with disambiguation")
+
+        # Check cache first
+        self.logger.info(f"[CONTEXT_MGR] Step 3: Checking cache...")
+        from services.context_manager import build_cache_key
+        cache_key = build_cache_key("filter", filter_value)
+        self.logger.info(f"[CONTEXT_MGR] Cache key: {cache_key}")
+
+        if cache_key in self._state['disambiguation_cache']:
+            cached_value = self._state['disambiguation_cache'][cache_key]
+            self.logger.info(f"[CONTEXT_MGR] ✅ CACHE HIT: '{filter_value}' → '{cached_value}'")
+            return cached_value
+
+        self.logger.info(f"[CONTEXT_MGR] ❌ Cache miss")
+
+        # No cache hit - raise disambiguation required
+        self.logger.info(f"[CONTEXT_MGR] Step 4: Preparing disambiguation request for user")
         if candidate_columns:
-            selected = candidate_columns[0]['actual_value']
-            column = candidate_columns[0]['column']
-            
-            self.logger.info(f"[CONTEXT_MGR] Auto-selected first candidate: {selected}")
-            
-            # 🆕 CACHE THE CHOICE
-            if self.session_manager:
-                self.session_manager.update_disambiguation_cache(
-                    self.session_id,
-                    self.source_id,
-                    column,
-                    filter_value,
-                    selected
-                )
-                self.logger.info(f"[CONTEXT_MGR] 💾 Cached choice for future queries")
-            
-            return selected
-        
+            # Get top 3 suggestions for UI buttons
+            top_3_suggestions = candidate_columns[:3]
+
+            self.logger.info(f"[CONTEXT_MGR] 🔘 Requesting user disambiguation for '{filter_value}'")
+            self.logger.info(f"[CONTEXT_MGR] Top 3 suggestions:")
+            for i, cand in enumerate(top_3_suggestions, 1):
+                self.logger.info(f"[CONTEXT_MGR]   {i}. '{cand.get('actual_value')}' (column: {cand.get('column')}, score: {cand.get('score', 100)})")
+
+            # Prepare exception details
+            suggestion_list = [
+                {
+                    'label': candidate.get('actual_value'),
+                    'column': candidate.get('column'),
+                    'confidence': candidate.get('score', 100)
+                }
+                for candidate in top_3_suggestions
+            ]
+
+            context_dict = {
+                'original_value': filter_value,
+                'column_name': top_3_suggestions[0].get('column'),
+                'operation_type': 'filter',
+                'session_id': self.session_id,
+                'source_id': self.source_id
+            }
+
+            self.logger.info(f"[CONTEXT_MGR] ━━━ Raising UserDisambiguationRequired Exception ━━━")
+            self.logger.info(f"[CONTEXT_MGR] Context: {context_dict}")
+
+            # Raise exception to trigger UI disambiguation flow
+            raise UserDisambiguationRequired(
+                message=f"Multiple possible values found for '{filter_value}'. Please select the correct one:",
+                suggestions=suggestion_list,
+                context=context_dict
+            )
+
+        self.logger.warning(f"[CONTEXT_MGR] ⚠️  No candidates provided, returning None")
         return None
     
     def ask_user_for_metric(self, query, available_metrics, operation_type):
@@ -196,7 +285,102 @@ class DefaultContextManager:
     
     def get_cached_disambiguation(self, session_id: str, source_id: str, column: str, term: str) -> Optional[str]:
         """
-        Get cached disambiguation choice for a given term in a column
+        Get cached disambiguation choice - uses DisambiguationManager cache
+        Integration by Aniket 4/12/2025
+
+        Args:
+            session_id: Current session ID
+            source_id: Current data source ID
+            column: Column name being filtered
+            term: The term to look up
+
+        Returns:
+            Cached disambiguation choice or None
+        """
+        # Check LangGraph state cache (integrated with DisambiguationManager)
+        from services.context_manager import build_cache_key
+        cache_key_str = build_cache_key("filter", term)
+
+        if cache_key_str in self._state['disambiguation_cache']:
+            result = self._state['disambiguation_cache'][cache_key_str]
+            self.logger.info(f"[CONTEXT_MGR] ✅ Cache hit: {cache_key_str} → {result}")
+            return result
+
+        # Fallback to legacy session_manager for backward compatibility
+        if self.session_manager:
+            result = self.session_manager.get_cached_disambiguation(session_id, source_id, column, term)
+            if result:
+                self.logger.info(f"[LEGACY_CACHE] ✅ HIT from session_manager → {result}")
+                return result
+
+        self.logger.debug(f"[CACHE] ❌ MISS: {cache_key_str}")
+        return None
+
+    def update_disambiguation_cache(self, session_id: str, source_id: str, column: str, term: str, choice: str):
+        """
+        Update disambiguation cache - uses DisambiguationManager
+        Integration by Aniket 4/12/2025
+
+        Args:
+            session_id: Current session ID
+            source_id: Current data source ID
+            column: Column name being filtered
+            term: The term that was disambiguated
+            choice: The chosen actual value
+        """
+        # Update LangGraph state cache
+        from services.context_manager import build_cache_key
+        cache_key_str = build_cache_key("filter", term)
+
+        self._state['disambiguation_cache'][cache_key_str] = choice
+        self.logger.info(f"[CONTEXT_MGR] 💾 Cache updated: {cache_key_str} → {choice}")
+
+        # Also update legacy session_manager for backward compatibility
+        if self.session_manager:
+            self.session_manager.update_disambiguation_cache(session_id, source_id, column, term, choice)
+            self.logger.debug(f"[LEGACY_CACHE] Updated session_manager cache")
+
+    # Additional methods for context manager integration (Integration by Aniket 4/12/2025)
+
+    def add_query_to_history(self, query: str, entities: Dict[str, Any], success: bool = True):
+        """
+        Add query to conversation history using ConversationMemory
+        
+        Args:
+            query: User's query
+            entities: Extracted entities from query
+            success: Whether query executed successfully
+        """
+        self._state = self.conversation_memory.add_query(self._state, query, entities, success)
+        self.logger.debug(f"[CONTEXT_MGR] Added query to conversation history")
+
+    def detect_followup(self, query: str) -> tuple[bool, Optional[Dict[str, Any]]]:
+        """
+        Detect if query is a follow-up question
+        
+        Args:
+            query: Current query
+            
+        Returns:
+            (is_followup, context_from_previous)
+        """
+        return self.conversation_memory.detect_followup(query, self._state)
+
+    def extract_temporal_entities(self, query: str) -> List[str]:
+        """
+        Extract temporal entities from query
+        
+        Args:
+            query: Natural language query
+            
+        Returns:
+            List of temporal keywords found
+        """
+        return self.temporal_detector.extract_temporal_entities(query)
+
+    def get_cached_disambiguation_old(self, session_id: str, source_id: str, column: str, term: str) -> Optional[str]:
+        """
+        OLD METHOD - Get cached disambiguation choice for a given term in a column
         
         Args:
             session_id: Current session ID
@@ -304,7 +488,7 @@ def create_stage1_schema(df_columns: List[str], column_samples: Dict[str, List[A
         # Date/time column
         date_column: Optional[ColumnEnum] = Field(
             None,
-            description="Date/time column for temporal filtering (MUST be from available columns)"
+            description="Date/time column for temporal operations (filtering, grouping, time series). Set this if the query involves any temporal dimension (days, weeks, months, years, dates). If grouping by a temporal column (any column containing date/time/week/month/year/quarter in its name), set this to that column. (MUST be from available columns)"
         )
         
         # Secondary columns (for comparisons, rankings, etc.)
