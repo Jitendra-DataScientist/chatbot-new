@@ -747,5 +747,26 @@
     "confidence": "very_high",
     "source": "tableau_hint_explicit",
     "column_type": "tableau_defined"
+  },
+  "platform": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests an interest in the frequency of occurrences of different platforms over time. Given that the 'platform' column contains categorical data, the appropriate aggregation function is COUNT to determine how many times each platform appears in the dataset.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "categorical"
+  },
+  "LOB ": {
+    "aggregation": "COUNT",
+    "reasoning": "The query 'temporal comparison drivers' suggests a need to count occurrences of different lines of business (LOB) over time. The LOB column contains categorical data representing different business areas, and the goal is likely to understand how many entries exist for each category. Since the values are not pre-aggregated counts but rather categorical identifiers, COUNT is the appropriate aggregation function to determine the frequency of each LOB.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "age_in_hours": {
+    "aggregation": "AVG",
+    "reasoning": "The user is interested in the correlation between 'time to close' and other metrics, which implies a need to understand the average time taken. The data in the 'age_in_hours' column is continuous and numeric, making the average a suitable measure to summarize the central tendency of the time values. Additionally, the statistical hint suggests that the average is a likely measure for this type of analysis.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "measure"
   }
 }

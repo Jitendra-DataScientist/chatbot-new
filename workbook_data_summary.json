@@ -2066,5 +2066,727 @@
     "generated_at": "2025-11-23T21:02:29.872276",
     "total_rows": 4108,
     "total_columns": 92
+  },
+  "Centralized L10N Metrics": {
+    "data_description": "This dataset contains over 2 million records related to project performance metrics, including numerical and categorical data on costs, savings, and touchless volumes across various projects and time periods, aimed at analyzing operational efficiency and resource allocation.",
+    "numerical_columns": {
+      "cpw_std_all": {
+        "count": 1298283.0,
+        "mean": 0.07347555916777149,
+        "std": 0.01161626262145331,
+        "min": 0.0553337336649866,
+        "25%": 0.0667367193473996,
+        "50%": 0.0717919563789976,
+        "75%": 0.0782755523526765,
+        "max": 0.1043009987673799,
+        "column_type": "measure"
+      },
+      "cpw_std_cg": {
+        "count": 1296926.0,
+        "mean": 0.06656085109190026,
+        "std": 0.019435302640894946,
+        "min": 0.0130310752707207,
+        "25%": 0.0567774785782609,
+        "50%": 0.06646685942498,
+        "75%": 0.0762777497419083,
+        "max": 0.2879806395642665,
+        "column_type": "measure"
+      },
+      "wwc": {
+        "count": 1302789.0,
+        "mean": 215.70435770873087,
+        "std": 87614.04927730918,
+        "min": 0.0,
+        "25%": 7.0,
+        "50%": 29.0,
+        "75%": 105.0,
+        "max": 100000000.0,
+        "column_type": "measure"
+      },
+      "twc": {
+        "count": 2062347.0,
+        "mean": 1182.109307125556,
+        "std": 195631.02879499845,
+        "min": 0.0,
+        "25%": 19.0,
+        "50%": 90.0,
+        "75%": 240.0,
+        "max": 115957018.0,
+        "column_type": "measure"
+      },
+      "cost": {
+        "count": 1302075.0,
+        "mean": 26.810103047480375,
+        "std": 559.2443349762577,
+        "min": -122191.11,
+        "25%": 1.57,
+        "50%": 6.27,
+        "75%": 19.95,
+        "max": 540671.7,
+        "column_type": "measure"
+      },
+      "mt_saving": {
+        "count": 759462.0,
+        "mean": 169.06573592072215,
+        "std": 19213.41136155596,
+        "min": 0.0,
+        "25%": 7.1145000000000005,
+        "50%": 20.925,
+        "75%": 40.176,
+        "max": 7595184.679,
+        "column_type": "measure"
+      },
+      "mt_spend": {
+        "count": 759462.0,
+        "mean": 2.555199891380874,
+        "std": 208.57889607568012,
+        "min": 0.0,
+        "25%": 0.0265,
+        "50%": 0.076,
+        "75%": 0.1465,
+        "max": 57978.509,
+        "column_type": "measure"
+      },
+      "Touchless Volume": {
+        "count": 2062814.0,
+        "mean": 978.3762378652671,
+        "std": 182797.19875574613,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 0.0,
+        "75%": 87.0,
+        "max": 115957018.0,
+        "column_type": "measure"
+      }
+    },
+    "categorical_columns": {
+      "month": {
+        "count": 2067807,
+        "unique": 46,
+        "top": "2025-09-01 00:00:00",
+        "freq": 238658,
+        "column_type": "categorical"
+      },
+      "project_name": {
+        "count": 2067388,
+        "unique": 94160,
+        "top": "MT Only",
+        "freq": 10730,
+        "column_type": "categorical"
+      },
+      "od": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 991631,
+        "column_type": "categorical"
+      },
+      "cl": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 723635,
+        "column_type": "categorical"
+      },
+      "noce": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 737614,
+        "column_type": "categorical"
+      },
+      "gca": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1091827,
+        "column_type": "categorical"
+      },
+      "urg": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1034079,
+        "column_type": "categorical"
+      },
+      "l10nfix": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1080860,
+        "column_type": "categorical"
+      },
+      "cleanup": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1092043,
+        "column_type": "categorical"
+      },
+      "tcr8": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1097198,
+        "column_type": "categorical"
+      },
+      "dtp": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1093741,
+        "column_type": "categorical"
+      },
+      "nocharge": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1096345,
+        "column_type": "categorical"
+      },
+      "rosetta_suggestion": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "False",
+        "freq": 1097143,
+        "column_type": "categorical"
+      },
+      "vendor": {
+        "count": 2067807,
+        "unique": 8,
+        "top": "Translated",
+        "freq": 806377,
+        "column_type": "categorical"
+      },
+      "vertical": {
+        "count": 2067807,
+        "unique": 12,
+        "top": "Not Reported",
+        "freq": 769524,
+        "column_type": "categorical"
+      },
+      "client_category": {
+        "count": 2067698,
+        "unique": 12,
+        "top": "Marketing",
+        "freq": 1286315,
+        "column_type": "categorical"
+      },
+      "client": {
+        "count": 2067806,
+        "unique": 118,
+        "top": "Marketing - Earner",
+        "freq": 700025,
+        "column_type": "categorical"
+      },
+      "client_raw": {
+        "count": 1298737,
+        "unique": 146,
+        "top": "Marketing - All",
+        "freq": 364197,
+        "column_type": "categorical"
+      },
+      "domain": {
+        "count": 2067793,
+        "unique": 120,
+        "top": "CRM",
+        "freq": 841473,
+        "column_type": "categorical"
+      },
+      "domain_raw": {
+        "count": 1305695,
+        "unique": 138,
+        "top": "UI",
+        "freq": 310597,
+        "column_type": "categorical"
+      },
+      "platform": {
+        "count": 2067807,
+        "unique": 5,
+        "top": "Phrase",
+        "freq": 1352204,
+        "column_type": "categorical"
+      },
+      "source_locale_type": {
+        "count": 2067807,
+        "unique": 3,
+        "top": "English",
+        "freq": 1674918,
+        "column_type": "categorical"
+      },
+      "source_locale": {
+        "count": 2067800,
+        "unique": 324,
+        "top": "en-US",
+        "freq": 1674853,
+        "column_type": "categorical"
+      },
+      "source_locale_raw": {
+        "count": 2017060,
+        "unique": 102,
+        "top": "English US",
+        "freq": 805228,
+        "column_type": "categorical"
+      },
+      "target_locale": {
+        "count": 2067796,
+        "unique": 363,
+        "top": "fr-FR",
+        "freq": 62247,
+        "column_type": "categorical"
+      },
+      "target_locale_raw": {
+        "count": 2017060,
+        "unique": 331,
+        "top": "French",
+        "freq": 39109,
+        "column_type": "categorical"
+      },
+      "project_count": {
+        "count": 2067807,
+        "unique": 2,
+        "top": "1.0",
+        "freq": 1298342,
+        "column_type": "categorical_numeric",
+        "original_dtype": "float64"
+      },
+      "mt_saving_source": {
+        "count": 2066553,
+        "unique": 86,
+        "top": "Not Reported",
+        "freq": 1302094,
+        "column_type": "categorical"
+      },
+      "new_service_original_charge": {
+        "count": 2067807,
+        "unique": 202,
+        "top": "nan",
+        "freq": 2067456,
+        "column_type": "identifier"
+      },
+      "new_service_actual_charge": {
+        "count": 2067807,
+        "unique": 269,
+        "top": "nan",
+        "freq": 2067456,
+        "column_type": "identifier"
+      },
+      "new_service_saving": {
+        "count": 2067807,
+        "unique": 272,
+        "top": "nan",
+        "freq": 2067456,
+        "column_type": "identifier"
+      },
+      "new_service_twc": {
+        "count": 2067807,
+        "unique": 202,
+        "top": "nan",
+        "freq": 2067456,
+        "column_type": "identifier"
+      },
+      "mega_region": {
+        "count": 2067807,
+        "unique": 8,
+        "top": "EMEA",
+        "freq": 752712,
+        "column_type": "categorical"
+      },
+      "language_tier": {
+        "count": 2067807,
+        "unique": 9,
+        "top": "Not Reported",
+        "freq": 716492,
+        "column_type": "categorical"
+      },
+      "datestr": {
+        "count": 2067807,
+        "unique": 46,
+        "top": "2025-09-01",
+        "freq": 238658,
+        "column_type": "categorical"
+      },
+      "Target Locale Refined": {
+        "count": 2067796,
+        "unique": 363,
+        "top": "fr-FR",
+        "freq": 62247,
+        "column_type": "categorical"
+      },
+      "Platform": {
+        "count": 2067807,
+        "unique": 6,
+        "top": "Phrase",
+        "freq": 1352022,
+        "column_type": "categorical"
+      },
+      "LOB ": {
+        "count": 2067698,
+        "unique": 12,
+        "top": "Marketing",
+        "freq": 1286315,
+        "column_type": "categorical"
+      },
+      "Touchless Type": {
+        "count": 2067807,
+        "unique": 2,
+        "top": "Human in Loop",
+        "freq": 1303266,
+        "column_type": "categorical"
+      }
+    },
+    "calculated_columns": {
+      "client filter temp": {
+        "formula": "not STARTSWITH([Client Refined], '100')",
+        "datatype": "boolean"
+      },
+      "Client Refined": {
+        "formula": "IF [client] in ('Marketing - Organization', 'Marketing-All')\nTHEN 'Marketing - All' \nELSEIF [client] IN ('MT Earner', 'Marketing - Courier', 'Marketing - Driver') THEN 'Marketing - Earner'\nELSEIF CONTAINS([client], 'SPECIAL INSTRUCTIONS') THEN 'Special Instructions'\nELSEIF CONTAINS([client], 'Document Purpose') THEN 'Document Purpose'\nELSEIF CONTAINS([client], 'Legal') THEN 'Legal'\nELSE [client] END",
+        "datatype": "string"
+      },
+      "Target Locale Refined": {
+        "formula": "if [target_locale] = 'uk-AU' THEN 'uk-UA' \nELSEIF  [target_locale] = 'es-419' THEN 'es-MX'\nelse [target_locale] END",
+        "datatype": "string"
+      },
+      "Platform": {
+        "formula": "IF [domain] = 'Menu Translation' \nTHEN 'MT Service (Excluding MT Portal)' \nELSE [platform] END",
+        "datatype": "string"
+      },
+      "Language Tier Strings": {
+        "formula": "if ISNULL([language_tier]) then 'Unknown'\nelse 'Tier ' + STR([language_tier]) END",
+        "datatype": "string"
+      },
+      "LOB ": {
+        "formula": "IF CONTAINS([Client Refined], 'Product') AND  \nNOT CONTAINS([Client Refined], 'Freight') AND\n[client_category] = 'Misc'\nTHEN 'Product'\nELSEIF  [Client Refined] = 'Freight Product' THEN 'Freight'\nELSE [client_category] END",
+        "datatype": "string"
+      },
+      "TWC - Dynamic": {
+        "formula": "IF ABS(SUM([twc])) >= 1000000000 THEN\n//round for billions\nSTR(ROUND(SUM([twc] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([twc])) >= 1000000 THEN\n//round for millions\nSTR(ROUND(SUM([twc] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([twc])) >= 1000 THEN\n//round for thousands\nSTR(ROUND(SUM([twc] / 1000), 2)) + \"K\"\nELSE\nSTR(ROUND(SUM([twc]),0))\nEND",
+        "datatype": "string"
+      },
+      "CPW Avg CG": {
+        "formula": "{FIXED [LOB (copy)_3947405127136538624]:\nSUM([cost]) / sum([twc])}",
+        "datatype": "real"
+      },
+      "TM % Pinnacle": {
+        "formula": "sum(FLOAT([twc_leverage_use]) - [wwc])/sum(FLOAT([twc_leverage_use]))",
+        "datatype": "real"
+      },
+      "CPW": {
+        "formula": "IF SUM([cost])/SUM([twc]) < 0 THEN NULL\nELSE SUM([cost])/SUM(\nif [vendor] = 'Pinnacle' AND  \nDATE([month]) < DATE('2023-06-01') THEN 0 ELSE [twc] END) \nEND",
+        "datatype": "real"
+      },
+      "TM %": {
+        "formula": "IF [TM % Pre (copy)_126593412764794883] < 0 THEN NULL \nELSEIF MAX([vendor]) = 'Pinnacle' THEN [TM % Pinnacle]\nELSE [TM % Pre (copy)_126593412764794883] END",
+        "datatype": "real"
+      },
+      "Fake Dimension": {
+        "formula": "1",
+        "datatype": "integer"
+      },
+      "CPW Avg All": {
+        "formula": "{FIXED [Fake Dimension]:\nSUM([cost]) / sum([twc])}",
+        "datatype": "real"
+      },
+      "Color Code - CPW Std CG Capped": {
+        "formula": "IF [CPW] > AVG([CPW Avg All (copy)_542683772359884807]) + 2 * AVG([cpw_std_cg])  \nTHEN 5\nELSEIF [CPW] > AVG([CPW Avg All (copy)_542683772359884807]) + 1 * AVG([cpw_std_cg])\nTHEN 4\nELSEIF [CPW] > AVG([CPW Avg All (copy)_542683772359884807]) - 1 * AVG([cpw_std_cg]) or ISNULL([CPW])\nTHEN 3\nELSEIF [CPW] > AVG([CPW Avg All (copy)_542683772359884807]) - 2 * AVG([cpw_std_cg])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "TM % Pre V2": {
+        "formula": "(\nsum(if [vendor] = 'MT Only' then 0 ELSE [twc]  end) - \nsum(if [vendor] = 'MT Only' then 0 ELSEIF [wwc] > [twc] then [twc] ELSE [wwc] end)\n)/\nsum(if [vendor] = 'MT Only' then 0 ELSE [twc]  end)",
+        "datatype": "real"
+      },
+      "Color Code - CPW Std All Capped": {
+        "formula": "IF [CPW] > AVG([CPW Avg All]) + 2 * AVG([cpw_std_all])\nTHEN 5\nELSEIF [CPW] > AVG([CPW Avg All]) + 1 * AVG([cpw_std_all])\nTHEN 4\nELSEIF [CPW] > AVG([CPW Avg All]) - 1 * AVG([cpw_std_all]) OR ISNULL([CPW])\nTHEN 3\nELSEIF [CPW] > AVG([CPW Avg All]) - 2 * AVG([cpw_std_all])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "Spend  - Dynamic": {
+        "formula": "IF ABS(SUM([cost])) >= 1000000000 THEN\n//round for billions\n\"$\" + STR(ROUND(SUM([cost] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([cost])) >= 1000000 THEN\n//round for millions\n\"$\" + STR(ROUND(SUM([cost] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([cost])) >= 1000 THEN\n//round for thousands\n\"$\" + STR(ROUND(SUM([cost] / 1000), 2)) + \"K\"\nELSE\n\"$\" + STR(ROUND(SUM([cost]),0))\nEND",
+        "datatype": "string"
+      },
+      "Metric Name": {
+        "formula": "\"TWC\"",
+        "datatype": "string"
+      },
+      "Dimension Name": {
+        "formula": "\"Resource Name\"",
+        "datatype": "string"
+      },
+      "Resource Type": {
+        "formula": "IF vendor in ('Acolad', 'Translated', 'Welocalize') THEN 'LSP'\nelse vendor end",
+        "datatype": "string"
+      },
+      "Dimension": {
+        "formula": "if [Parameters].[Parameter 7] = 'Resource Type' THEN [Resource Type]\nELSEIF [Parameters].[Parameter 7] = 'Resource Name' THEN [vendor]\nELSEIF [Parameters].[Parameter 7] = 'Platform' THEN [Platform]\nELSEIF [Parameters].[Parameter 7] = 'Line of Business' THEN [LOB (copy)_3947405127136538624]\nELSEIF [Parameters].[Parameter 7] = 'Client' THEN [Client Refined]\nELSEIF [Parameters].[Parameter 7] = 'Domain' THEN [domain]\nELSEIF [Parameters].[Parameter 7] = 'Source Locale Type' THEN [source_locale_type]\nELSEIF [Parameters].[Parameter 7] = 'Source Locale' THEN [source_locale]\nELSEIF [Parameters].[Parameter 7] = 'Target Locale' THEN [Target Locale Refined]\nELSEIF [Parameters].[Parameter 7] = 'Target Language Tier' THEN [Language Tier Strings]\nELSEIF [Parameters].[Parameter 7] = 'Region' THEN [mega_region]\nEND",
+        "datatype": "string"
+      },
+      "Metric": {
+        "formula": "if [Parameters].[Parameter 6] = 'TWC' THEN SUM([twc])\nELSEIF [Parameters].[Parameter 6] = 'Spend' THEN SUM([cost])\nELSEIF [Parameters].[Parameter 6] = 'CPW' THEN [CPW]\nEND",
+        "datatype": "real"
+      },
+      "Metric Label": {
+        "formula": "if [Parameters].[Parameter 6] = 'CPW' THEN STR(ROUND([CPW],2))\nELSEIF [Parameters].[Parameter 6] = 'Spend' THEN [Spend (copy)_4627659770320306176]\nELSEIF [Parameters].[Parameter 6] = 'TWC' THEN [TWC (copy)_4627659770321125377]\nEND",
+        "datatype": "string"
+      },
+      "Metric Not CPW": {
+        "formula": "[Parameters].[Parameter 6] != 'CPW'",
+        "datatype": "boolean"
+      },
+      "CPW STD - Dynamic": {
+        "formula": "if [Parameters].[Parameter 7] in ('Client', 'Domain') THEN [cpw_std_cg]\nelse [cpw_std_all] end",
+        "datatype": "real"
+      },
+      "Color Code - Dynamic": {
+        "formula": "if [Parameters].[Parameter 7] in ('Client', 'Domain') THEN [Color Code - CPW Std All Refined (copy)_2125980516718186497]\nelse [Color Code - CPW Std Oct (copy)_2125980516717330432] end",
+        "datatype": "integer"
+      },
+      "CPW AVG - Dynamic": {
+        "formula": "if [Parameters].[Parameter 7] in ('Client', 'Domain') THEN [CPW Avg All (copy)_542683772359884807]\nelse [CPW Avg All] end",
+        "datatype": "real"
+      },
+      "Before current incomplete month": {
+        "formula": "DATEPART('month', [month]) <= DATEPART('month', TODAY()) - 1\nor\nDATEPART('year', [month]) < DATEPART('year', TODAY())",
+        "datatype": "boolean"
+      },
+      "TaT Caculated": {
+        "formula": "SUM([TaT_sum]) / SUM([job_count])",
+        "datatype": "real"
+      },
+      "Is Legal": {
+        "formula": "[client_category] = 'Legal'",
+        "datatype": "boolean"
+      },
+      "Is Marketing": {
+        "formula": "[client_category] = 'Marketing'",
+        "datatype": "boolean"
+      },
+      "Compare TaT By": {
+        "formula": "\"No Breakdown\"",
+        "datatype": "string"
+      },
+      "TaT Breakdown": {
+        "formula": "IF [Parameters].[Compare By (copy)_807059183526182912] = 'Vendor' THEN [vendor]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'LOB' THEN [client_category]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'Client' THEN [client]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'Domain' THEN [domain]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'Target Locale' THEN [target_locale]\nELSEIF [Parameters].[Compare By (copy)_807059183526182912] = 'No Breakdown' THEN 'Overall'\nEND",
+        "datatype": "string"
+      },
+      "Is Product": {
+        "formula": "[client_category] = 'Product'",
+        "datatype": "boolean"
+      },
+      "Is Support": {
+        "formula": "[client_category] = 'Support'",
+        "datatype": "boolean"
+      },
+      "TaT / SLA Ratio": {
+        "formula": "[TaT Caculated] / [TaT Caculated (copy)_313844613153333250]",
+        "datatype": "real"
+      },
+      "SLA Calculated": {
+        "formula": "SUM([TaT Sum (copy)_313844613157924867]) / SUM([job_count])",
+        "datatype": "real"
+      },
+      "SLA Sum": {
+        "formula": "[SLA_sum]",
+        "datatype": "real"
+      },
+      "Choose Color Code Based on SLA or Avg TaT": {
+        "formula": "2",
+        "datatype": "integer"
+      },
+      "All Avg - Calculated": {
+        "formula": "{FIXED [Fake Dimension]:\nSUM([TaT_sum]) / sum([job_count])}",
+        "datatype": "real"
+      },
+      "Baseline Avg - Calculated": {
+        "formula": "\"Avg: \" + LEFT(STR(ROUND(AVG([All Avg - Agg (copy)_563301807327445013]),2)), 4)",
+        "datatype": "string"
+      },
+      "Color code - Combined - All - Threshold": {
+        "formula": "CASE [Parameters].[Parameter 1]\nWHEN 1 THEN \n\nCASE [Color code - All (copy)_313844613151555584]\nWHEN 1 THEN \"50% + Below SLA\"\nWHEN 2 THEN \"25% - 50% Below SLA\"\nWHEN 3 THEN \"0% - 25% Below SLA\"\nWHEN 4 THEN \"0% - 50% + Above SLA\"\nWHEN 5 THEN \"50% + Above SLA\"\nEND \n\nWHEN 2 THEN\nCASE [color code - Client Category New (copy)_563301807292854283] \nWHEN 1 THEN \"[Avg + 2 STDDEV, ∞]\"\nWHEN 2 THEN \"[Avg + 1 STDDEV, Avg + 2 STDDEV]\"\nWHEN 3 THEN \"[Avg - STDDEV, Avg + STDDEV]\"\nWHEN 4 THEN \"[Avg- 2 STDDEV, Avg - STDDEV]\"\nWHEN 5 THEN \"[-∞, Avg - 2 STDDEV]]\"\nEND\n\nEND",
+        "datatype": "string"
+      },
+      "Color code - SLA": {
+        "formula": "IF [TaT Caculated (copy)_313844613159297029] > 0.5\nTHEN 5\nELSEIF [TaT Caculated (copy)_313844613159297029] > 0\nTHEN 4\nELSEIF [TaT Caculated (copy)_313844613159297029] > -0.25\nTHEN 3\nELSEIF [TaT Caculated (copy)_313844613159297029] > -0.5\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "Color code - Combined - All": {
+        "formula": "CASE [Parameters].[Parameter 1] \nWHEN 1 THEN [Color code - All (copy)_313844613151555584] ELSE [color code - Client Category New (copy)_563301807292854283] END",
+        "datatype": "integer"
+      },
+      "WC per Day": {
+        "formula": "SUM([word_count]) / SUM([TaT_sum])",
+        "datatype": "real"
+      },
+      "TaT SLA Diff": {
+        "formula": "([TaT Caculated] - [TaT Caculated (copy)_313844613153333250]) / [TaT Caculated (copy)_313844613153333250]",
+        "datatype": "real"
+      },
+      "All Std": {
+        "formula": "{FIXED [Fake Dimension]:STDEV([TaT_avg])}",
+        "datatype": "real"
+      },
+      "Color code - All": {
+        "formula": "IF [TaT Caculated] > AVG([All Avg - Agg (copy)_563301807327445013]) + 2 * AVG([W Std - Agg (copy)_563301807269814276])\nTHEN 5\nELSEIF [TaT Caculated] > AVG([All Avg - Agg (copy)_563301807327445013]) + 1 * AVG([W Std - Agg (copy)_563301807269814276])\nTHEN 4\nELSEIF [TaT Caculated] > AVG([All Avg - Agg (copy)_563301807327445013]) - 1 * AVG([W Std - Agg (copy)_563301807269814276])\nTHEN 3\nELSEIF [TaT Caculated] > AVG([All Avg - Agg (copy)_563301807327445013]) - 2 * AVG([W Std - Agg (copy)_563301807269814276])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "Color Code Threshold - All": {
+        "formula": "\"Comparing to AVG and STDDEV\"\n+\" \n\"\n+\"Avg: \" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013],2)), 4)\n+\" \n\"\n+\"STDDEV: \" + LEFT(STR(ROUND([W Std - Agg (copy)_563301807269814276],2)), 4)\n+\" \n\"\n+\"Red: Value >\" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] + 2 * [W Std - Agg (copy)_563301807269814276],2)), 4)\n+\" \n\"\n+\"Orange: \" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013]+ 1 * [W Std - Agg (copy)_563301807269814276],2)), 4) + ' < value <= ' + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] + 2*[W Std - Agg (copy)_563301807269814276],2)), 4)\n+\" \n\"\n+\"Yellow: \" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] - [W Std - Agg (copy)_563301807269814276], 2)), 4) + ' < value <= ' + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] + [W Std - Agg (copy)_563301807269814276], 2)), 4)\n+\" \n\"\n+\"Lime: \" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013]- 2 * [W Std - Agg (copy)_563301807269814276],2)), 4) + ' < value <= ' + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] - 1*[W Std - Agg (copy)_563301807269814276],2)), 4)\n+\" \n\"\n+\"Pine: Value <=\" + LEFT(STR(ROUND([All Avg - Agg (copy)_563301807327445013] - 2 * [W Std - Agg (copy)_563301807269814276],2)), 4)",
+        "datatype": "string"
+      },
+      "Color code - Combined - CG - Threshold": {
+        "formula": "CASE [Parameters].[Parameter 1]\nWHEN 1 THEN \n\nCASE [Color code - All (copy)_313844613151555584]\nWHEN 1 THEN \"50% + Below SLA\"\nWHEN 2 THEN \"25% - 50% Below SLA\"\nWHEN 3 THEN \"0% - 25% Below SLA\"\nWHEN 4 THEN \"0% - 50% + Above SLA\"\nWHEN 5 THEN \"50% + Above SLA\"\nEND \n\nWHEN 2 THEN\nCASE [F - Color code - All (copy)_3113676202876297222] \nWHEN 1 THEN \"[Avg + 2 STDDEV, ∞]\"\nWHEN 2 THEN \"[Avg + 1 STDDEV, Avg + 2 STDDEV]\"\nWHEN 3 THEN \"[Avg - STDDEV, Avg + STDDEV]\"\nWHEN 4 THEN \"[Avg- 2 STDDEV, Avg - STDDEV]\"\nWHEN 5 THEN \"[-∞, Avg - 2 STDDEV]]\"\nEND\n\nEND",
+        "datatype": "string"
+      },
+      "Color code - Combined - CG": {
+        "formula": "CASE [Parameters].[Parameter 1] \nWHEN 1 THEN [Color code - All (copy)_313844613151555584] ELSE [F - Color code - All (copy)_3113676202876297222] END",
+        "datatype": "integer"
+      },
+      "CG Avg - Calculated": {
+        "formula": "{FIXED [client_category]:\nSUM([TaT_sum]) / sum([job_count])}",
+        "datatype": "real"
+      },
+      "CG Std": {
+        "formula": "{FIXED [client_category]:STDEV([TaT_avg])}",
+        "datatype": "real"
+      },
+      "Color Code Threshold -CG": {
+        "formula": "\"Comparing to AVG and STDDEV\"\n+\" \n\"\n+\"Avg: \" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607],2)), 4)\n+\" \n\"\n+\"STDDEV: \" + LEFT(STR(ROUND([F - All Std (copy)_3113676202876919816],2)), 4)\n+\" \n\"\n+\"Red: Value >\" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] + 2 * [F - All Std (copy)_3113676202876919816],2)), 4)\n+\" \n\"\n+\"Orange: \" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607]+ 1 * [F - All Std (copy)_3113676202876919816],2)), 4) + ' < value <= ' + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] + 2*[F - All Std (copy)_3113676202876919816],2)), 4)\n+\" \n\"\n+\"Yellow: \" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] - [F - All Std (copy)_3113676202876919816], 2)), 4) + ' < value <= ' + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] + [F - All Std (copy)_3113676202876919816], 2)), 4)\n+\" \n\"\n+\"Lime: \" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607]- 2 * [F - All Std (copy)_3113676202876919816],2)), 4) + ' < value <= ' + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] - 1*[F - All Std (copy)_3113676202876919816],2)), 4)\n+\" \n\"\n+\"Pine: Value <=\" + LEFT(STR(ROUND([F - All Avg - Calculated (copy)_3113676202876825607] - 2 * [F - All Std (copy)_3113676202876919816],2)), 4)",
+        "datatype": "string"
+      },
+      "Color code - CG": {
+        "formula": "IF [TaT Caculated] > AVG([F - All Avg - Calculated (copy)_3113676202876825607]) + 2 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 5\nELSEIF [TaT Caculated] > AVG([F - All Avg - Calculated (copy)_3113676202876825607]) + 1 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 4\nELSEIF [TaT Caculated] > AVG([F - All Avg - Calculated (copy)_3113676202876825607]) - 1 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 3\nELSEIF [TaT Caculated] > AVG([F - All Avg - Calculated (copy)_3113676202876825607]) - 2 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "CG Avg": {
+        "formula": "{FIXED [client_category]:\nAVG([TaT_avg])}",
+        "datatype": "real"
+      },
+      "Color code - CG - Not Calculated": {
+        "formula": "IF [TaT Caculated] > AVG([F - CG Avg - Calculated (copy)_3113676202879500300]) + 2 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 5\nELSEIF [TaT Caculated] > AVG([F - CG Avg - Calculated (copy)_3113676202879500300]) + 1 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 4\nELSEIF [TaT Caculated] > AVG([F - CG Avg - Calculated (copy)_3113676202879500300]) - 1 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 3\nELSEIF [TaT Caculated] > AVG([F - CG Avg - Calculated (copy)_3113676202879500300]) - 2 * AVG([F - All Std (copy)_3113676202876919816])\nTHEN 2\nELSE 1 END",
+        "datatype": "integer"
+      },
+      "All Std By Complete": {
+        "formula": "{FIXED [is_job_completed]:STDEV([TaT_avg])}",
+        "datatype": "real"
+      },
+      "TAT Per 100 WC": {
+        "formula": "SUM([TaT_sum]) / SUM([word_count]) * 100",
+        "datatype": "real"
+      },
+      "WC Per Job": {
+        "formula": "SUM([word_count])/SUM([job_count])",
+        "datatype": "real"
+      },
+      "WWC - Dynamic": {
+        "formula": "IF ABS(SUM([wwc])) >= 1000000000 THEN\n//round for billions\nSTR(ROUND(SUM([wwc] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([wwc])) >= 1000000 THEN\n//round for millions\nSTR(ROUND(SUM([wwc] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([wwc])) >= 1000 THEN\n//round for thousands\nSTR(ROUND(SUM([wwc] / 1000), 2)) + \"K\"\nELSE\nSTR(ROUND(SUM([wwc]),0))\nEND",
+        "datatype": "string"
+      },
+      "Touchless Saving - Dynamic": {
+        "formula": "IF ABS(SUM([mt_saving])) >= 1000000000 THEN\n//round for billions\n\"$\" + STR(ROUND(SUM([mt_saving] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([mt_saving])) >= 1000000 THEN\n//round for millions\n\"$\" + STR(ROUND(SUM([mt_saving] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([mt_saving])) >= 1000 THEN\n//round for thousands\n\"$\" + STR(ROUND(SUM([mt_saving] / 1000), 2)) + \"K\"\nELSE\n\"$\" + STR(ROUND(SUM([mt_saving]),0))\nEND",
+        "datatype": "string"
+      },
+      "Touchless Volume": {
+        "formula": "if [vendor] = 'MT Only' THEN [twc] ELSE 0 end",
+        "datatype": "real"
+      },
+      "Touchless Volume - Dynamic": {
+        "formula": "IF ABS(SUM([Touchless Volume])) >= 1000000000 THEN\n//round for billions\nSTR(ROUND(SUM([Touchless Volume] / 1000000000), 2)) + \"B\"\nELSEIF ABS(SUM([Touchless Volume])) >= 1000000 THEN\n//round for millions\nSTR(ROUND(SUM([Touchless Volume] / 1000000), 2)) + \"M\"\nELSEIF ABS(SUM([Touchless Volume])) >= 1000 THEN\n//round for thousands\nSTR(ROUND(SUM([Touchless Volume] / 1000), 2)) + \"K\"\nELSE\nSTR(ROUND(SUM([Touchless Volume]),0))\nEND",
+        "datatype": "string"
+      },
+      "MT saving CPW": {
+        "formula": "SUM([mt_saving])/SUM([Touchless Volume])",
+        "datatype": "real"
+      },
+      "Month After 2023 Jul": {
+        "formula": "DATE([month]) >= date('2023-07-01')",
+        "datatype": "boolean"
+      },
+      "Touchless Volume %": {
+        "formula": "SUM([Touchless Volume]) / SUM([twc])",
+        "datatype": "real"
+      },
+      "Is GoX": {
+        "formula": "LEFT([domain], 4) = '1002' \nOR LEFT([Client Refined], 4) = '1002'",
+        "datatype": "boolean"
+      },
+      "Touchless Type": {
+        "formula": "if [vendor] = 'MT Only' THEN 'Touchless' ELSE 'Human in Loop' END",
+        "datatype": "string"
+      },
+      "Is in Phrase": {
+        "formula": "[Platform] = 'Phrase'",
+        "datatype": "boolean"
+      },
+      "Estimated Cost Based on 24 Q1": {
+        "formula": "IF YEAR([month]) >= 2025 then [twc] * 0.038\nelse [cost] end",
+        "datatype": "real"
+      },
+      "Estimated Cost Based on 24 Q1 HITL": {
+        "formula": "IF YEAR([month]) >= 2025 then [twc] * 0.132\nelse [cost] end",
+        "datatype": "real"
+      },
+      "Estimated Cost Based on 24 Q4": {
+        "formula": "IF YEAR([month]) >= 2025 then [twc] * 0.021\nelse [cost] end",
+        "datatype": "real"
+      },
+      "Is MT": {
+        "formula": "[vendor] = 'MT Only'",
+        "datatype": "boolean"
+      },
+      "Estimated Cost Based on 24 Q4 HITL": {
+        "formula": "IF YEAR([month]) >= 2025 then [twc] * 0.101\nelse [cost] end",
+        "datatype": "real"
+      },
+      "SLV %": {
+        "formula": "SUM(IF [vendor] IN ('Latamways', 'Upwords', 'Sandberg')\nTHEN twc ELSE 0 END)/\nSUM(IF [vendor] in ('MT Only') THEN 0\nELSE twc END)",
+        "datatype": "real"
+      },
+      "Not Touchless": {
+        "formula": "[vendor] != 'MT Only'",
+        "datatype": "boolean"
+      },
+      "Is SLV": {
+        "formula": "IF [vendor] IN ('Latamways', 'Upwords', 'Sandberg')\nTHEN 'SLV'\nELSEIF [vendor] = 'Pinnacle' THEN 'Pinnacle'\nELSE 'MLV' END",
+        "datatype": "string"
+      },
+      "Is SLV Language": {
+        "formula": "[Target Locale Refined] in (\n'da-DK', 'es-AR', 'es-MX', 'fi-FI','nb-NO',\n'pt-BR', 'sv-SE'\n)",
+        "datatype": "boolean"
+      },
+      "Data include MS Jobs Til": {
+        "formula": "Max([date])",
+        "datatype": "date"
+      },
+      "Touchless Dimension Name": {
+        "formula": "\"Touchless Source\"",
+        "datatype": "string"
+      },
+      "Touchless Metric Name": {
+        "formula": "\"Touchless Volume\"",
+        "datatype": "string"
+      },
+      "Touchless Metric": {
+        "formula": "if [Parameters].[Parameter 8] = 'Touchless Saving' THEN [mt_saving]\nELSEIF [Parameters].[Parameter 8] = 'Touchless Volume' THEN [Touchless Volume]\nend",
+        "datatype": "real"
+      },
+      "Touchless Dimension": {
+        "formula": "if [Parameters].[Dimension Name (copy)_526639702199148561] = 'Touchless Type' THEN [Touchless Type]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Touchless Source' THEN [LOB (copy)_3947405127136538624]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Touchless Domain' THEN [mt_saving_source]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Target Locale' THEN [Target Locale Refined]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Region' THEN [mega_region]\nELSEIF [Parameters].[Dimension Name (copy)_526639702199148561] = 'Platform' THEN [Platform]\nEND",
+        "datatype": "string"
+      },
+      "Touchless Metric Label": {
+        "formula": "if [Parameters].[Parameter 8] = 'Touchless Saving' THEN [Touchless Saving - Dynamic]\nELSEIF [Parameters].[Parameter 8] = 'Touchless Volume' THEN [Touchless Volume - Dynamic]\nend",
+        "datatype": "string"
+      },
+      "Year - Month": {
+        "formula": "left(STR(month),7)",
+        "datatype": "string"
+      },
+      "Exclude Welocalize and RWS": {
+        "formula": "[vendor] != 'Welocalize' AND NOT CONTAINS([vendor], 'RWS')",
+        "datatype": "boolean"
+      }
+    },
+    "generated_at": "2025-12-09T15:38:23.143992",
+    "total_rows": 2067807,
+    "total_columns": 48
   }
 }
