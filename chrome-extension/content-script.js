@@ -11,6 +11,510 @@
   // Debug flag - set to true for verbose logging
   const DEBUG = true;
 
+  // ============================================================================
+  // LOGGING UTILITIES (Must be defined BEFORE SessionManager uses them)
+  // ============================================================================
+  
+  // ContentLogger - Enhanced logging system for content script
+  const ContentLogger = {
+    log: function(level, message, data = null, event_type = 'GENERAL') {
+      const timestamp = new Date().toISOString();
+      const prefix = `[${timestamp}][${level.toUpperCase()}][CONTENT]`;
+      
+      const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
+      
+      if (data) {
+        console[consoleMethod](prefix, message, data);
+      } else {
+        console[consoleMethod](prefix, message);
+      }
+      
+      // Send to backend for enhanced logging
+      this.sendToBackend(level, message, data, event_type);
+      
+      // Also send to background script for centralized logging
+      try {
+        chrome.runtime.sendMessage({
+          action: 'logDebug',
+          level: level,
+          message: message,
+          data: data,
+          timestamp: timestamp,
+          url: window.location.href
+        }).catch(() => {}); // Ignore if background script not available
+      } catch (error) {
+        // Ignore messaging errors
+      }
+    },
+
+    sendToBackend: async function(level, message, data = null, event_type = 'GENERAL') {
+      try {
+        // proxyFetch will be available when this is called (async)
+        const backendUrl = 'http://localhost:8502';
+        
+        const logData = {
+          event_type: event_type,
+          level: level,
+          message: message,
+          data: {
+            ...data,
+            timestamp_client: new Date().toISOString(),
+            page_title: document.title
+          },
+          url: window.location.href
+        };
+
+        // Use chrome.runtime.sendMessage for now, will use proxyFetch when available
+        if (typeof proxyFetch !== 'undefined') {
+          await proxyFetch(`${backendUrl}/api/extension/log`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(logData)
+          });
+        }
+      } catch (error) {
+        // Silently fail - don't want logging to break the extension
+        console.warn('[ContentLogger] Failed to send log to backend:', error);
+      }
+    },
+
+    debug: function(message, data = null, event_type = 'DEBUG') { this.log('debug', message, data, event_type); },
+    info: function(message, data = null, event_type = 'INFO') { this.log('info', message, data, event_type); },
+    warn: function(message, data = null, event_type = 'WARNING') { this.log('warn', message, data, event_type); },
+    error: function(message, data = null, event_type = 'ERROR') { this.log('error', message, data, event_type); },
+    
+    // Specialized logging methods
+    logChatRequest: function(message, selectedChart, sessionId) {
+      this.log('info', `Chat request: "${message}"`, {
+        selected_chart: selectedChart,
+        session_id: sessionId,
+        message_length: message.length
+      }, 'CHAT_REQUEST');
+    },
+    
+    logChatResponse: function(response, success = true, error = null) {
+      this.log(success ? 'info' : 'error', `Chat response received`, {
+        response_preview: response.substring(0, 100),
+        full_response: response,
+        success: success,
+        error: error
+      }, success ? 'CHAT_RESPONSE' : 'CHAT_ERROR');
+    },
+    
+    logChartSelection: function(chartName, chartData = null) {
+      this.log('info', `Chart selected: ${chartName}`, {
+        chart_name: chartName,
+        chart_data: chartData
+      }, 'CHART_SELECTION');
+    },
+    
+    logConnectionEvent: function(event, success = true, details = null) {
+      this.log(success ? 'info' : 'error', `Connection ${event}`, {
+        event: event,
+        success: success,
+        details: details
+      }, `CONNECTION_${event.toUpperCase()}`);
+    },
+    
+    logNetworkRequest: function(method, url, status, requestData = null, responseData = null, error = null) {
+      this.log(error ? 'error' : 'info', `${method} ${url}`, {
+        method: method,
+        url: url,
+        status_code: status,
+        request_data: requestData,
+        response_data: responseData,
+        error: error
+      }, 'NETWORK_REQUEST');
+    }
+  };
+
+  // Debug logging helper functions
+  function debugLogNetwork(message, data = null) {
+    ContentLogger.debug(`Network: ${message}`, data);
+    
+    if (DEBUG) {
+      console.log(`[Tableau Assistant Network] ${message}`, data || '');
+      // Also send to background script for centralized logging
+      try {
+        chrome.runtime.sendMessage({
+          action: 'logDebug',
+          message: `Network: ${message}`,
+          data: data
+        }).catch(() => {}); // Ignore if background script not available
+      } catch (error) {
+        // Ignore
+      }
+    }
+  }
+
+  function debugLog(message, data = null) {
+    ContentLogger.debug(message, data);
+    
+    if (DEBUG) {
+      console.log(`[Tableau Assistant] ${message}`, data || '');
+    }
+  }
+
+  // ============================================================================
+  // SESSION MANAGER (Multi-User, Multi-Dashboard Support)
+  // ============================================================================
+  class SessionManager {
+    constructor() {
+      this.sessionId = null;
+      this.userIdentity = null;
+      this.dashboardContext = null;
+      this.initialized = false;
+      debugLog('[SessionManager] Instance created');
+    }
+    
+    async initialize() {
+      debugLog('[SessionManager] Starting initialization...');
+      
+      try {
+        await this._initializeSessionId();
+        await this._extractUserIdentity();
+        await this._extractDashboardContext();
+        
+        if (!this.userIdentity || !this.dashboardContext || !this.sessionId) {
+          throw new Error('Failed to initialize all required session components');
+        }
+        
+        this.initialized = true;
+        debugLog('[SessionManager] ✅ Initialization complete:', {
+          sessionId: this.sessionId,
+          user: this.userIdentity.username,
+          dashboard: this.dashboardContext.dashboardName
+        });
+        
+        return true;
+      } catch (error) {
+        console.error('[SessionManager] ❌ Initialization failed:', error);
+        this.initialized = false;
+        return false;
+      }
+    }
+    
+    async _initializeSessionId() {
+      this.sessionId = sessionStorage.getItem('chatbot_session_id');
+      
+      if (!this.sessionId) {
+        this.sessionId = this._generateUUID();
+        sessionStorage.setItem('chatbot_session_id', this.sessionId);
+        debugLog('[SessionManager] New session created:', this.sessionId);
+      } else {
+        debugLog('[SessionManager] Session restored:', this.sessionId);
+      }
+    }
+    
+    async _extractUserIdentity() {
+      debugLog('[SessionManager] Extracting user identity...');
+      
+      try {
+        // Method 1: Check intercepted network requests for getSessionInfo API
+        // Wait up to 2 seconds for the network request to be captured
+        const userFromNetworkCapture = await this._waitForUserFromNetwork(2000);
+        if (userFromNetworkCapture) {
+          this.userIdentity = userFromNetworkCapture;
+          debugLog('[SessionManager] ✅ User extracted from intercepted network request (getSessionInfo):', this.userIdentity.username);
+          return;
+        }
+        
+        // Method 2: Try window.bootstrapData.user (Tableau Cloud)
+        if (window.bootstrapData && window.bootstrapData.user) {
+          const user = window.bootstrapData.user;
+          this.userIdentity = {
+            luid: user.luid,
+            username: user.username,
+            displayName: user.displayName,
+            systemUserId: user.systemUserId,
+            domainName: user.domainName || 'local'
+          };
+          debugLog('[SessionManager] ✅ User extracted from bootstrapData:', this.userIdentity.username);
+          return;
+        }
+        
+        // Method 3: Try window.parent.bootstrapData (embedded dashboards)
+        if (window.parent && window.parent.bootstrapData && window.parent.bootstrapData.user) {
+          const user = window.parent.bootstrapData.user;
+          this.userIdentity = {
+            luid: user.luid,
+            username: user.username,
+            displayName: user.displayName,
+            systemUserId: user.systemUserId,
+            domainName: user.domainName || 'local'
+          };
+          debugLog('[SessionManager] ✅ User extracted from parent.bootstrapData:', this.userIdentity.username);
+          return;
+        }
+        
+        // Method 4: Try extracting from page DOM
+        const userFromDOM = this._extractUserFromDOM();
+        if (userFromDOM && userFromDOM.username && userFromDOM.username !== 'Guest') {
+          this.userIdentity = userFromDOM;
+          debugLog('[SessionManager] ✅ User extracted from DOM:', this.userIdentity.username);
+          return;
+        }
+        
+        // Method 5: Try window.tsConfig (Tableau Server)
+        if (window.tsConfig && window.tsConfig.username) {
+          this.userIdentity = {
+            luid: window.tsConfig.userId || this._generateBrowserFingerprint(),
+            username: window.tsConfig.username,
+            displayName: window.tsConfig.displayName || window.tsConfig.username,
+            systemUserId: window.tsConfig.userId || null,
+            domainName: window.tsConfig.domainName || 'local'
+          };
+          debugLog('[SessionManager] ✅ User extracted from tsConfig:', this.userIdentity.username);
+          return;
+        }
+        
+        // Fallback: create anonymous user
+        debugLog('[SessionManager] ⚠️ Could not extract Tableau user, creating anonymous session');
+        debugLog('[SessionManager] Checked: network requests, bootstrapData, parent.bootstrapData, DOM, tsConfig');
+        
+        // Diagnostic logging - what's available on the page?
+        debugLog('[SessionManager] Diagnostic info:');
+        debugLog('  - Intercepted requests:', networkRequestsState.requests.length);
+        debugLog('  - window.bootstrapData:', typeof window.bootstrapData, window.bootstrapData ? 'EXISTS' : 'MISSING');
+        debugLog('  - window.parent.bootstrapData:', typeof window.parent?.bootstrapData, window.parent?.bootstrapData ? 'EXISTS' : 'MISSING');
+        debugLog('  - window.tsConfig:', typeof window.tsConfig, window.tsConfig ? 'EXISTS' : 'MISSING');
+        debugLog('  - User menu elements:', document.querySelectorAll('[data-tb-test-id="account-button"], .tb-user-menu-button').length);
+        
+        this.userIdentity = await this._createAnonymousUser();
+      } catch (error) {
+        console.error('[SessionManager] Error extracting user:', error);
+        this.userIdentity = await this._createAnonymousUser();
+      }
+    }
+    
+    async _waitForUserFromNetwork(maxWaitMs = 2000) {
+      const pollInterval = 100; // Check every 100ms
+      const maxAttempts = maxWaitMs / pollInterval;
+      let attempts = 0;
+      
+      debugLog(`[SessionManager] Waiting up to ${maxWaitMs}ms for getSessionInfo network request...`);
+      
+      while (attempts < maxAttempts) {
+        const user = this._getUserFromNetworkRequests();
+        if (user) {
+          debugLog(`[SessionManager] Found user data after ${attempts * pollInterval}ms`);
+          return user;
+        }
+        
+        // Wait before next attempt
+        await new Promise(resolve => setTimeout(resolve, pollInterval));
+        attempts++;
+      }
+      
+      debugLog(`[SessionManager] Timeout: No user data found in network requests after ${maxWaitMs}ms`);
+      return null;
+    }
+    
+    _getUserFromNetworkRequests() {
+      try {
+        // Check if we have any intercepted network requests
+        if (!networkRequestsState || !networkRequestsState.requests || networkRequestsState.requests.length === 0) {
+          return null;
+        }
+        
+        // Find getSessionInfo API call
+        const sessionInfoRequest = networkRequestsState.requests.find(req => 
+          req.url && req.url.includes('getSessionInfo')
+        );
+        
+        if (!sessionInfoRequest) {
+          return null;
+        }
+        
+        // Extract user from response
+        const responseBody = sessionInfoRequest.response_body;
+        if (!responseBody || !responseBody.result || !responseBody.result.user) {
+          return null;
+        }
+        
+        const user = responseBody.result.user;
+        
+        // Validate we have required fields
+        if (!user.username || !user.luid) {
+          return null;
+        }
+        
+        return {
+          luid: user.luid,
+          username: user.username,
+          displayName: user.displayName || user.username,
+          systemUserId: user.systemUserId || null,
+          domainName: user.domainName || 'local'
+        };
+      } catch (error) {
+        debugLog('[SessionManager] Error extracting user from network requests:', error);
+        return null;
+      }
+    }
+    
+    _extractUserFromDOM() {
+      try {
+        // Try to find username in various common Tableau UI elements
+        
+        // Method 1: User menu button (Tableau Cloud/Server)
+        const userMenuButton = document.querySelector('[data-tb-test-id="account-button"]') ||
+                              document.querySelector('.tb-user-menu-button') ||
+                              document.querySelector('[aria-label*="account"]');
+        if (userMenuButton) {
+          const username = userMenuButton.getAttribute('aria-label') || 
+                          userMenuButton.textContent.trim();
+          if (username && username !== '' && !username.includes('Sign In')) {
+            return {
+              luid: `dom_${this._generateBrowserFingerprint()}`,
+              username: username,
+              displayName: username,
+              systemUserId: null,
+              domainName: 'local'
+            };
+          }
+        }
+        
+        // Method 2: Check for username in page meta tags
+        const userMeta = document.querySelector('meta[name="user-name"]') ||
+                        document.querySelector('meta[name="tableau:username"]');
+        if (userMeta) {
+          const username = userMeta.getAttribute('content');
+          if (username && username !== 'Guest') {
+            return {
+              luid: `meta_${this._generateBrowserFingerprint()}`,
+              username: username,
+              displayName: username,
+              systemUserId: null,
+              domainName: 'local'
+            };
+          }
+        }
+        
+        // Method 3: Try extracting from any visible user display
+        const userDisplayElements = document.querySelectorAll('[class*="user"], [class*="account"], [data-user]');
+        for (const elem of userDisplayElements) {
+          const text = elem.textContent.trim();
+          if (text && text.includes('@') && !text.includes('Sign In') && !text.includes('Log In')) {
+            return {
+              luid: `elem_${this._generateBrowserFingerprint()}`,
+              username: text,
+              displayName: text.split('@')[0],
+              systemUserId: null,
+              domainName: text.split('@')[1] || 'local'
+            };
+          }
+        }
+        
+        return null;
+      } catch (error) {
+        debugLog('[SessionManager] Error extracting user from DOM:', error);
+        return null;
+      }
+    }
+    
+    async _extractDashboardContext() {
+      debugLog('[SessionManager] Extracting dashboard context...');
+      
+      // Extract from URL
+      const url = window.location.href;
+      const match = url.match(/\/views\/([^\/]+)\/([^?#]+)/);
+      
+      if (match) {
+        this.dashboardContext = {
+          workbookId: match[1],
+          workbookName: match[1].replace(/_/g, ' '),
+          dashboardName: match[2].replace(/_/g, ' ')
+        };
+        debugLog('[SessionManager] ✅ Dashboard context from URL:', this.dashboardContext);
+        return;
+      }
+      
+      // Fallback: from page title
+      const title = document.title;
+      const titleMatch = title.match(/^([^:]+):\s*([^\-]+)/);
+      
+      if (titleMatch) {
+        const workbookName = titleMatch[1].trim();
+        const dashboardName = titleMatch[2].trim();
+        
+        this.dashboardContext = {
+          workbookId: workbookName.replace(/\s+/g, '_'),
+          workbookName: workbookName,
+          dashboardName: dashboardName
+        };
+        debugLog('[SessionManager] ✅ Dashboard context from page title:', this.dashboardContext);
+        return;
+      }
+      
+      // Last resort
+      this.dashboardContext = {
+        workbookId: 'unknown_workbook',
+        workbookName: 'Unknown Workbook',
+        dashboardName: 'Unknown Dashboard'
+      };
+      debugLog('[SessionManager] ⚠️ Using default dashboard context');
+    }
+    
+    async _createAnonymousUser() {
+      const fingerprint = this._generateBrowserFingerprint();
+      return {
+        luid: `anonymous_${fingerprint}`,
+        username: 'anonymous@local',
+        displayName: 'Anonymous User',
+        systemUserId: null,
+        domainName: 'anonymous'
+      };
+    }
+    
+    _generateBrowserFingerprint() {
+      const components = [
+        navigator.userAgent,
+        navigator.language,
+        screen.width + 'x' + screen.height,
+        new Date().getTimezoneOffset()
+      ].join('|');
+      
+      let hash = 0;
+      for (let i = 0; i < components.length; i++) {
+        hash = ((hash << 5) - hash) + components.charCodeAt(i);
+        hash = hash & hash;
+      }
+      
+      return Math.abs(hash).toString(36);
+    }
+    
+    _generateUUID() {
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+    
+    getRequestContext() {
+      if (!this.initialized) {
+        throw new Error('SessionManager not initialized. Call initialize() first.');
+      }
+      
+      return {
+        user: this.userIdentity,
+        workbook_id: this.dashboardContext.workbookId,
+        workbook_name: this.dashboardContext.workbookName,
+        dashboard_name: this.dashboardContext.dashboardName,
+        session_id: this.sessionId,
+        timestamp: new Date().toISOString()
+      };
+    }
+    
+    isReady() {
+      return this.initialized;
+    }
+  }
+  
+  // Initialize SessionManager instance
+  const sessionManager = new SessionManager();
+  // ============================================================================
+
   // Extension state management - MUST be declared early for ContentLogger
   let extensionState = {
     ready: false,
@@ -81,15 +585,15 @@
   // EXPORT STATUS POLLING (for Chrome Extension)
   // ============================================================================
   let exportProgressPoller = null;
-  let currentConnectionKey = null;
+  let currentSessionId = null;
 
   function pollExportStatus() {
-    if (!currentConnectionKey) {
+    if (!currentSessionId) {
       stopExportStatusPolling();
       return;
     }
     
-    const url = `${extensionState.backendUrl}/api/export-status?connection_key=${encodeURIComponent(currentConnectionKey)}`;
+    const url = `${extensionState.backendUrl}/api/export-status?session_id=${encodeURIComponent(currentSessionId)}`;
     
     proxyFetch(url)
       .then(response => response.json())
@@ -204,13 +708,13 @@
     }
   }
 
-  function startExportStatusPolling(connectionKey) {
-    currentConnectionKey = connectionKey;
+  function startExportStatusPolling(sessionId) {
+    currentSessionId = sessionId;
     
     // Stop any existing poller
     stopExportStatusPolling();
     
-    ContentLogger.info('Starting export status polling', { connectionKey });
+    ContentLogger.info('Starting export status polling', { session_id: sessionId });
     
     // Start polling immediately
     pollExportStatus();
@@ -224,146 +728,6 @@
       clearInterval(exportProgressPoller);
       exportProgressPoller = null;
       ContentLogger.info('Stopped export status polling');
-    }
-  }
-
-  // Enhanced logging system for content script
-  const ContentLogger = {
-    log: function(level, message, data = null, event_type = 'GENERAL') {
-      const timestamp = new Date().toISOString();
-      const prefix = `[${timestamp}][${level.toUpperCase()}][CONTENT]`;
-      
-      const consoleMethod = level === 'error' ? 'error' : level === 'warn' ? 'warn' : 'log';
-      
-      if (data) {
-        console[consoleMethod](prefix, message, data);
-      } else {
-        console[consoleMethod](prefix, message);
-      }
-      
-      // Send to backend for enhanced logging
-      this.sendToBackend(level, message, data, event_type);
-      
-      // Also send to background script for centralized logging
-      try {
-        chrome.runtime.sendMessage({
-          action: 'logDebug',
-          level: level,
-          message: message,
-          data: data,
-          timestamp: timestamp,
-          url: window.location.href
-        }).catch(() => {}); // Ignore if background script not available
-      } catch (error) {
-        // Ignore messaging errors
-      }
-    },
-
-    sendToBackend: async function(level, message, data = null, event_type = 'GENERAL') {
-      try {
-        // Check if extensionState is available (avoid temporal dead zone issues)
-        const backendUrl = (typeof extensionState !== 'undefined' && extensionState?.backendUrl) 
-          ? extensionState.backendUrl 
-          : 'http://localhost:8502';
-          
-        const tableauContext = (typeof extensionState !== 'undefined' && extensionState?.context) 
-          ? extensionState.context 
-          : {};
-
-        const logData = {
-          event_type: event_type,
-          level: level,
-          message: message,
-          data: {
-            ...data,
-            timestamp_client: new Date().toISOString(),
-            page_title: document.title,
-            tableau_context: tableauContext
-          },
-          url: window.location.href
-        };
-
-        await proxyFetch(`${backendUrl}/api/extension/log`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(logData)
-        });
-      } catch (error) {
-        // Silently fail - don't want logging to break the extension
-        console.warn('[ContentLogger] Failed to send log to backend:', error);
-      }
-    },
-
-    debug: function(message, data = null, event_type = 'DEBUG') { this.log('debug', message, data, event_type); },
-    info: function(message, data = null, event_type = 'INFO') { this.log('info', message, data, event_type); },
-    warn: function(message, data = null, event_type = 'WARNING') { this.log('warn', message, data, event_type); },
-    error: function(message, data = null, event_type = 'ERROR') { this.log('error', message, data, event_type); },
-    
-    // Specialized logging methods
-    logChatRequest: function(message, selectedChart, connectionKey) {
-      this.log('info', `Chat request: "${message}"`, {
-        selected_chart: selectedChart,
-        connection_key: connectionKey,
-        message_length: message.length
-      }, 'CHAT_REQUEST');
-    },
-    
-    logChatResponse: function(response, success = true, error = null) {
-      this.log(success ? 'info' : 'error', `Chat response received`, {
-        response_preview: response.substring(0, 100),
-        full_response: response,
-        success: success,
-        error: error
-      }, success ? 'CHAT_RESPONSE' : 'CHAT_ERROR');
-    },
-    
-    logChartSelection: function(chartName, chartData = null) {
-      this.log('info', `Chart selected: ${chartName}`, {
-        chart_name: chartName,
-        chart_data: chartData
-      }, 'CHART_SELECTION');
-    },
-    
-    logConnectionEvent: function(event, success = true, details = null) {
-      this.log(success ? 'info' : 'error', `Connection ${event}`, {
-        event: event,
-        success: success,
-        details: details
-      }, `CONNECTION_${event.toUpperCase()}`);
-    },
-    
-    logNetworkRequest: function(method, url, status, requestData = null, responseData = null, error = null) {
-      this.log(error ? 'error' : 'info', `${method} ${url}`, {
-        method: method,
-        url: url,
-        status_code: status,
-        request_data: requestData,
-        response_data: responseData,
-        error: error
-      }, 'NETWORK_REQUEST');
-    }
-  };
-  
-  // Enhanced debug logging for connection issues
-  function debugLogNetwork(message, data = null) {
-    ContentLogger.debug(`Network: ${message}`, data);
-    
-    if (DEBUG) {
-      console.log(`[Tableau Assistant Network] ${message}`, data || '');
-      // Also send to background script for centralized logging
-      chrome.runtime.sendMessage({
-        action: 'logDebug',
-        message: `Network: ${message}`,
-        data: data
-      }).catch(() => {}); // Ignore if background script not available
-    }
-  }
-
-  function debugLog(message, data = null) {
-    ContentLogger.debug(message, data);
-    
-    if (DEBUG) {
-      console.log(`[Tableau Assistant] ${message}`, data || '');
     }
   }
 
@@ -573,11 +937,9 @@
 
   let flaskConnectionState = {
     initialized: false,
-    sessionId: null,
     connected: false,
     workbookName: null,
-    dashboardName: null,
-    connectionKey: null
+    dashboardName: null
   };
 
   let navigationState = {
@@ -2293,14 +2655,24 @@
     }
 
     try {
+      // Ensure SessionManager is initialized
+      if (!sessionManager.isReady()) {
+        updateMessageById('init-loading', '🔄 Initializing session...');
+        const sessionInitialized = await sessionManager.initialize();
+        if (!sessionInitialized) {
+          throw new Error('Failed to initialize session manager');
+        }
+      }
+      
       debugLog('Initializing Flask backend connection...');
       
       // Create loading indicator for initialization
       const initLoadingId = `init-loading-${Date.now()}`;
       appendMessage('🔄 Connecting to analytics backend...', 'bot status', null, initLoadingId);
 
-      // Extract Tableau context
-      const tableauContext = extractTableauContext();
+      // Get request context from SessionManager
+      const requestContext = sessionManager.getRequestContext();
+      debugLog('[NEW ARCH] Using request context:', requestContext);
       
       // Update status
       updateMessageById(initLoadingId, '🔄 Extracting workbook information...');
@@ -2308,7 +2680,7 @@
       debugLog('Sending initialization request to Flask backend...');
       debugLogNetwork('POST request to /api/tableau/initialize', {
         url: `${extensionState.backendUrl}/api/tableau/initialize`,
-        context: tableauContext
+        context: requestContext
       });
       
       updateMessageById(initLoadingId, '🔄 Establishing secure connection...');
@@ -2317,7 +2689,7 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          tableauContext: tableauContext,
+          context: requestContext,
           clientTimestamp: new Date().toISOString(),
           source: 'chrome_extension'
         })
@@ -2341,20 +2713,18 @@
         flaskConnectionState.connected = true;
         flaskConnectionState.workbookName = result.workbook_name;
         flaskConnectionState.dashboardName = result.dashboard_name;
-        flaskConnectionState.connectionKey = result.connection_key || result.workbook_name;
         
         // Update loading message with success
         updateMessageById(initLoadingId, '✅ Connection established successfully!');
         
-        // Start export status polling immediately
-        if (flaskConnectionState.connectionKey) {
-          startExportStatusPolling(flaskConnectionState.connectionKey);
-        }
+        // Start export status polling with session ID
+        startExportStatusPolling(requestContext.session_id);
         
         ContentLogger.logConnectionEvent('initialization', true, {
-          connectionKey: flaskConnectionState.connectionKey,
-          workbookName: flaskConnectionState.workbookName,
-          dashboardName: flaskConnectionState.dashboardName,
+          session_id: requestContext.session_id,
+          user: requestContext.user.username,
+          workbookName: result.workbook_name,
+          dashboardName: result.dashboard_name,
           cached: result.cached,
           availableViews: result.available_views
         });
@@ -3084,13 +3454,13 @@
         return false;
       }
 
-      const connectionKey = flaskConnectionState.connectionKey || 
-                           flaskConnectionState.workbookName ||
-                           'default_workbook';
+      // Get request context from SessionManager
+      const requestContext = sessionManager.getRequestContext();
+      const session_id = requestContext.session_id;
       
-      debugLog('Using connection key for charts request', { connectionKey });
+      debugLog('[NEW ARCH] Using session_id for charts request', { session_id });
       
-      const response = await proxyFetch(`${extensionState.backendUrl}/api/get_worksheets?connection_key=${encodeURIComponent(connectionKey)}`);
+      const response = await proxyFetch(`${extensionState.backendUrl}/api/get_worksheets?session_id=${encodeURIComponent(session_id)}`);
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -3141,14 +3511,21 @@
     debugLog('Loading workbook data summary...');
     
     try {
-      const workbookName = flaskConnectionState.workbookName || flaskConnectionState.connectionKey;
+      const workbookName = flaskConnectionState.workbookName;
       
       if (!workbookName) {
         debugLog('No workbook name available, skipping summary');
         return false;
       }
       
-      const response = await proxyFetch(`${extensionState.backendUrl}/api/get_workbook_summary?workbook=${encodeURIComponent(workbookName)}`);
+      // NEW ARCHITECTURE: Ensure SessionManager is initialized
+      if (!sessionManager.isReady()) {
+        debugLog('[ERROR] SessionManager not initialized, cannot load workbook summary');
+        return false;
+      }
+      
+      const requestContext = sessionManager.getRequestContext();
+      const response = await proxyFetch(`${extensionState.backendUrl}/api/get_workbook_summary?session_id=${requestContext.session_id}`);
       
       if (!response.ok) {
         debugLog('Failed to load workbook summary', { status: response.status });
@@ -3713,7 +4090,7 @@
     debugLog('Chart selected:', chart);
     ContentLogger.logChartSelection(chart.name, {
       chartId: chart.id,
-      connectionKey: flaskConnectionState.connectionKey,
+      session_id: sessionManager.sessionId,
       workbookName: flaskConnectionState.workbookName
     });
     
@@ -3741,7 +4118,7 @@
     debugLog('Chart selection completed', { selected: chart.name });
     ContentLogger.info('Chart selection completed', {
       selectedChart: chart.name,
-      connectionKey: flaskConnectionState.connectionKey,
+      session_id: sessionManager.sessionId,
       workbookName: flaskConnectionState.workbookName
     }, 'CHART_SELECTION_COMPLETED');
   }
@@ -3929,11 +4306,12 @@
     });
     
     try {
-      const connectionKey = flaskConnectionState.connectionKey || flaskConnectionState.workbookName;
+      // Get request context from SessionManager
+      const requestContext = sessionManager.getRequestContext();
       
       const requestBody = {
         message: 'AUTO_ANALYSIS',
-        context: extensionState.context,
+        context: requestContext,
         tableauReady: extensionState.ready,
         timestamp: new Date().toISOString(),
         selected_chart: chart.name || chart,
@@ -3942,7 +4320,6 @@
           chart_name: chart.name || chart,
           chart_type: chart.type || 'unknown'
         },
-        connection_key: connectionKey,
         source: 'chrome_extension',
         auto_analysis: true,
         cache_only: true  // NEW FLAG - silent mode
@@ -4000,11 +4377,13 @@
         ? chartSelectionState.selectedChart 
         : chartSelectionState.selectedChart?.name;
       
+      // Get request context from SessionManager
+      const requestContext = sessionManager.getRequestContext();
+      
       const requestData = {
         message: question,
         selected_chart: chartName, // Pass ONLY the chart NAME as string
-        connection_key: flaskConnectionState.connectionKey,
-        context: extensionState.context,
+        context: requestContext,
         source: 'chrome_extension'
       };
       
@@ -4072,11 +4451,9 @@
         return;
       }
       
-      const connectionKey = flaskConnectionState.connectionKey || flaskConnectionState.workbookName;
-      if (!connectionKey) {
-        updateMessageById(analysisLoadingId, '❌ No connection key available. Please refresh the page.', 'bot error');
-        return;
-      }
+      // Get request context from SessionManager
+      const requestContext = sessionManager.getRequestContext();
+      debugLog('[NEW ARCH] Using request context for auto-analysis:', requestContext);
       
       const updateStatus = (message) => {
         updateMessageById(analysisLoadingId, `🔍 ${message}`);
@@ -4087,7 +4464,7 @@
       // Prepare auto-analysis request
       const requestBody = {
         message: 'AUTO_ANALYSIS', // Special message to trigger auto-analysis
-        context: extensionState.context,
+        context: requestContext,
         tableauReady: extensionState.ready,
         timestamp: new Date().toISOString(),
         selected_chart: chart.name,
@@ -4096,7 +4473,6 @@
           chart_name: chart.name,
           chart_type: chart.type || 'unknown'
         },
-        connection_key: connectionKey,
         source: 'chrome_extension',
         auto_analysis: true // Flag to indicate this is auto-analysis
       };
@@ -4299,26 +4675,18 @@
       debugLog('Sending chat message to backend...');
       updateStatus('Connecting to analytics backend...');
       
-      // Make sure we have the right connection key
-      const connectionKey = flaskConnectionState.connectionKey || flaskConnectionState.workbookName;
-      
-      if (!connectionKey) {
-        ContentLogger.error('No connection key available for chat request', {
-          flaskState: flaskConnectionState,
-          selectedChart: selectedChart ? selectedChart.name : null
-        }, 'CONNECTION_ERROR');
-        updateMessageById(loadingId, 'Connection error: No connection key available. Please refresh the page.', 'bot error');
-        return;
-      }
+      // Get request context from SessionManager
+      const requestContext = sessionManager.getRequestContext();
+      debugLog('[NEW ARCH] Using request context for chat:', requestContext);
       
       updateStatus('Preparing request for enhanced analysis...');
       
       // Log the chat request
-      ContentLogger.logChatRequest(text, selectedChart ? selectedChart.name : null, connectionKey);
+      ContentLogger.logChatRequest(text, selectedChart ? selectedChart.name : null, requestContext.session_id);
       
       const requestBody = { 
         message: text, 
-        context: extensionState.context,
+        context: requestContext,
         tableauReady: extensionState.ready,
         timestamp: new Date().toISOString(),
         selected_chart: selectedChart ? selectedChart.name : null,
@@ -4327,7 +4695,6 @@
           chart_name: selectedChart.name,
           chart_type: selectedChart.type || 'unknown'
         } : null,
-        connection_key: connectionKey,
         source: 'chrome_extension'
       };
       
@@ -4408,13 +4775,13 @@
         debugLog('Backend requires reinitialization');
         appendMessage('Reinitializing connection...', 'bot status');
         
-        // CRITICAL: Preserve connection key info during reset
-        const previousConnectionKey = flaskConnectionState.connectionKey;
+        // Preserve state info for logging
         const previousWorkbookName = flaskConnectionState.workbookName;
         const previousDashboardName = flaskConnectionState.dashboardName;
+        const previousSessionId = sessionManager.sessionId;
         
-        ContentLogger.info('Preserving connection state during reinitialization', {
-          previousConnectionKey,
+        ContentLogger.info('Reinitializing connection', {
+          previousSessionId,
           previousWorkbookName,
           previousDashboardName
         });
@@ -4424,11 +4791,13 @@
         
         await initializeFlaskConnection();
         
-        // Verify connection key was restored
+        // Verify connection state after reinitialization
         ContentLogger.info('Connection state after reinitialization', {
-          connectionKey: flaskConnectionState.connectionKey,
+          session_id: sessionManager.sessionId,
           workbookName: flaskConnectionState.workbookName,
-          restoredCorrectly: flaskConnectionState.connectionKey === previousConnectionKey
+          dashboardName: flaskConnectionState.dashboardName,
+          initialized: flaskConnectionState.initialized,
+          session_changed: previousSessionId !== sessionManager.sessionId
         });
         
         // Retry the request

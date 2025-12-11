@@ -10,6 +10,7 @@ import time
 import logging
 import traceback
 import numpy as np
+import pandas as pd
 import asyncio
 from dotenv import load_dotenv
 
@@ -153,6 +154,29 @@ try:
 except ImportError as e:
     debug_log(f"Enhanced services not available: {e}")
     ENHANCED_SERVICES_AVAILABLE = False
+
+# ========================================================================
+# NEW ARCHITECTURE IMPORTS (Multi-User, Multi-Dashboard Support)
+# ========================================================================
+try:
+    from core.app_integration import (
+        initialize_new_managers,
+        register_new_routes,
+        get_managers,
+        cleanup_on_shutdown
+    )
+    from core.request_context import RequestContext
+    from core.flask_middleware import get_request_context, require_context
+    from core.agent_context_adapter import (
+        get_disambiguation_adapter,
+        get_conversation_adapter
+    )
+    NEW_ARCHITECTURE_AVAILABLE = True
+    debug_log("New architecture imports successful")
+except ImportError as e:
+    debug_log(f"New architecture not available: {e}")
+    NEW_ARCHITECTURE_AVAILABLE = False
+# ========================================================================
 
 # OpenAI Configuration
 master_logger.info("OPENAI CONFIGURATION STARTED")
@@ -391,6 +415,52 @@ except Exception as e:
 
 debug_log("Initialized global state managers")
 
+# ============================================================================
+# NEW ARCHITECTURE MANAGERS (Multi-User, Multi-Dashboard Support)
+# ============================================================================
+if NEW_ARCHITECTURE_AVAILABLE:
+    try:
+        master_logger.info("=" * 80)
+        master_logger.info("INITIALIZING NEW ARCHITECTURE (Multi-Tenant System)")
+        master_logger.info("=" * 80)
+        
+        # Initialize all new managers (state, data, cache, lifecycle)
+        new_managers = initialize_new_managers()
+        
+        # Extract managers for easy access
+        hierarchical_state_manager = new_managers['state_manager']
+        scoped_data_manager = new_managers['data_manager']
+        scoped_cache_manager = new_managers['cache_manager']
+        session_lifecycle_manager = new_managers['lifecycle_manager']
+        
+        # Initialize adapters for existing code compatibility
+        disambiguation_adapter = get_disambiguation_adapter()
+        conversation_adapter = get_conversation_adapter()
+        
+        master_logger.info("=" * 80)
+        master_logger.info("✅ NEW ARCHITECTURE READY - Multi-user, multi-dashboard support enabled")
+        master_logger.info("=" * 80)
+        
+    except Exception as e:
+        master_logger.error(f"❌ Failed to initialize new architecture: {e}", exc_info=True)
+        master_logger.error("Application will continue with legacy system only")
+        # Set to None so routes can detect and fall back to legacy
+        hierarchical_state_manager = None
+        scoped_data_manager = None
+        scoped_cache_manager = None
+        session_lifecycle_manager = None
+        disambiguation_adapter = None
+        conversation_adapter = None
+else:
+    master_logger.warning("New architecture not available - using legacy system only")
+    hierarchical_state_manager = None
+    scoped_data_manager = None
+    scoped_cache_manager = None
+    session_lifecycle_manager = None
+    disambiguation_adapter = None
+    conversation_adapter = None
+# ============================================================================
+
 # Connection refresh interval (30 minutes)
 CONNECTION_REFRESH_INTERVAL = 30 * 60
 master_logger.info(f"Connection refresh interval set to {CONNECTION_REFRESH_INTERVAL} seconds")
@@ -523,6 +593,17 @@ def call_llm(prompt, model="gpt-3.5-turbo", temperature=0):
         debug_log("LLM call failed", {"error": str(e)})
         return f"AI Error: {str(e)}"
 
+# ============================================================================
+# REGISTER NEW ARCHITECTURE ROUTES
+# ============================================================================
+if NEW_ARCHITECTURE_AVAILABLE and hierarchical_state_manager is not None:
+    try:
+        register_new_routes(app)
+        master_logger.info("✅ New architecture routes registered successfully")
+    except Exception as e:
+        master_logger.error(f"Failed to register new architecture routes: {e}", exc_info=True)
+# ============================================================================
+
 @app.route("/")
 @function_logger('app.routes.index')
 def index():
@@ -638,15 +719,38 @@ def initialize_tableau():
         
         debug_log("Received initialization request", data)
         
-        # Get Tableau context from the request
-        tableau_context = data.get("tableauContext", {})
-        dashboard_name = tableau_context.get("dashboardName")
-        workbook_name = tableau_context.get("workbookName") 
-        workbook_id = tableau_context.get("workbookId") or tableau_context.get("workbook_id")
-        view_content_url = tableau_context.get("viewContentUrl") or tableau_context.get("view_content_url")
-        site_content_url = tableau_context.get("siteContentUrl") or tableau_context.get("site_content_url")
-        worksheet_names = tableau_context.get("worksheetNames", [])
-        url = tableau_context.get("url")
+        # ============================================================================
+        # HANDLE BOTH OLD AND NEW ARCHITECTURE FORMATS
+        # ============================================================================
+        request_context_data = data.get("context")
+        session_id = None
+        user_info = None
+        
+        if request_context_data:
+            # NEW ARCHITECTURE: Extract from RequestContext format
+            master_logger.info("Using NEW ARCHITECTURE context format")
+            dashboard_name = request_context_data.get("dashboard_name")
+            workbook_name = request_context_data.get("workbook_name") or request_context_data.get("workbook_id")
+            workbook_id = request_context_data.get("workbook_id")
+            session_id = request_context_data.get("session_id")
+            user_info = request_context_data.get("user", {})
+            view_content_url = None
+            site_content_url = None
+            worksheet_names = []
+            url = None
+            
+            master_logger.info(f"NEW ARCH - User: {user_info.get('username', 'unknown')}, Session: {session_id}")
+        else:
+            # OLD ARCHITECTURE: Extract from tableauContext format
+            master_logger.info("Using LEGACY tableauContext format")
+            tableau_context = data.get("tableauContext", {})
+            dashboard_name = tableau_context.get("dashboardName")
+            workbook_name = tableau_context.get("workbookName") 
+            workbook_id = tableau_context.get("workbookId") or tableau_context.get("workbook_id")
+            view_content_url = tableau_context.get("viewContentUrl") or tableau_context.get("view_content_url")
+            site_content_url = tableau_context.get("siteContentUrl") or tableau_context.get("site_content_url")
+            worksheet_names = tableau_context.get("worksheetNames", [])
+            url = tableau_context.get("url")
         
         master_logger.info("Extracting Tableau context from request")
         master_logger.info(f"Dashboard name: {dashboard_name}")
@@ -657,7 +761,12 @@ def initialize_tableau():
         master_logger.info(f"Worksheet count: {len(worksheet_names)}")
         master_logger.info(f"Source URL: {url}")
         master_logger.debug(f"Worksheet names: {worksheet_names}")
-        master_logger.debug(f"Full tableau context: {json.dumps(tableau_context, indent=2, default=str)}")
+        
+        # Log full context (handle both NEW and OLD formats)
+        if request_context_data:
+            master_logger.debug(f"Full request context: {json.dumps(request_context_data, indent=2, default=str)}")
+        else:
+            master_logger.debug(f"Full tableau context: {json.dumps(tableau_context, indent=2, default=str)}")
         
         debug_log("Extracted Tableau context", {
             "dashboard_name": dashboard_name,
@@ -667,27 +776,108 @@ def initialize_tableau():
             "url": url
         })
         
-        # Prefer workbook_id as the stable connection key when available
-        connection_key = workbook_id or workbook_name or dashboard_name or "default_workbook"
-        if not connection_key:
-            connection_key = f"workbook_{hash(str(tableau_context))}"
+        # Generate connection key
+        # NEW ARCH: Use session_id for key when available
+        if session_id and user_info:
+            connection_key = session_id  # Use session_id directly as the key for new arch
+            master_logger.info(f"NEW ARCH - Using session_id as connection key: '{connection_key}'")
+        else:
+            # OLD ARCH: Use workbook-based key
+            connection_key = workbook_id or workbook_name or dashboard_name or "default_workbook"
+            if not connection_key:
+                connection_key = f"workbook_{hash(str(data.get('tableauContext', {})))}"
+            master_logger.info(f"LEGACY - Generated connection key: '{connection_key}'")
         
-        master_logger.info(f"Generated connection key: '{connection_key}'")
-        master_logger.debug(f"Connection key generation logic - workbook: {workbook_name}, dashboard: {dashboard_name}")
+        master_logger.debug(f"Connection key generation logic - workbook: {workbook_name}, dashboard: {dashboard_name}, session: {session_id}")
         
-        debug_log("Generated connection key", {"connection_key": connection_key})
+        debug_log("Generated connection key", {"connection_key": connection_key, "is_new_arch": bool(session_id)})
         
-        # Check if we already have a valid connection for this workbook
-        master_logger.info(f"Checking for existing valid connection for key: {connection_key}")
-        has_valid_connection = state_manager.has_valid_connection(connection_key)
-        master_logger.info(f"Valid connection exists: {has_valid_connection}")
+        # ============================================================================
+        # CHECK FOR EXISTING SESSION - NEW ARCHITECTURE ONLY
+        # ============================================================================
+        
+        # REQUIRE session_id for new architecture
+        if not session_id:
+            master_logger.warning("No session_id provided - initialization requires session context")
+            # Continue to initialize new connection (will fail later with proper error)
+            has_valid_connection = False
+        elif NEW_ARCHITECTURE_AVAILABLE and hierarchical_state_manager:
+            # Check if session already exists in new architecture
+            existing_state = hierarchical_state_manager.get_state_by_session_id(session_id)
+            has_valid_connection = existing_state is not None
+            master_logger.info(f"Existing session check - Session ID: {session_id[:8]}..., Found: {has_valid_connection}")
+        else:
+            has_valid_connection = False
+            master_logger.warning("New architecture not available - cannot check for existing session")
         
         if has_valid_connection:
-            master_logger.info("Using existing cached connection")
-            debug_log("Found existing valid connection", {"connection_key": connection_key})
+            master_logger.info("Using existing cached session")
+            debug_log("Found existing valid session", {"session_id": session_id})
             
-            state = state_manager.get_state(connection_key)
+            # Retrieve state from hierarchical manager
+            state = hierarchical_state_manager.get_state_by_session_id(session_id)
             master_logger.info(f"Retrieved cached state - views: {len(state.available_views)}, workbook: {state.workbook_name}")
+            
+            # ============================================================================
+            # ENSURE DATA IS REGISTERED FOR CACHED SESSION
+            # ============================================================================
+            # Check if data exists in scoped_data_manager for this session
+            # If not, load and register it (handles case where session persists but data was cleaned up)
+            
+            from core.request_context import RequestContext, UserIdentity
+            
+            # Reconstruct context for cached session
+            cached_user_identity = UserIdentity(
+                primary_id=getattr(state, 'user_id', 'anonymous'),
+                username=getattr(state, 'username', 'anonymous@local'),  # Use stored username, not user_id!
+                display_name='User'
+            )
+            
+            cached_context = RequestContext(
+                user=cached_user_identity,
+                workbook_id=state.workbook_id or state.workbook_name,
+                workbook_name=state.workbook_name,
+                dashboard_name=getattr(state, 'dashboard_name', 'unknown'),
+                session_id=session_id,
+                created_at=state.connection_timestamp,
+                last_activity=state.last_activity
+            )
+            
+            # Check if data exists
+            if not scoped_data_manager.has_data(cached_context, 'main_data'):
+                master_logger.warning(f"Cached session {session_id[:8]} has no data - attempting to load")
+                
+                try:
+                    project_root = Path(__file__).parent
+                    workbook_exports_path = project_root / "tableau_exports" / state.workbook_name
+                    
+                    # Find CSV file
+                    csv_file_path = None
+                    if workbook_exports_path.exists():
+                        for subdirectory in ["worksheets", "datasources"]:
+                            subdir_path = workbook_exports_path / subdirectory
+                            if subdir_path.exists():
+                                csv_files = list(subdir_path.glob("*.csv"))
+                                if csv_files:
+                                    csv_file_path = csv_files[0]
+                                    break
+                        
+                        if not csv_file_path:
+                            csv_files = list(workbook_exports_path.glob("*.csv"))
+                            if csv_files:
+                                csv_file_path = csv_files[0]
+                    
+                    if csv_file_path and csv_file_path.exists():
+                        df = pd.read_csv(csv_file_path)
+                        scoped_data_manager.register_data(cached_context, df, 'main_data')
+                        master_logger.info(f"✅ Registered data for cached session: {df.shape}")
+                    else:
+                        master_logger.warning(f"No CSV data found for cached session")
+                
+                except Exception as e:
+                    master_logger.error(f"Failed to load data for cached session: {e}")
+            else:
+                master_logger.info(f"✅ Cached session already has data registered")
             
             # Generate workbook summary using CSV data for cached connection
             workbook_summary = None
@@ -767,9 +957,132 @@ def initialize_tableau():
                 "has_raw_data": state_or_error.raw_data is not None
             })
             
-            # Store the connection state using workbook name as key
-            master_logger.info(f"Storing connection state with key: {connection_key}")
-            state_manager.store_state(connection_key, state_or_error)
+            # ============================================================================
+            # STORE STATE - NEW ARCHITECTURE ONLY (No Legacy Support)
+            # ============================================================================
+        
+            # REQUIRE session_id and user_info for new architecture
+            if not (session_id and user_info):
+                master_logger.error("Missing session_id or user_info - cannot initialize without context")
+                return jsonify({
+                    "success": False,
+                    "error": "Session context required. Please reload the extension.",
+                    "details": "Missing session_id or user information"
+                }), 400
+        
+            if not (NEW_ARCHITECTURE_AVAILABLE and hierarchical_state_manager):
+                master_logger.error("New architecture not available but required")
+                return jsonify({
+                    "success": False,
+                    "error": "Server configuration error - session management unavailable"
+                }), 500
+        
+            try:
+                from core.request_context import RequestContext, UserIdentity
+                
+                # Create UserIdentity from user_info
+                user_identity = UserIdentity(
+                    primary_id=user_info.get('luid', 'anonymous'),
+                    username=user_info.get('username', 'anonymous@local'),
+                    display_name=user_info.get('displayName', 'Anonymous'),
+                    system_user_id=user_info.get('systemUserId'),
+                    domain_name=user_info.get('domainName', 'local')
+                )
+                
+                # Create RequestContext using VERIFIED names from state (after fuzzy-matching)
+                context = RequestContext(
+                    user=user_identity,
+                    workbook_id=state_or_error.workbook_id or workbook_name,
+                    workbook_name=state_or_error.workbook_name,  # Use fuzzy-matched name for consistency
+                    dashboard_name=state_or_error.dashboard_name or dashboard_name or "unknown",
+                    session_id=session_id,
+                    created_at=datetime.utcnow(),
+                    last_activity=datetime.utcnow()
+                )
+                
+                # Update the state_or_error with context information
+                state_or_error.session_id = session_id
+                state_or_error.user_id = user_identity.primary_id
+                state_or_error.username = user_identity.username  # Store for context reconstruction
+                
+                # Store in hierarchical state manager (CORRECT METHOD)
+                hierarchical_state_manager.store_state(context, state_or_error)
+                
+                master_logger.info(f"✅ NEW ARCH - Stored state in hierarchical manager")
+                master_logger.info(f"   User: {user_identity.username}, Session: {session_id[:8]}...")
+                
+                # ============================================================================
+                # ATTEMPT IMMEDIATE DATA REGISTRATION (if data already exists)
+                # ============================================================================
+                # Note: This handles cases where CSV data is already exported from a previous session
+                # or where worksheet data is immediately available. The auto-export background
+                # thread will register data after export completes for new dashboards.
+                
+                master_logger.info(f"Checking for existing CSV data for session_id={session_id[:8]}...")
+                
+                immediate_data_registered = False
+                
+                # Try to load existing CSV from tableau_exports if already exported
+                try:
+                    project_root = Path(__file__).parent
+                    # CRITICAL: Use fuzzy-matched name from state, NOT request name
+                    verified_workbook_name = state_or_error.workbook_name
+                    master_logger.info(f"Checking for existing CSV data (using verified name: '{verified_workbook_name}')")
+                    workbook_exports_path = project_root / "tableau_exports" / verified_workbook_name
+                    
+                    if workbook_exports_path.exists():
+                        master_logger.info(f"✅ Found existing export directory: {workbook_exports_path}")
+                        
+                        # Look for CSV files
+                        csv_file_path = None
+                        for subdirectory in ["worksheets", "datasources"]:
+                            subdir_path = workbook_exports_path / subdirectory
+                            if subdir_path.exists():
+                                csv_files = list(subdir_path.glob("*.csv"))
+                                if csv_files:
+                                    csv_file_path = csv_files[0]
+                                    break
+                        
+                        if not csv_file_path:
+                            csv_files = list(workbook_exports_path.glob("*.csv"))
+                            if csv_files:
+                                csv_file_path = csv_files[0]
+                        
+                        if csv_file_path and csv_file_path.exists():
+                            master_logger.info(f"Loading existing CSV: {csv_file_path}")
+                            df = pd.read_csv(csv_file_path)
+                            scoped_data_manager.register_data(context, df, 'main_data')
+                            master_logger.info(f"✅ IMMEDIATE REGISTRATION - main_data: {df.shape}")
+                            immediate_data_registered = True
+                        else:
+                            master_logger.info("No existing CSV files found - will wait for auto-export")
+                    else:
+                        master_logger.info("Export directory doesn't exist yet - will wait for auto-export")
+                
+                except Exception as e:
+                    master_logger.warning(f"Could not load existing CSV data: {e}")
+                    master_logger.info("Will rely on auto-export to register data")
+                
+                # LEGACY CODE REMOVED - No longer check global csv_data_loader
+                # New architecture only uses session-scoped data from scoped_data_manager
+                # if not immediate_data_registered:
+                #     if csv_data_loader and csv_data_loader.data is not None:
+                #         scoped_data_manager.register_data(context, csv_data_loader.data, 'main_data')
+                #         master_logger.info(f"✅ IMMEDIATE REGISTRATION from global csv_data_loader: {csv_data_loader.data.shape}")
+                #         immediate_data_registered = True
+                
+                if immediate_data_registered:
+                    master_logger.info(f"✅ Data immediately available for session {session_id[:8]}")
+                else:
+                    master_logger.info(f"⏳ Data will be registered after auto-export completes for session {session_id[:8]}")
+            
+            except Exception as e:
+                master_logger.error(f"Failed to store state in new architecture: {e}", exc_info=True)
+                return jsonify({
+                    "success": False,
+                    "error": "Failed to initialize session",
+                    "details": str(e)
+                }), 500
             
             # ============================================================================
             # AUTO-EXPORT FUNCTIONALITY
@@ -777,8 +1090,8 @@ def initialize_tableau():
             
             # Trigger automatic export if enabled
             if AUTO_EXPORT_ENABLED and workbook_name:
-                # Get workbook_id from connection state if not provided in request
-                actual_workbook_id = workbook_id or getattr(state_or_error, 'workbook_id', None)
+                # ALWAYS prefer state's workbook_id (fuzzy-matched, verified UUID) over request
+                actual_workbook_id = getattr(state_or_error, 'workbook_id', None) or workbook_id
                 
                 master_logger.info("=== TRIGGERING AUTO-EXPORT ===")
                 master_logger.info(f"Auto-export enabled: {AUTO_EXPORT_ENABLED}")
@@ -788,167 +1101,235 @@ def initialize_tableau():
                 master_logger.info(f"Workbook ID (request): {workbook_id}")
                 master_logger.info(f"Workbook ID (state): {getattr(state_or_error, 'workbook_id', None)}")
                 master_logger.info(f"Using workbook ID: {actual_workbook_id}")
-                
+            
                 try:
                     # Use CompleteWorkbookDataManager for comprehensive export
                     complete_manager = CompleteWorkbookDataManager(connection_manager)
-                    
+                
+                    # CAPTURE CONTEXT for data registration after export
+                    captured_context = context  # Immutable, safe to pass to thread
+                    captured_session_id = session_id
+                    captured_workbook_name = state_or_error.workbook_name  # Use fuzzy-matched name from state
+                
+                    # Log name differences for debugging
+                    if workbook_name != captured_workbook_name:
+                        master_logger.info(f"📋 Workbook name normalization:")
+                        master_logger.info(f"   Request name: '{workbook_name}'")
+                        master_logger.info(f"   Fuzzy-matched name: '{captured_workbook_name}'")
+                        master_logger.info(f"   ✅ Using fuzzy-matched name for all operations")
+                
                     # Run async export in the background (don't block initialization)
                     def run_auto_export():
-                        # Initialize export status for this connection
-                        update_export_status(
-                            connection_key,
-                            in_progress=True,
-                            stage='starting',
-                            message='Preparing to download dashboard data...'
-                        )
+                            # Initialize export status for this connection
+                            update_export_status(
+                                connection_key,
+                                in_progress=True,
+                                stage='starting',
+                                message='Preparing to download dashboard data...'
+                            )
+                    
+                            try:
+                                loop = asyncio.new_event_loop()
+                                asyncio.set_event_loop(loop)
                         
-                        try:
-                            loop = asyncio.new_event_loop()
-                            asyncio.set_event_loop(loop)
+                                # If we have workbook_id, do full export including TWB download
+                                if actual_workbook_id:
+                                    master_logger.info(f"Running full export with workbook_id: {actual_workbook_id}")
                             
-                            # If we have workbook_id, do full export including TWB download
-                            if actual_workbook_id:
-                                master_logger.info(f"Running full export with workbook_id: {actual_workbook_id}")
-                                
-                                # Update status before starting export
-                                update_export_status(
-                                    connection_key,
-                                    stage='downloading',
-                                    message='Downloading workbook file and metadata...'
-                                )
-                                
-                                # Create progress callback for the export
-                                def progress_callback(update):
-                                    """Forward progress updates to export status tracker"""
-                                    update_export_status(connection_key, **update)
-                                
-                                export_result = loop.run_until_complete(
-                                    complete_manager.fetch_complete_workbook_data(
-                                        workbook_name=workbook_name,
-                                        workbook_id=actual_workbook_id,
-                                        site_id=state_or_error.site_id,
-                                        auth_token=state_or_error.auth_token,
-                                        export_to_csv=AUTO_EXPORT_CSV,
-                                        progress_callback=progress_callback
+                                    # Update status before starting export
+                                    update_export_status(
+                                        connection_key,
+                                        stage='downloading',
+                                        message='Downloading workbook file and metadata...'
                                     )
-                                )
-                            else:
-                                # Fallback: Create basic export using available worksheet data
-                                master_logger.info("Running basic export (no workbook_id available)")
-                                try:
-                                    if AUTO_EXPORT_CSV and enhanced_data_fetcher:
-                                        # Get worksheet data and export to CSV
-                                        workbook_data = loop.run_until_complete(
-                                            enhanced_data_fetcher.fetch_workbook_data(state_or_error)
-                                        )
-                                        
-                                        if workbook_data.get('success') and 'worksheets_data' in workbook_data:
-                                            # Use WorkbookDataExporter for CSV export only
-                                            exporter = WorkbookDataExporter()
-                                            export_result = exporter.export_all_to_csv(
-                                                workbook_name=workbook_name,
-                                                worksheets_data=workbook_data['worksheets_data'],
-                                                datasources_data={}  # No datasource data available in this mode
-                                            )
-                                            export_result['mode'] = 'basic_csv_only'
-                                        else:
-                                            master_logger.warning("Could not fetch workbook data for basic export")
-                                            export_result = {'success': False, 'error': 'No workbook data available'}
-                                    else:
-                                        master_logger.info("CSV export disabled or enhanced services not available")
-                                        export_result = {'success': True, 'mode': 'metadata_only'}
-                                        
-                                    # Create metadata export if possible (requires existing metadata)
-                                    if AUTO_EXPORT_METADATA:
-                                        try:
-                                            # Try to export any existing metadata
-                                            metadata_path = f"twb_metadata_{workbook_name}.json"
-                                            if os.path.exists(metadata_path):
-                                                master_logger.info(f"Metadata file already exists: {metadata_path}")
-                                                export_result['metadata_exported'] = True
-                                            else:
-                                                master_logger.info("No existing metadata to export")
-                                                export_result['metadata_exported'] = False
-                                        except Exception as e:
-                                            master_logger.warning(f"Metadata export failed: {e}")
-                                            export_result['metadata_exported'] = False
-                                            
-                                except Exception as e:
-                                    master_logger.error(f"Basic export failed: {e}")
-                                    export_result = {'success': False, 'error': f'Basic export failed: {str(e)}', 'mode': 'failed'}
                             
-                            if export_result.get('success'):
-                                export_mode = export_result.get('mode', 'full')
-                                master_logger.info(f"✅ Auto-export completed successfully (mode: {export_mode})")
-                                
-                                if export_mode == 'full':
-                                    master_logger.info(f"Metadata exported: {AUTO_EXPORT_METADATA}")
-                                    if 'metadata_path' in export_result:
-                                        metadata_dir = os.path.dirname(export_result['metadata_path'])
-                                        master_logger.info(f"Metadata folder created: {metadata_dir}")
-                                        master_logger.info(f"Metadata file: {export_result['metadata_path']}")
-                                    if AUTO_EXPORT_CSV and 'csv_export' in export_result:
-                                        csv_info = export_result['csv_export']
-                                        master_logger.info(f"CSV export completed: {csv_info.get('output_dir', 'Unknown location')}")
-                                        master_logger.info(f"Worksheets exported: {csv_info.get('worksheets_exported', 0)}")
-                                        master_logger.info(f"Datasources exported: {csv_info.get('datasources_exported', 0)}")
-                                elif export_mode == 'basic_csv_only':
-                                    master_logger.info(f"Basic CSV export completed: {export_result.get('output_dir', 'Unknown location')}")
-                                    master_logger.info(f"Worksheets exported: {export_result.get('worksheets_exported', 0)}")
-                                    master_logger.info(f"Total rows exported: {export_result.get('total_worksheet_rows', 0)}")
+                                    # Create progress callback for the export
+                                    def progress_callback(update):
+                                        """Forward progress updates to export status tracker"""
+                                        update_export_status(connection_key, **update)
+                            
+                                    export_result = loop.run_until_complete(
+                                        complete_manager.fetch_complete_workbook_data(
+                                            workbook_name=captured_workbook_name,  # Use fuzzy-matched name from state
+                                            workbook_id=actual_workbook_id,
+                                            site_id=state_or_error.site_id,
+                                            auth_token=state_or_error.auth_token,
+                                            export_to_csv=AUTO_EXPORT_CSV,
+                                            progress_callback=progress_callback
+                                        )
+                                    )
                                 else:
-                                    master_logger.info(f"Export mode '{export_mode}' completed")
-                                
-                                # Reload CSV data from the newly exported files
-                                try:
-                                    csv_reload_success = reload_csv_data_for_workbook(workbook_name)
-                                    if csv_reload_success:
-                                        master_logger.info(f"✅ CSV data reloaded from tableau_exports/{workbook_name}")
+                                    # Fallback: Create basic export using available worksheet data
+                                    master_logger.info("Running basic export (no workbook_id available)")
+                                    try:
+                                        if AUTO_EXPORT_CSV and enhanced_data_fetcher:
+                                            # Get worksheet data and export to CSV
+                                            workbook_data = loop.run_until_complete(
+                                                enhanced_data_fetcher.fetch_workbook_data(state_or_error)
+                                            )
+                                    
+                                            if workbook_data.get('success') and 'worksheets_data' in workbook_data:
+                                                # Use WorkbookDataExporter for CSV export only
+                                                exporter = WorkbookDataExporter()
+                                                export_result = exporter.export_all_to_csv(
+                                                    workbook_name=captured_workbook_name,  # Use fuzzy-matched name from state
+                                                    worksheets_data=workbook_data['worksheets_data'],
+                                                    datasources_data={}  # No datasource data available in this mode
+                                                )
+                                                export_result['mode'] = 'basic_csv_only'
+                                            else:
+                                                master_logger.warning("Could not fetch workbook data for basic export")
+                                                export_result = {'success': False, 'error': 'No workbook data available'}
+                                        else:
+                                            master_logger.info("CSV export disabled or enhanced services not available")
+                                            export_result = {'success': True, 'mode': 'metadata_only'}
+                                    
+                                        # Create metadata export if possible (requires existing metadata)
+                                        if AUTO_EXPORT_METADATA:
+                                            try:
+                                                # Try to export any existing metadata
+                                                metadata_path = f"twb_metadata_{workbook_name}.json"
+                                                if os.path.exists(metadata_path):
+                                                    master_logger.info(f"Metadata file already exists: {metadata_path}")
+                                                    export_result['metadata_exported'] = True
+                                                else:
+                                                    master_logger.info("No existing metadata to export")
+                                                    export_result['metadata_exported'] = False
+                                            except Exception as e:
+                                                master_logger.warning(f"Metadata export failed: {e}")
+                                                export_result['metadata_exported'] = False
+                                        
+                                    except Exception as e:
+                                        master_logger.error(f"Basic export failed: {e}")
+                                        export_result = {'success': False, 'error': f'Basic export failed: {str(e)}', 'mode': 'failed'}
+                        
+                                if export_result.get('success'):
+                                    export_mode = export_result.get('mode', 'full')
+                                    master_logger.info(f"✅ Auto-export completed successfully (mode: {export_mode})")
+                            
+                                    if export_mode == 'full':
+                                        master_logger.info(f"Metadata exported: {AUTO_EXPORT_METADATA}")
+                                        if 'metadata_path' in export_result:
+                                            metadata_dir = os.path.dirname(export_result['metadata_path'])
+                                            master_logger.info(f"Metadata folder created: {metadata_dir}")
+                                            master_logger.info(f"Metadata file: {export_result['metadata_path']}")
+                                        if AUTO_EXPORT_CSV and 'csv_export' in export_result:
+                                            csv_info = export_result['csv_export']
+                                            master_logger.info(f"CSV export completed: {csv_info.get('output_dir', 'Unknown location')}")
+                                            master_logger.info(f"Worksheets exported: {csv_info.get('worksheets_exported', 0)}")
+                                            master_logger.info(f"Datasources exported: {csv_info.get('datasources_exported', 0)}")
+                                    elif export_mode == 'basic_csv_only':
+                                        master_logger.info(f"Basic CSV export completed: {export_result.get('output_dir', 'Unknown location')}")
+                                        master_logger.info(f"Worksheets exported: {export_result.get('worksheets_exported', 0)}")
+                                        master_logger.info(f"Total rows exported: {export_result.get('total_worksheet_rows', 0)}")
                                     else:
-                                        master_logger.warning(f"⚠️ Failed to reload CSV data for workbook: {workbook_name}")
-                                except Exception as csv_reload_error:
-                                    master_logger.error(f"❌ Error reloading CSV data: {csv_reload_error}")
+                                        master_logger.info(f"Export mode '{export_mode}' completed")
+                            
+                                    # ============================================================================
+                                    # LOAD AND REGISTER DATA IN SCOPED_DATA_MANAGER (Multi-User Support)
+                                    # ============================================================================
                                 
-                                # Mark export as complete (preserve existing counts from backend)
-                                current_status = get_export_status(connection_key)
-                                update_export_status(
-                                    connection_key,
-                                    in_progress=False,
-                                    stage='complete',
-                                    message='Dashboard data ready! You can now ask questions.',
-                                    worksheets_processed=current_status.get('worksheets_processed', 0),
-                                    total_worksheets=current_status.get('total_worksheets', 0),
-                                    datasources_processed=current_status.get('datasources_processed', 0),
-                                    total_datasources=current_status.get('total_datasources', 0)
-                                )
-                            else:
-                                master_logger.warning(f"Auto-export failed: {export_result.get('error', 'Unknown error')} (mode: {export_result.get('mode', 'unknown')})")
+                                    master_logger.info("=" * 80)
+                                    master_logger.info("REGISTERING EXPORTED DATA FOR SESSION")
+                                    master_logger.info("=" * 80)
+                                
+                                    try:
+                                        # Find and load CSV data directly (don't use global csv_data_loader)
+                                        project_root = Path(__file__).parent
+                                        workbook_exports_path = project_root / "tableau_exports" / captured_workbook_name
+                                    
+                                        master_logger.info(f"Looking for CSV in: {workbook_exports_path}")
+                                    
+                                        # Find CSV file in exports
+                                        csv_file_path = None
+                                        for subdirectory in ["worksheets", "datasources"]:
+                                            subdir_path = workbook_exports_path / subdirectory
+                                            if subdir_path.exists():
+                                                csv_files = list(subdir_path.glob("*.csv"))
+                                                if csv_files:
+                                                    csv_file_path = csv_files[0]  # Take first CSV found
+                                                    master_logger.info(f"Found CSV file: {csv_file_path}")
+                                                    break
+                                    
+                                        if not csv_file_path:
+                                            # Check root of workbook directory
+                                            csv_files = list(workbook_exports_path.glob("*.csv"))
+                                            if csv_files:
+                                                csv_file_path = csv_files[0]
+                                                master_logger.info(f"Found CSV in workbook root: {csv_file_path}")
+                                    
+                                        if csv_file_path and csv_file_path.exists():
+                                            # Load CSV data directly
+                                            master_logger.info(f"Loading CSV data from: {csv_file_path}")
+                                            df = pd.read_csv(csv_file_path)
+                                            master_logger.info(f"CSV loaded successfully: {df.shape} (rows: {df.shape[0]}, cols: {df.shape[1]})")
+                                        
+                                            # Register in scoped_data_manager for this session
+                                            scoped_data_manager.register_data(
+                                                captured_context,
+                                                df,
+                                                'main_data'
+                                            )
+                                        
+                                            master_logger.info(f"✅ REGISTERED main_data for session {captured_session_id[:8]}: {df.shape}")
+                                            master_logger.info(f"   User: {captured_context.user.username}")
+                                            master_logger.info(f"   Dashboard: {captured_context.dashboard_name}")
+                                            master_logger.info(f"   Memory: {df.memory_usage(deep=True).sum() / 1024**2:.2f} MB")
+                                        
+                                            # LEGACY CODE REMOVED - No longer reload global csv_data_loader
+                                            # New architecture uses scoped_data_manager only for true multi-user isolation
+                                            # csv_reload_success = reload_csv_data_for_workbook(captured_workbook_name)
+                                            # if csv_reload_success:
+                                            #     master_logger.info(f"✅ Global CSV data also reloaded (backward compat)")
+                                        
+                                        else:
+                                            master_logger.warning(f"⚠️ No CSV file found in {workbook_exports_path}")
+                                            master_logger.warning("⚠️ Data will not be available for this session")
+                                
+                                    except Exception as csv_load_error:
+                                        master_logger.error(f"❌ Error loading and registering CSV data: {csv_load_error}")
+                                        master_logger.error(traceback.format_exc())
+                                        master_logger.error("⚠️ Session will not have data available")
+                            
+                                    # Mark export as complete (preserve existing counts from backend)
+                                    current_status = get_export_status(connection_key)
+                                    update_export_status(
+                                        connection_key,
+                                        in_progress=False,
+                                        stage='complete',
+                                        message='Dashboard data ready! You can now ask questions.',
+                                        worksheets_processed=current_status.get('worksheets_processed', 0),
+                                        total_worksheets=current_status.get('total_worksheets', 0),
+                                        datasources_processed=current_status.get('datasources_processed', 0),
+                                        total_datasources=current_status.get('total_datasources', 0)
+                                    )
+                                else:
+                                    master_logger.warning(f"Auto-export failed: {export_result.get('error', 'Unknown error')} (mode: {export_result.get('mode', 'unknown')})")
+                                    # Mark export as failed
+                                    update_export_status(
+                                        connection_key,
+                                        in_progress=False,
+                                        stage='failed',
+                                        message=f"Export failed: {export_result.get('error', 'Unknown error')}"
+                                    )
+                            
+                            except Exception as e:
+                                master_logger.error(f"Auto-export exception: {e}")
+                                master_logger.error(traceback.format_exc())
                                 # Mark export as failed
                                 update_export_status(
                                     connection_key,
                                     in_progress=False,
                                     stage='failed',
-                                    message=f"Export failed: {export_result.get('error', 'Unknown error')}"
+                                    message=f"Export error: {str(e)}"
                                 )
-                                
-                        except Exception as e:
-                            master_logger.error(f"Auto-export exception: {e}")
-                            master_logger.error(traceback.format_exc())
-                            # Mark export as failed
-                            update_export_status(
-                                connection_key,
-                                in_progress=False,
-                                stage='failed',
-                                message=f"Export error: {str(e)}"
-                            )
-                        finally:
-                            loop.close()
-                    
+                            finally:
+                                loop.close()
+                
                     # Start export in background thread
                     export_thread = threading.Thread(target=run_auto_export, daemon=True)
                     export_thread.start()
-                    
+                
                     master_logger.info("Auto-export started in background thread")
                     debug_log("Auto-export triggered", {
                         "workbook_name": workbook_name,
@@ -959,7 +1340,7 @@ def initialize_tableau():
                         "export_csv": AUTO_EXPORT_CSV,
                         "export_metadata": AUTO_EXPORT_METADATA
                     })
-                    
+                
                 except Exception as e:
                     master_logger.error(f"Failed to start auto-export: {e}")
                     debug_log("Auto-export failed to start", {"error": str(e)})
@@ -971,7 +1352,7 @@ def initialize_tableau():
                     "workbook_id_from_request": workbook_id,
                     "workbook_id_from_state": getattr(state_or_error, 'workbook_id', None) if 'state_or_error' in locals() else None
                 })
-            
+        
             # Generate workbook summary (lightweight, no CSV loading during init)
             # CSV data will be loaded by the export thread and reloaded automatically
             workbook_summary = None
@@ -983,13 +1364,13 @@ def initialize_tableau():
                     'summary_line1': f"📊 Connected to workbook: {state_or_error.workbook_name}",
                     'summary_line2': f"🔍 Found {len(state_or_error.available_views)} worksheets available"
                 }
-                
+        
                 # If auto-export is running, add a note
                 if AUTO_EXPORT_ENABLED and workbook_name:
                     workbook_summary['summary_line2'] += " (loading data in background...)"
-                    
+            
                 debug_log("Lightweight summary generated for immediate response", workbook_summary)
-                
+        
             except Exception as e:
                 master_logger.warning(f"Could not generate workbook summary for new connection: {e}")
                 debug_log("Failed to generate workbook summary for new connection", {"error": str(e)})
@@ -998,7 +1379,8 @@ def initialize_tableau():
                     'summary_line1': f"📊 Connected to workbook: {state_or_error.workbook_name}",
                     'summary_line2': f"🔍 Found {len(state_or_error.available_views)} worksheets ready for analysis"
                 }
-            
+        
+            # Return success response (executed after try/except completes)
             response_data = {
                 "success": True,
                 "cached": False,
@@ -1009,10 +1391,9 @@ def initialize_tableau():
                 "raw_data_available": state_or_error.raw_data is not None,
                 "workbook_summary": workbook_summary
             }
-            
+        
             master_logger.info(f"Returning successful connection response: {json.dumps(response_data, default=str)}")
             return jsonify(response_data)
-            
         else:
             master_logger.error(f"Tableau connection FAILED: {str(state_or_error)}")
             debug_log("Tableau connection failed", {"error": str(state_or_error)})
@@ -1024,7 +1405,7 @@ def initialize_tableau():
             
             master_logger.error(f"Returning error response: {json.dumps(error_response)}")
             return jsonify(error_response), 400
-            
+        
     except Exception as e:
         master_logger.error(f"EXCEPTION in Tableau initialization: {type(e).__name__}: {str(e)}")
         master_logger.error(f"Full traceback: {traceback.format_exc()}")
@@ -1049,44 +1430,51 @@ def get_worksheets():
     debug_log("Get worksheets endpoint called")
     
     try:
-        # Get connection key from query params or try to determine from context
-        connection_key = request.args.get('connection_key', 'default_workbook')
+        # ============================================================================
+        # NEW ARCHITECTURE ONLY - REQUIRE SESSION_ID
+        # ============================================================================
         
-        master_logger.info(f"Connection key from request: '{connection_key}'")
+        session_id = request.args.get('session_id')
+        
         master_logger.debug(f"All query parameters: {dict(request.args)}")
         
-        debug_log("Getting worksheets for connection", {"connection_key": connection_key})
+        # Validate session_id is provided
+        if not session_id:
+            master_logger.error("Missing session_id parameter")
+            return jsonify({
+                'error': 'session_id parameter is required',
+                'worksheets': []
+            }), 400
         
-        # Get current state - try exact match first
-        current_state = state_manager.get_state(connection_key)
+        # Check new architecture availability
+        if not (NEW_ARCHITECTURE_AVAILABLE and hierarchical_state_manager):
+            master_logger.error("New architecture not available")
+            return jsonify({
+                'error': 'Session management not available',
+                'worksheets': []
+            }), 500
         
-        # If not found, try to find a matching state by iterating through all states
+        # Look up session state
+        master_logger.info(f"Looking up session: {session_id[:8]}...")
+        current_state = hierarchical_state_manager.get_state_by_session_id(session_id)
+        
+        if current_state:
+            master_logger.info(f"✅ Found session - Workbook: {current_state.workbook_name}")
+            debug_log("Found state in hierarchical manager", {
+                "session_id": session_id[:8],
+                "workbook": current_state.workbook_name
+            })
+        
+        # Return error if session not found
         if not current_state:
-            debug_log("Exact match not found, searching all states")
-            if hasattr(state_manager, '_states'):
-                debug_log("Available connection keys", {"keys": list(state_manager._states.keys())})
-                
-                # Try to find by workbook name match
-                for key, state in state_manager._states.items():
-                    if (state.workbook_name == connection_key or 
-                        key == connection_key or
-                        state.workbook_name and connection_key in state.workbook_name):
-                        debug_log("Found matching state", {"stored_key": key, "workbook_name": state.workbook_name})
-                        current_state = state
-                        break
-        
-        if not current_state:
-            debug_log("No current state found", {"connection_key": connection_key})
-            # Return more helpful error with available keys
-            available_keys = []
-            if hasattr(state_manager, '_states'):
-                available_keys = [f"{key} (workbook: {state.workbook_name})" 
-                                for key, state in state_manager._states.items()]
+            master_logger.error(f"Session not found: {session_id[:8]}...")
+            debug_log("Session not found", {"session_id": session_id})
             
             return jsonify({
                 "success": False,
-                "error": f"No active Tableau connection found for '{connection_key}'. Available connections: {available_keys}"
-            }), 400
+                "error": f"Session not found. Please reconnect to the dashboard.",
+                "details": f"Session ID: {session_id[:8]}... not found in active sessions"
+            }), 404
         
         # Extract worksheet information
         worksheets = []
@@ -1121,30 +1509,72 @@ def get_worksheets():
 @app.route("/api/get_workbook_summary", methods=["GET"])
 @function_logger('app.routes.get_workbook_summary')
 def get_workbook_summary():
-    """Get or generate workbook data summary with column statistics and LLM description"""
+    """Get or generate workbook data summary with column statistics and LLM description - NEW ARCHITECTURE"""
     master_logger.info("=== GET WORKBOOK SUMMARY ENDPOINT CALLED ===")
     
     try:
-        # Get workbook name from query params
-        workbook_name = request.args.get('workbook')
+        # DEBUG: Log all query parameters
+        master_logger.debug(f"All query parameters: {dict(request.args)}")
         
-        if not workbook_name:
+        # NEW ARCHITECTURE: REQUIRE session_id
+        session_id = request.args.get('session_id')
+        
+        master_logger.debug(f"Extracted session_id: {session_id}")
+        
+        if not session_id:
             return jsonify({
                 "success": False,
-                "error": "Workbook name is required"
+                "error": "session_id parameter is required",
+                "details": "Please reconnect to the dashboard"
             }), 400
         
+        master_logger.info(f"Getting summary for session_id: {session_id[:8]}...")
+        
+        # Get state from hierarchical state manager
+        state = hierarchical_state_manager.get_state_by_session_id(session_id)
+        
+        if not state or not state.workbook_name:
+            return jsonify({
+                "success": False,
+                "error": "Session not found. Please reconnect to the dashboard.",
+                "details": f"Session ID: {session_id[:8]}... not found"
+            }), 404
+        
+        workbook_name = state.workbook_name
         master_logger.info(f"Getting summary for workbook: {workbook_name}")
         
-        # Check if CSV data is loaded
-        if csv_data_loader.data is None:
+        # Reconstruct RequestContext from session state to retrieve data
+        from core.request_context import RequestContext, UserIdentity
+        
+        # Get user info from state
+        user_identity = UserIdentity(
+            primary_id=getattr(state, 'user_id', 'anonymous'),
+            username=getattr(state, 'username', 'anonymous@local'),  # Use stored username, not user_id!
+            display_name='User'
+        )
+        
+        # Create RequestContext
+        context = RequestContext(
+            user=user_identity,
+            workbook_id=state.workbook_id or workbook_name,
+            workbook_name=workbook_name,
+            dashboard_name=getattr(state, 'dashboard_name', 'unknown'),
+            session_id=session_id,
+            created_at=state.connection_timestamp,
+            last_activity=state.last_activity
+        )
+        
+        # Get DataFrame from scoped_data_manager (NEW ARCHITECTURE)
+        df = scoped_data_manager.get_data(context, 'main_data')
+        
+        if df is None:
+            master_logger.warning(f"No data available yet for session {session_id[:8]}")
             return jsonify({
                 "success": False,
-                "error": "CSV data not loaded. Please connect to workbook first."
-            }), 400
-        
-        # Get the DataFrame
-        df = csv_data_loader.data
+                "error": "Data is still loading. Please wait a moment and try again.",
+                "details": f"Dashboard data export is in progress. This usually takes 5-30 seconds.",
+                "retry": True
+            }), 503  # 503 Service Unavailable (temporary)
         
         # Find metadata file
         # Normalize workbook name (remove spaces, replace with underscores for folder lookup)
@@ -1290,7 +1720,7 @@ def get_export_status_api():
     Get current export progress for frontend polling.
     
     Query parameters:
-        connection_key (str): Unique identifier for the connection
+        session_id (str): Session UUID (REQUIRED)
         
     Returns:
         JSON with export status including:
@@ -1304,14 +1734,21 @@ def get_export_status_api():
         - current_item (str): Name of current item being processed
     """
     try:
-        connection_key = request.args.get('connection_key', '')
+        # ============================================================================
+        # NEW ARCHITECTURE ONLY - REQUIRE SESSION_ID
+        # ============================================================================
         
-        if not connection_key:
+        session_id = request.args.get('session_id')
+        
+        if not session_id:
+            master_logger.error("Missing session_id parameter for export status")
             return jsonify({
-                'error': 'connection_key parameter required'
+                'error': 'session_id parameter is required'
             }), 400
         
-        status = get_export_status(connection_key)
+        master_logger.debug(f"Export status lookup for session: {session_id[:8]}...")
+        
+        status = get_export_status(session_id)
         return jsonify(status)
         
     except Exception as e:
@@ -1647,9 +2084,35 @@ def chat_api():
         print("data")
         print (json.dumps(data, indent=4))
         msg = (data.get("message") or "").strip()
-        tableau_context = data.get("context", {})
+        
+        # ============================================================================
+        # NEW ARCHITECTURE ONLY - REQUIRE SESSION CONTEXT
+        # ============================================================================
+        request_context_data = data.get("context")
+        
+        if not request_context_data:
+            master_logger.error("Missing context in chat request")
+            return jsonify({
+                "reply": "Session context required. Please reconnect to the dashboard.",
+                "error": "missing_context",
+                "requires_initialization": True
+            }), 400
+        
+        session_id = request_context_data.get("session_id")
+        user_info = request_context_data.get("user", {})
+        
+        if not session_id:
+            master_logger.error("Missing session_id in context")
+            return jsonify({
+                "reply": "Session ID required. Please reconnect to the dashboard.",
+                "error": "missing_session_id",
+                "requires_initialization": True
+            }), 400
+        
+        master_logger.info(f"Chat - NEW ARCH - User: {user_info.get('username', 'unknown')}, Session: {session_id[:8]}...")
+        connection_key = session_id  # Use session_id as key for compatibility
+        
         tableau_ready = data.get("tableauReady", False)
-        connection_key = data.get("connection_key")
         
         # NEW: Handle selected chart context
         selected_chart = data.get("selected_chart")
@@ -1662,7 +2125,8 @@ def chat_api():
                 selected_chart=selected_chart,
                 connection_key=connection_key,
                 request_data={
-                    "tableau_context": tableau_context,
+                    "context": request_context_data,
+                    "session_id": session_id,
                     "tableau_ready": tableau_ready,
                     "chart_context": chart_context,
                     "user_agent": request.headers.get('User-Agent'),
@@ -1685,23 +2149,26 @@ def chat_api():
             debug_log("Chat request rejected - empty message")
             return jsonify({"reply": "Please enter a message."})
         
-        # Try to get connection key from context if not provided
-        if not connection_key:
-            workbook_name = tableau_context.get("workbookName")
-            dashboard_name = tableau_context.get("dashboardName")
-            connection_key = workbook_name or dashboard_name or "default_workbook"
-            debug_log("Connection key derived from context", {
-                "workbook_name": workbook_name,
-                "dashboard_name": dashboard_name,
-                "final_connection_key": connection_key
-            })
+        debug_log("Chat request - session_id", {"session_id": session_id})
+        
+        # ============================================================================
+        # GET STATE - NEW ARCHITECTURE ONLY
+        # ============================================================================
+        
+        if not (NEW_ARCHITECTURE_AVAILABLE and hierarchical_state_manager):
+            master_logger.error("New architecture not available")
+            return jsonify({
+                "reply": "Server configuration error - session management unavailable",
+                "error": "architecture_unavailable"
+            }), 500
+        
+        # Retrieve state using session_id
+        current_state = hierarchical_state_manager.get_state_by_session_id(session_id)
+        
+        if current_state:
+            master_logger.info(f"✅ Retrieved state for session: {session_id[:8]}... - Workbook: {current_state.workbook_name}")
         else:
-            debug_log("Connection key provided in request", {"connection_key": connection_key})
-        
-        debug_log("Using connection key", {"connection_key": connection_key})
-        
-        # Get current state
-        current_state = state_manager.get_state(connection_key)
+            master_logger.warning(f"⚠️ No state found for session: {session_id[:8]}...")
         
         if not current_state:
             debug_log("No current state found", {"connection_key": connection_key})
@@ -1811,15 +2278,43 @@ async def handle_enhanced_query_processing(msg, state, selected_chart, chart_con
             })
         
         # Step 1.5: Load CSV data early (needed for context creation and Tableau hints extraction)
-        if csv_data_loader and csv_data_loader.load_data():
-            csv_data = csv_data_loader.data
-            debug_log("CSV data loaded early for context creation", {
+        # NEW ARCHITECTURE: Get CSV data from scoped_data_manager
+        # Reconstruct RequestContext from state to access scoped data
+        from core.request_context import RequestContext, UserIdentity
+        
+        session_context = None
+        try:
+            user_identity = UserIdentity(
+                primary_id=getattr(state, 'user_id', 'anonymous'),
+                username=getattr(state, 'username', 'anonymous@local'),  # Use stored username, not user_id!
+                display_name='User'
+            )
+            
+            session_context = RequestContext(
+                user=user_identity,
+                workbook_id=state.workbook_id or state.workbook_name,
+                workbook_name=state.workbook_name,
+                dashboard_name=state.dashboard_name or 'unknown',
+                session_id=state.session_id,
+                created_at=getattr(state, 'connection_timestamp', datetime.utcnow()),
+                last_activity=getattr(state, 'last_activity', datetime.utcnow())
+            )
+        except Exception as ctx_error:
+            debug_log("Failed to create RequestContext", {"error": str(ctx_error)})
+        
+        # Get CSV data using the context
+        csv_data = None
+        if session_context:
+            csv_data = scoped_data_manager.get_data(session_context, 'main_data')
+        
+        if csv_data is not None:
+            debug_log("CSV data loaded from scoped_data_manager", {
                 "csv_shape": csv_data.shape if hasattr(csv_data, 'shape') else 'not a DataFrame',
                 "csv_columns": len(csv_data.columns) if hasattr(csv_data, 'columns') else 0,
-                "csv_file_path": csv_data_loader.csv_file_path
+                "session_id": state.session_id[:8] if state.session_id else 'unknown'
             })
         else:
-            debug_log("No CSV data available")
+            debug_log("No CSV data available for this session")
         
         # Step 1.6: Extract Tableau aggregation hints from selected chart
         if selected_chart and csv_data_loader and workbook_data.get('worksheets_data'):
@@ -1867,12 +2362,12 @@ async def handle_enhanced_query_processing(msg, state, selected_chart, chart_con
         if selected_chart and workbook_data.get('worksheets_data'):
             # Analysis query: use Tableau chart columns
             available_columns = get_all_columns_from_workbook(workbook_data['worksheets_data'])
-        elif csv_data_loader and csv_data_loader.data is not None:
-            # Exploration query: use CSV columns
-            available_columns = list(csv_data_loader.data.columns)
+        elif csv_data is not None:
+            # Exploration query: use CSV columns from scoped_data_manager
+            available_columns = list(csv_data.columns)
         
-        # Get CSV file path for context (thread-safe)
-        csv_file_path_for_context = csv_data_loader.csv_file_path if csv_data_loader else None
+        # Get CSV file path for context from state (NEW ARCHITECTURE)
+        csv_file_path_for_context = getattr(state, 'csv_file_path', None)
         master_logger.info(f"[CONTEXT DEBUG] csv_file_path being added to context: {csv_file_path_for_context}")
         
         # 🔍 DEBUG: Log state details before building context
@@ -1927,9 +2422,12 @@ async def handle_enhanced_query_processing(msg, state, selected_chart, chart_con
             # CSV data already loaded at Step 1.5 above - just verify it's available
             if csv_data is None:
                 debug_log("Warning: CSV data was not loaded earlier, attempting to load now")
-                if csv_data_loader and csv_data_loader.load_data():
-                    csv_data = csv_data_loader.data
-                    debug_log("CSV data loaded for query understanding agent (fallback)", {
+                # NEW ARCHITECTURE: Try to get from scoped_data_manager again
+                if session_context:
+                    csv_data = scoped_data_manager.get_data(session_context, 'main_data')
+                
+                if csv_data is not None:
+                    debug_log("CSV data loaded from scoped_data_manager (fallback)", {
                         "csv_shape": csv_data.shape if hasattr(csv_data, 'shape') else 'not a DataFrame',
                         "csv_columns": len(csv_data.columns) if hasattr(csv_data, 'columns') else 0
                     })
@@ -4257,6 +4755,30 @@ def cleanup_old_connections():
         except Exception as e:
             debug_log("Error in connection cleanup", {"error": str(e)})
             time.sleep(60)  # Wait 1 minute before retrying
+
+# ============================================================================
+# SHUTDOWN HANDLER (New Architecture Cleanup)
+# ============================================================================
+import atexit
+
+@atexit.register
+def shutdown():
+    """Cleanup on application shutdown"""
+    master_logger.info("=" * 80)
+    master_logger.info("APPLICATION SHUTTING DOWN")
+    master_logger.info("=" * 80)
+    
+    if NEW_ARCHITECTURE_AVAILABLE and session_lifecycle_manager is not None:
+        try:
+            cleanup_on_shutdown()
+            master_logger.info("✅ New architecture cleanup completed")
+        except Exception as e:
+            master_logger.error(f"Error during new architecture cleanup: {e}", exc_info=True)
+    
+    master_logger.info("=" * 80)
+    master_logger.info("SHUTDOWN COMPLETE")
+    master_logger.info("=" * 80)
+# ============================================================================
 
 if __name__ == "__main__":
     master_logger.info("=== FLASK APPLICATION STARTUP ===")
