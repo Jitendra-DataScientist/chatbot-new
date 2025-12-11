@@ -134,3 +134,4 @@ const debugLog = () => {}; // ⚠️ Too late!
 
 The extension should now load without errors.
 
+

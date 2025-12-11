@@ -429,3 +429,4 @@ def get_conversation_adapter() -> ConversationHistoryAdapter:
         _conversation_adapter = ConversationHistoryAdapter(max_history=10)
     return _conversation_adapter
 
+

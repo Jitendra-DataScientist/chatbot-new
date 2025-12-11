@@ -283,3 +283,4 @@ This is fine for testing.
 
 **The Chrome extension is now fully integrated with the new multi-user, multi-dashboard architecture.**
 
+

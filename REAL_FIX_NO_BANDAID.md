@@ -254,3 +254,4 @@ The network interceptor was:
 **Status:** ✅ PROPER FIX APPLIED - NO BANDAIDS  
 **Test:** Reload extension → Refresh Tableau → Check console for real username
 
+
