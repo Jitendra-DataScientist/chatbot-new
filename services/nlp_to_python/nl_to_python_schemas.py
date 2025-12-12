@@ -111,14 +111,15 @@ class DefaultContextManager:
 
         # 🆕 INTEGRATE NEW CONTEXT MANAGER MODULES (Integration by Aniket 4/12/2025)
         # Initialize TemporalDetector FIRST (shared by DisambiguationManager)
-        self.temporal_detector = TemporalDetector(use_bert_ner=True)
+        # TEMPORARILY DISABLED: BERT NER (model folder deleted until shap is restored)
+        self.temporal_detector = TemporalDetector(use_bert_ner=False)
 
         # Initialize DisambiguationManager for column/value disambiguation
         # ⚠️ DisambiguationManager creates its own TemporalDetector internally
         # We keep both for now (slight inefficiency but maintains compatibility)
         self.disambiguation_manager = DisambiguationManager(
             fuzzy_threshold=70,
-            use_bert_ner=True
+            use_bert_ner=False  # TEMPORARILY DISABLED: BERT NER
         )
 
         # Initialize ConversationMemory for query history tracking

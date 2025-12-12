@@ -20,11 +20,12 @@ import pandas as pd
 from functools import lru_cache
 from collections import defaultdict # 🆕 1. Add Imports
 
-import torch
-import torch.nn as nn
+# TEMPORARILY DISABLED: BERT model imports (not needed with hardcoded intent)
+# import torch
+# import torch.nn as nn
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from openai import OpenAI
-from transformers import BertTokenizer, BertModel, BertPreTrainedModel, BertConfig
+# from transformers import BertTokenizer, BertModel, BertPreTrainedModel, BertConfig
 
 # LangGraph imports for workflow orchestration
 from langgraph.graph import StateGraph, END
@@ -275,23 +276,24 @@ class SessionContextManager:
             'schema_updates': []
         }
 
-# Define the custom multi-task classification model
-class BertForMultiTaskClassification(BertPreTrainedModel):
-    def __init__(self, config, num_intent_labels=3, num_subcategory_labels=19):
-        super().__init__(config)
-        self.bert = BertModel(config)
-        classifier_dropout = config.hidden_dropout_prob
-        self.dropout = nn.Dropout(classifier_dropout)
-        self.intent_classifier = nn.Linear(config.hidden_size, num_intent_labels)
-        self.subcategory_classifier = nn.Linear(config.hidden_size, num_subcategory_labels)
-        self.post_init()
-    
-    def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, **kwargs):
-        outputs = self.bert(input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
-        pooled_output = self.dropout(outputs[1])
-        intent_logits = self.intent_classifier(pooled_output)
-        subcategory_logits = self.subcategory_classifier(pooled_output)
-        return {'intent_logits': intent_logits, 'subcategory_logits': subcategory_logits}
+# TEMPORARILY DISABLED: BERT model class (not needed with hardcoded intent)
+# # Define the custom multi-task classification model
+# class BertForMultiTaskClassification(BertPreTrainedModel):
+#     def __init__(self, config, num_intent_labels=3, num_subcategory_labels=19):
+#         super().__init__(config)
+#         self.bert = BertModel(config)
+#         classifier_dropout = config.hidden_dropout_prob
+#         self.dropout = nn.Dropout(classifier_dropout)
+#         self.intent_classifier = nn.Linear(config.hidden_size, num_intent_labels)
+#         self.subcategory_classifier = nn.Linear(config.hidden_size, num_subcategory_labels)
+#         self.post_init()
+#     
+#     def forward(self, input_ids=None, attention_mask=None, token_type_ids=None, **kwargs):
+#         outputs = self.bert(input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids)
+#         pooled_output = self.dropout(outputs[1])
+#         intent_logits = self.intent_classifier(pooled_output)
+#         subcategory_logits = self.subcategory_classifier(pooled_output)
+#         return {'intent_logits': intent_logits, 'subcategory_logits': subcategory_logits}
 
 
 class QueryAgent:
@@ -324,26 +326,28 @@ class QueryAgent:
         self.valid_intents = list(self.agent_requirements.keys())
         master_logger.info(f"Valid intents: {self.valid_intents}")
         
+        # TEMPORARILY DISABLED: BERT model loading (folders deleted until shap is restored)
         # Initialize multi-task BERT intent and subcategory classifier
-        master_logger.info("Loading multi-task BERT intent and subcategory classifier...")
-        local_dir = "./intent-classifier-new"
-        self.tokenizer = BertTokenizer.from_pretrained(local_dir)
-        self.model = BertForMultiTaskClassification.from_pretrained(
-            local_dir,
-            config=BertConfig.from_pretrained(local_dir),
-            num_intent_labels=3,
-            num_subcategory_labels=19
-        )
-        self.model.eval()
-        
-        # Load label mappings
-        with open(f"{local_dir}/label_mappings.json", 'r') as f:
-            label_mappings = json.load(f)
-        self.intent_labels = {int(k): v for k, v in label_mappings['intent']['id2label'].items()}
-        self.subcategory_labels = {int(k): v for k, v in label_mappings['subcategory']['id2label'].items()}
-        master_logger.info(f"✓ Multi-task BERT Classifier loaded from {local_dir}")
-        master_logger.info(f"✓ Intent labels: {self.intent_labels}")
-        master_logger.info(f"✓ Subcategory labels: {self.subcategory_labels}")
+        # master_logger.info("Loading multi-task BERT intent and subcategory classifier...")
+        # local_dir = "./intent-classifier-new"
+        # self.tokenizer = BertTokenizer.from_pretrained(local_dir)
+        # self.model = BertForMultiTaskClassification.from_pretrained(
+        #     local_dir,
+        #     config=BertConfig.from_pretrained(local_dir),
+        #     num_intent_labels=3,
+        #     num_subcategory_labels=19
+        # )
+        # self.model.eval()
+        # 
+        # # Load label mappings
+        # with open(f"{local_dir}/label_mappings.json", 'r') as f:
+        #     label_mappings = json.load(f)
+        # self.intent_labels = {int(k): v for k, v in label_mappings['intent']['id2label'].items()}
+        # self.subcategory_labels = {int(k): v for k, v in label_mappings['subcategory']['id2label'].items()}
+        # master_logger.info(f"✓ Multi-task BERT Classifier loaded from {local_dir}")
+        # master_logger.info(f"✓ Intent labels: {self.intent_labels}")
+        # master_logger.info(f"✓ Subcategory labels: {self.subcategory_labels}")
+        master_logger.info("⚠️ BERT classifier temporarily disabled (using hardcoded intent)")
         
         # Performance metrics
         self.metrics = {
@@ -466,95 +470,36 @@ class QueryAgent:
         stop=stop_after_attempt(3)
     )
     async def _classify_intent(self, query: str, context: Dict = None) -> Dict[str, Any]:
-        """Multi-task BERT-based classification for both intent and subcategory."""
-        master_logger.info("=== CLASSIFYING INTENT WITH MULTI-TASK BERT ===")
+        """TEMPORARILY HARDCODED: Returns exploration intent (BERT model disabled)"""
+        master_logger.info("=== CLASSIFYING INTENT (HARDCODED - BERT DISABLED) ===")
         master_logger.info(f"Query for classification: '{query}'")
         master_logger.debug(f"Context for classification: {context}")
         
         try:
             start_time = time.time()
             
-            # Tokenize query
-            master_logger.info("Tokenizing query for multi-task model")
-            inputs = self.tokenizer(query, padding='max_length', truncation=True, max_length=64, return_tensors='pt')
+            # TEMPORARY: Hardcoded to exploration intent
+            # TODO: Re-enable BERT model when shap is restored
+            predicted_intent = 'exploration'
+            subcategory = 'general'
+            intent_confidence = 1.0
+            subcategory_confidence = 1.0
+            mapped_intent = 'data_exploration'
             
-            # Run model inference
-            master_logger.info("Running multi-task model inference")
-            with torch.no_grad():
-                outputs = self.model(**inputs)
-                intent_logits = outputs['intent_logits']
-                subcategory_logits = outputs['subcategory_logits']
-                
-                # Get predictions with confidence scores
-                intent_probs = torch.softmax(intent_logits, dim=-1)
-                subcategory_probs = torch.softmax(subcategory_logits, dim=-1)
-                
-                intent_pred = torch.argmax(intent_probs, dim=-1).item()
-                subcategory_pred = torch.argmax(subcategory_probs, dim=-1).item()
-                
-                intent_confidence = intent_probs[0][intent_pred].item()
-                subcategory_confidence = subcategory_probs[0][subcategory_pred].item()
-            
-            # Map predictions to labels
-            predicted_intent = self.intent_labels[intent_pred]
-            subcategory = self.subcategory_labels[subcategory_pred]
-            
-            master_logger.info(f"Multi-task model prediction: intent={predicted_intent} (conf={intent_confidence:.4f}), subcategory={subcategory} (conf={subcategory_confidence:.4f})")
+            master_logger.info(f"⚠️ Using hardcoded intent: {mapped_intent} (BERT model disabled)")
             
             inference_time = (time.time() - start_time) * 1000  # ms
-            master_logger.info(f"Classification completed in {inference_time:.1f}ms")
-            
-            # Map BERT intent to system intent if needed
-            # The reference code uses: exploration, analysis, prediction
-            # We need to map these to the valid_intents in our system
-            intent_mapping = {
-                'exploration': 'data_exploration',
-                'analysis': 'shap_analysis',  # Default analysis to shap_analysis
-                'prediction': 'prediction'
-            }
-            
-            # Check if we need to map the intent based on subcategory
-            if predicted_intent == 'analysis':
-                if subcategory == 'causal':
-                    mapped_intent = 'shap_analysis'
-                elif subcategory == 'anomaly':
-                    mapped_intent = 'anomaly_detection'
-                elif subcategory == 'trend':
-                    mapped_intent = 'trend_analysis'
-                elif subcategory == 'correlation':
-                    mapped_intent = 'statistical_significance'
-                else:
-                    mapped_intent = 'shap_analysis'
-            elif predicted_intent == 'exploration':
-                if subcategory == 'ranking':
-                    mapped_intent = 'top_bottom_analysis'
-                elif subcategory == 'comparison':
-                    mapped_intent = 'comparison'
-                else:
-                    mapped_intent = 'data_exploration'
-            elif predicted_intent == 'prediction':
-                mapped_intent = 'prediction'
-            else:
-                # If intent is already in valid_intents, use it directly
-                mapped_intent = predicted_intent if predicted_intent in self.valid_intents else 'data_exploration'
-            
-            master_logger.info(f"Intent mapping: {predicted_intent} → {mapped_intent}")
-            
-            # Validate mapped intent
-            if mapped_intent not in self.valid_intents:
-                master_logger.warning(f"Mapped intent {mapped_intent} not in valid_intents, defaulting to data_exploration")
-                mapped_intent = 'data_exploration'
             
             # Build result in expected format
             result = {
                 'primary_intent': mapped_intent,
                 'confidence': intent_confidence,
-                'reasoning': f"Multi-task BERT classified as '{predicted_intent}' (conf={intent_confidence:.4f}) with sub-category '{subcategory}' (conf={subcategory_confidence:.4f}). Mapped to '{mapped_intent}'.",
+                'reasoning': f"Hardcoded intent (BERT model temporarily disabled). Using '{mapped_intent}'.",
                 'entities': {
                     'original_intent': predicted_intent,
                     'sub_category': subcategory,
                     'subcategory_confidence': subcategory_confidence,
-                    'metrics': [],  # Could extract these with NER if needed
+                    'metrics': [],
                     'dimensions': []
                 },
                 'success': True,
@@ -565,7 +510,7 @@ class QueryAgent:
             return result
             
         except Exception as e:
-            master_logger.error(f"Multi-task BERT classification failed: {type(e).__name__}: {str(e)}")
+            master_logger.error(f"Intent classification failed: {type(e).__name__}: {str(e)}")
             master_logger.error(f"Full traceback: {traceback.format_exc()}")
             raise
 

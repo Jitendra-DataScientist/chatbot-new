@@ -788,6 +788,14 @@ Here's the percentage breakdown across different {entity_name}:
         if any(indicator in query_lower for indicator in single_value_indicators) and len(df) <= 3:
             return "single_value"
         
+        # Check for datetime columns (time series data) - dataset-agnostic detection
+        datetime_columns = [col for col in df.columns 
+                            if pd.api.types.is_datetime64_any_dtype(df[col])]
+        
+        # Multi-row with datetime column = time series breakdown
+        if len(df) > 1 and datetime_columns:
+            return "time_summary"
+        
         # If multiple rows with categorical data, it's likely a breakdown
         if len(df) > 1:
             categorical_columns = [col for col in df.columns if df[col].dtype == 'object']

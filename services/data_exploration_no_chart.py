@@ -31,7 +31,8 @@ from services.multi_table_service import TableauMultiTableService
 from services.insight_generator import TableauInsightGenerator
 from services.NL_to_python import NLToPythonGenerator
 from services.enhanced_analysis_service import EnhancedAnalysisService
-from services.period_extraction_service import PeriodExtractionService
+# TEMPORARILY DISABLED: BERT model (folder deleted until shap is restored)
+# from services.period_extraction_service import PeriodExtractionService
 from services.response_template_engine import ResponseTemplateEngine
 
 master_logger = setup_module_logger('services.data_exploration')
@@ -70,11 +71,9 @@ class data_exploration:
         self.template_engine = ResponseTemplateEngine()
         master_logger.info("✓ Response template engine initialized")
         
-        # Initialize period extraction service
-        self.period_extractor = PeriodExtractionService(
-            model_path="event-period-ner-bert"
-        )
-        master_logger.info("✓ Period extraction service initialized")
+        # TEMPORARILY DISABLED: Period extraction service (BERT model folder deleted until shap is restored)
+        # self.period_extractor = PeriodExtractionService(model_path="event-period-ner-bert")
+        self.period_extractor = None
         
         # Initialize ConversationOrchestrator
         try:
@@ -812,10 +811,40 @@ class data_exploration:
             master_logger.info(f"[TABLE_FORMAT] Formatting result")
             
             # Extract intent type and nl_result for template engine
-            intent_type = intent_result.primary_intent if intent_result and hasattr(intent_result, 'primary_intent') else 'data_exploration'
             nl_result = analysis_result.get('nl_result') if isinstance(analysis_result, dict) else None
             
-            master_logger.info(f"[TABLE_FORMAT] Intent type: {intent_type}, Has NL result: {nl_result is not None}")
+            # Determine intent_type with priority hierarchy
+            intent_type = 'data_exploration'  # default fallback
+            
+            if nl_result:
+                # Priority 1: Check ranking flags (semantic indicators override operation_type)
+                is_top = getattr(nl_result, 'is_top_query', False)
+                is_bottom = getattr(nl_result, 'is_bottom_query', False)
+                
+                if is_top or is_bottom:
+                    intent_type = 'top_bottom_analysis'
+                    master_logger.info(f"[TABLE_FORMAT] Ranking query detected -> top_bottom_analysis (top={is_top}, bottom={is_bottom})")
+                
+                # Priority 2: Map operation_type to intent_type
+                elif hasattr(nl_result, 'operation_type'):
+                    op_to_intent = {
+                        'ranking': 'top_bottom_analysis',
+                        'percentile': 'percentile_analysis',
+                        'grouped_aggregation': 'aggregation_summary',
+                        'composition_percentage': 'composition_percentage'
+                    }
+                    intent_type = op_to_intent.get(nl_result.operation_type, 'data_exploration')
+                    master_logger.info(f"[TABLE_FORMAT] Operation type mapping: {nl_result.operation_type} -> {intent_type}")
+                else:
+                    # Priority 3: Fallback to Stage 1 intent
+                    intent_type = intent_result.primary_intent if intent_result and hasattr(intent_result, 'primary_intent') else 'data_exploration'
+                    master_logger.info(f"[TABLE_FORMAT] No operation_type, using Stage 1 intent: {intent_type}")
+            else:
+                # No nl_result available, use Stage 1 intent
+                intent_type = intent_result.primary_intent if intent_result and hasattr(intent_result, 'primary_intent') else 'data_exploration'
+                master_logger.info(f"[TABLE_FORMAT] No nl_result, using Stage 1 intent: {intent_type}")
+            
+            master_logger.info(f"[TABLE_FORMAT] Final intent type: {intent_type}, Has NL result: {nl_result is not None}")
             
             # Extract result
             result_data = None
