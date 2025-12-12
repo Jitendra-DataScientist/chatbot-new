@@ -172,127 +172,76 @@ def get_env_variable(key: str, default: str = "") -> str:
         return default
 
 @function_logger('tableau_backend.load_tableau_config')
-def load_tableau_config(filepath: str = None, site_content_url: str = None, tableau_url: str = None, get_all_fallbacks: bool = False) -> Dict:
+def load_tableau_config(filepath: str = None) -> Dict:
     """
-    Loads Tableau configuration from Google Sheets PAT credentials service
-
-    This function now uses the direct Google Sheets API to fetch credentials by site_content_url:
-    - Fetches credentials from Google Sheets by site_content_url lookup
-    - Supports extracting site_content_url from Tableau URLs
+    Loads Tableau configuration from Google Sheets credentials service
+    
+    This function now uses the centralized credentials service which:
+    - Fetches credentials from Google Sheets by username lookup
     - Includes 5-minute in-memory caching for performance
     - Provides comprehensive logging and error handling
-    - Supports fallback credentials (multiple credentials for same site)
-
+    
     Args:
-        filepath: DEPRECATED - Kept for backwards compatibility, falls back to tableau_config.json if needed
-        site_content_url: The site_content_url to lookup (e.g., "uMetricAnalytics")
-        tableau_url: Full Tableau URL to extract site_content_url from
-        get_all_fallbacks: If True, returns ALL credentials for the site (for fallback support)
-
+        filepath: DEPRECATED - Kept for backwards compatibility but not used
+                 Credentials now loaded from Google Sheets exclusively
+    
     Returns:
-        If get_all_fallbacks=False:
-            Dict containing single Tableau configuration
-        If get_all_fallbacks=True:
-            List of Dict containing all credentials for the site (ordered by priority)
+        Dict containing Tableau configuration with keys:
+        - username, password, site_content_url, tableau_server_url, api_version, etc.
     """
-    from services.tableau_pat_service import tableau_pat_service
-
-    master_logger.info("[CONFIG] Configuration mode: Google Sheets PAT Service (Direct API)")
+    from services.tableau_credentials_service import load_tableau_config as load_credentials
+    
+    master_logger.info("[CONFIG] Configuration mode: Google Sheets Credentials Service")
     master_logger.info("[CONFIG] Fetching credentials from Google Sheets...")
-
+    
     try:
-        # Priority 1: Use provided site_content_url
-        if site_content_url:
-            master_logger.info(f"Using provided site_content_url: {site_content_url}")
-
-        # Priority 2: Extract from provided Tableau URL
-        elif tableau_url:
-            master_logger.info(f"Extracting site_content_url from URL: {tableau_url}")
-            site_content_url = tableau_pat_service.extract_site_content_url_from_url(tableau_url)
-            if not site_content_url:
-                raise ValueError(f"Could not extract site_content_url from URL: {tableau_url}")
-            master_logger.info(f"Extracted site_content_url: {site_content_url}")
-
-        # Priority 3: Check environment variable
-        elif get_env_variable('TABLEAU_SITE_CONTENT_URL', None):
-            site_content_url = get_env_variable('TABLEAU_SITE_CONTENT_URL')
-            master_logger.info(f"Using site_content_url from environment: {site_content_url}")
-
-        # Priority 4: Fall back to tableau_config.json
-        else:
-            master_logger.warning("No site_content_url or tableau_url provided, falling back to tableau_config.json")
-            if filepath is None:
-                filepath = 'tableau_config.json'
-
-            if os.path.exists(filepath):
-                with open(filepath, 'r') as f:
-                    config = json.load(f)
-                master_logger.info(f"[FALLBACK] Loaded configuration from {filepath}")
-
-                # Ensure auth_type is set
-                if 'auth_type' not in config:
-                    if 'personal_access_token_name' in config:
-                        config['auth_type'] = 'personal_access_token'
-                    elif 'username' in config:
-                        config['auth_type'] = 'username_password'
-
-                return config
-            else:
-                raise FileNotFoundError(
-                    f"No site_content_url/tableau_url provided and fallback file not found: {filepath}. "
-                    f"Please provide site_content_url, tableau_url, or set TABLEAU_SITE_CONTENT_URL env variable."
-                )
-
-        # Fetch credentials from Google Sheets by site_content_url
-        if get_all_fallbacks:
-            # Get ALL credentials for fallback support
-            master_logger.info(f"Fetching ALL credentials for {site_content_url} (fallback mode enabled)")
-            success, credentials_list, error = tableau_pat_service.get_all_credentials_by_site_content_url(site_content_url)
-
-            if not success:
-                raise RuntimeError(f"Failed to fetch credentials from Google Sheets: {error}")
-
-            master_logger.info(f"[SUCCESS] Loaded {len(credentials_list)} credential(s) for fallback")
-            return credentials_list  # Return list of credentials
-
-        else:
-            # Get single credential (first match)
-            success, config, error = tableau_pat_service.get_credentials_by_site_content_url(site_content_url)
-
-            if not success:
-                raise RuntimeError(f"Failed to fetch credentials from Google Sheets: {error}")
-
+        # Load credentials from Google Sheets (no fallback to pass_config.json)
+        # Username must be set in environment variable TABLEAU_USERNAME or .env file
+        username = get_env_variable('TABLEAU_USERNAME', None)
+        
+        if not username:
+            raise ValueError(
+                "TABLEAU_USERNAME environment variable not set. "
+                "Please set it in your .env file or environment variables."
+            )
+        
+        config = load_credentials(username=username)
+        
         master_logger.info("[SUCCESS] Tableau configuration loaded successfully from Google Sheets")
         master_logger.debug(f"Configuration keys: {list(config.keys())}")
-
+        
         # Log important configuration details (without sensitive info)
         if 'tableau_server_url' in config:
             master_logger.info(f"Tableau server URL: {config['tableau_server_url']}")
         if 'api_version' in config:
             master_logger.info(f"API version: {config['api_version']}")
-        if 'site_content_url' in config:
-            master_logger.info(f"Site content URL: {config['site_content_url']}")
-
-        # Log authentication type
-        auth_type = config.get('auth_type', 'unknown')
-        master_logger.info(f"Authentication type: {auth_type}")
-
-        if auth_type == "username_password" and 'username' in config:
-            master_logger.info(f"Username configured: {config['username']}")
-        elif auth_type == "personal_access_token" and 'personal_access_token_name' in config:
-            master_logger.info(f"PAT name configured: {config['personal_access_token_name']}")
-
+        
+        # Handle different authentication types
+        if 'auth_type' in config:
+            auth_type = config['auth_type']
+            master_logger.info(f"Authentication type: {auth_type}")
+            
+            if auth_type == "username_password":
+                if 'username' in config:
+                    master_logger.info(f"Username configured: {config['username']}")
+            elif auth_type == "personal_access_token":
+                if 'personal_access_token_name' in config:
+                    master_logger.info(f"PAT name configured: {config['personal_access_token_name']}")
+        else:
+            # Default to username_password
+            config['auth_type'] = 'username_password'
+            master_logger.info("Authentication type: username_password (default)")
+            
         return config
-
+        
     except Exception as e:
         master_logger.error(f"[FAILED] Failed to load Tableau configuration: {e}")
-        master_logger.error(traceback.format_exc())
-        print(f"CRITICAL ERROR: Failed to load Tableau configuration: {e}")
+        master_logger.error("Google Sheets credentials service failed - no fallback available")
+        print(f"CRITICAL ERROR: Failed to load Tableau configuration from Google Sheets: {e}")
         print("Please check:")
-        print("  1. Google Sheet contains credentials for the site_content_url")
-        print("  2. Google Sheets API credentials (token.pickle, credentials.json) are valid")
-        print("  3. The 'Credentials' sheet has the correct columns")
-        print("  4. Or provide a valid tableau_config.json as fallback")
+        print("  1. google_sheets_config.json has correct Apps Script URL")
+        print("  2. Google Sheets service is enabled")
+        print("  3. Your Google Sheet has credentials for the username")
         raise RuntimeError(f"Failed to load Tableau credentials: {e}")
 
 TABLEAU_CONFIG = load_tableau_config()

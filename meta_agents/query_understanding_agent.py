@@ -81,7 +81,7 @@ class QueryProcessingState(TypedDict):
     """State schema for LangGraph-based query processing workflow"""
     # Core input data
     query: str
-    data_id: str  # FIX: Add data_id to TypedDict (used by shap_analysis)
+    data_id: str  # FIX: Add data_id to TypedDict
     connection_key: str  # FIX: Add connection_key to TypedDict
     csv_data: Optional[pd.DataFrame]
     selected_chart: Optional[str]
@@ -574,10 +574,6 @@ class QueryAgent:
         base_requirements = {'requires_chart_selection': True}
         
         requirements_map = {
-            'shap_analysis': {
-                'minimum_numeric_columns': 2,
-                'minimum_rows': 10
-            },
             'statistical_significance': {
                 'minimum_numeric_columns': 2,
                 'minimum_rows': 5
@@ -902,131 +898,6 @@ class QueryAgent:
             #     # Update original_intent from full classification
             #     original_intent = intent_result.entities.get('original_intent', original_intent)
 
-            
-            # COMMENTED OUT: SHAP_ANALYSIS SERVICE routing
-            # # ========== ROUTING TO SHAP_ANALYSIS SERVICE (if analysis with chart) ==========
-            # # If this is an analysis query WITH chart, route to shap_analysis service
-            if False:  # original_intent == 'analysis' and selected_chart:
-                master_logger.info("="*80)
-                master_logger.info("🔀 ROUTING TO SHAP_ANALYSIS SERVICE")
-                master_logger.info(f"   Original Intent: {original_intent}")
-                master_logger.info(f"   Primary Intent: {primary_intent}")
-                master_logger.info(f"   Chart: {selected_chart}")
-                master_logger.info("="*80)
-                
-                try:
-                    # Import and initialize the shap_analysis service
-                    from services.shap_analysis_v6 import shap_analysis
-                    
-                    # Get global smart_agg_decider from app context
-                    import app
-                    smart_agg_decider = getattr(app, 'smart_agg_decider', None)
-                    
-                    if not smart_agg_decider:
-                        master_logger.warning("smart_agg_decider not available, proceeding without it")
-                    
-                    # Get intent_result properly
-                    intent_response = await self.process(query, context)
-                    if intent_response.success:
-                        intent_result = intent_response.data
-                    else:
-                        # Fallback intent
-                        intent_result = QueryIntent(
-                            primary_intent=primary_intent,
-                            confidence=classification.get('confidence', 0.8),
-                            entities=classification.get('entities', {})
-                        )
-                    
-                    # Initialize the analysis service
-                    analysis_service = shap_analysis(
-                        llm_client=self.llm_client, 
-                        smart_agg_decider=smart_agg_decider,
-                        causal_cache_path="causal_analysis_cache.json"
-                    )
-                    
-                    # Get workbook_id and csv_file_path from context (passed from app.py)
-                    workbook_id = None
-                    csv_file_path = None
-                    if context:
-                        # DEBUG: Log what context actually is
-                        master_logger.info(f"[SHAP_ANALYSIS] Context type: {type(context)}")
-                        master_logger.info(f"[SHAP_ANALYSIS] Context value: {context}")
-                        
-                        # Handle both dict and ChatContext object
-                        if isinstance(context, dict):
-                            workbook_id = context.get('workbook_id')
-                            csv_file_path = context.get('csv_file_path')
-                            master_logger.info(f"[SHAP_ANALYSIS] Context is dict, extracted csv_file_path: {csv_file_path}")
-                        else:
-                            workbook_id = getattr(context, 'workbook_id', None)
-                            csv_file_path = getattr(context, 'csv_file_path', None)
-                            master_logger.info(f"[SHAP_ANALYSIS] Context is object, extracted csv_file_path: {csv_file_path}")
-                        master_logger.info(f"[SHAP_ANALYSIS] Retrieved workbook_id from context: {workbook_id}")
-                        master_logger.info(f"[SHAP_ANALYSIS] Retrieved csv_file_path from context: {csv_file_path}")
-                    else:
-                        master_logger.warning(f"[SHAP_ANALYSIS] No context provided, workbook_id and csv_file_path will be None")
-                    
-                    # Process the query with DataManager reference pattern
-                    result = analysis_service.process(
-                        query_text=query,
-                        data_id=data_id,  # Pass data_id instead of csv_data
-                        connection_key=source_id or "default",
-                        selected_chart=selected_chart,
-                        intent_result=intent_result,  # Pass the intent_result
-                        chart_context={"workbook_id": workbook_id, "csv_file_path": csv_file_path}  # Pass workbook_id and csv_file_path for cache
-                    )
-                    
-                    # Return the result directly
-                    master_logger.info("✅ shap_analysis service completed successfully")
-                    master_logger.info("="*80)
-                    
-                    # Extract seven_layer_analysis if present
-                    seven_layer = result.get('seven_layer_analysis')
-                    if seven_layer:
-                        master_logger.info("✅ 7-layer analysis found in result, adding to response")
-                    
-                    response_dict = {
-                        "success": result.get('success', False),
-                        "reply": result.get('response', 'Analysis completed'),
-                        "intent": intent_result,
-                        "analysis_result": result.get('computational_results', {}),
-                        "shap_visualizations": result.get('shap_visualizations', []),
-                        "visualization": {
-                            'needs_visualization': result.get('needs_visualization', False),
-                            'chart_type': result.get('chart_type'),
-                            'chart_image': result.get('chart_image')
-                        },
-                        "execution_time": result.get('execution_time', 0),
-                        "routed_to": "services.shap_analysis.shap_analysis"
-                    }
-                    
-                    # Add seven_layer_analysis if present
-                    if seven_layer:
-                        response_dict["seven_layer_analysis"] = seven_layer
-                    
-                    # 🆕 Update schema if analysis produced new columns (Ashish's feature)
-                    try:
-                        self._update_schema_from_result({"analysis_result": result}, session_id, source_id)
-                    except Exception as schema_err:
-                        master_logger.warning(f"Schema update failed: {schema_err}")
-                    
-                    # 🆕 Save query to history (Ashish's feature)
-                    try:
-                        self.session_manager.add_query_to_history(
-                            session_id,
-                            query,
-                            source_id,
-                            resolved_entities={'intent': intent_result.primary_intent}
-                        )
-                    except Exception as history_err:
-                        master_logger.warning(f"History update failed: {history_err}")
-                    
-                    return response_dict
-                    
-                except Exception as e:
-                    master_logger.error(f"❌ Error in shap_analysis service: {e}", exc_info=True)
-                    master_logger.info("⚠️  Falling back to LangGraph workflow...")
-                    # Fall through to LangGraph if there's an error
             
             # COMMENTED OUT: DATA_EXPLORATION (with chart) SERVICE routing
             # # ========== ROUTING TO DATA_EXPLORATION SERVICE ==========
@@ -1770,7 +1641,7 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
         
         try:
             # Check if this is a chart-aware intent that can benefit from LLM enhancement
-            chart_aware_intents = ["anomaly_detection", "trend_analysis", "shap_analysis"]
+            chart_aware_intents = ["anomaly_detection", "trend_analysis"]
             
             if chart_context and intent_type in chart_aware_intents:
                 master_logger.info(f"Using LLM-enhanced analysis for chart-aware intent: {intent_type}")
@@ -1838,7 +1709,7 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
         
         visualization_intents = [
             "trend_analysis", "anomaly_detection", "top_bottom_analysis", 
-            "comparison", "seasonality", "data_exploration", "shap_analysis"
+            "comparison", "seasonality", "data_exploration"
         ]
         return intent_result.primary_intent in visualization_intents
     
@@ -2092,8 +1963,9 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
             primary_intent = intent_result.primary_intent
             
             # Apply existing routing logic from process_with_services
+            # Note: 'analysis' now routes to data_exploration (shap_analysis removed)
             if original_intent == 'analysis':
-                state["service_route"] = "shap_analysis"
+                state["service_route"] = "data_exploration"
             elif original_intent == 'exploration':
                 state["service_route"] = "data_exploration"  
             else:
@@ -2163,67 +2035,6 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
             master_logger.error(f"No-chart exploration failed: {e}")
             state["needs_fallback"] = True
             state["error_context"] = {"node": "no_chart_exploration", "error": str(e)}
-            
-        return state
-
-    async def _shap_analysis_service_node(self, state: QueryProcessingState) -> QueryProcessingState:
-        """SHAP analysis service using existing logic from process_with_services"""
-        master_logger.info("=== LANGGRAPH: SHAP ANALYSIS SERVICE NODE ===")
-        
-        try:
-            # Extract SHAP analysis logic from process_with_services
-            from services.shap_analysis_v6 import shap_analysis
-            
-            import app
-            smart_agg_decider = getattr(app, 'smart_agg_decider', None)
-            
-            analysis_service = shap_analysis(
-                llm_client=self.llm_client,
-                smart_agg_decider=smart_agg_decider,
-                causal_cache_path="causal_analysis_cache.json"
-            )
-            
-            # Extract workbook_id from context for cache
-            workbook_id = None
-            ctx = state.get("context")
-            if ctx:
-                if isinstance(ctx, dict):
-                    workbook_id = ctx.get("workbook_id")
-                else:  # ChatContext object
-                    workbook_id = getattr(ctx, "workbook_id", None)
-            
-            # Pass data_id instead of csv_data (reference pattern - eliminates JSON bottleneck)
-            result = analysis_service.process(
-                query_text=state["query"],
-                data_id=state["data_id"],
-                connection_key=state.get("connection_key", "default"),
-                selected_chart=state["selected_chart"],
-                intent_result=state["intent_result"],
-                chart_context={"workbook_id": workbook_id}  # FIX: Pass workbook_id for cache
-            )
-            
-            state["final_response"] = {
-                "success": result.get('success', False),
-                "reply": result.get('response', 'Analysis completed'),
-                "intent": state["intent_result"],
-                "analysis_result": result.get('computational_results', {}),
-                "features_table": result.get('features_table'),
-                "shap_visualizations": result.get('shap_visualizations', []),
-                "visualization": {
-                    'needs_visualization': result.get('needs_visualization', False),
-                    'chart_type': result.get('chart_type'),
-                    'chart_image': result.get('chart_image')
-                },
-                "execution_time": result.get('execution_time', 0),
-                "routed_to": "services.shap_analysis.shap_analysis"
-            }
-            state["processing_complete"] = True
-            master_logger.info("✅ SHAP analysis completed successfully")
-            
-        except Exception as e:
-            master_logger.error(f"SHAP analysis failed: {e}")
-            state["needs_fallback"] = True
-            state["error_context"] = {"node": "shap_analysis", "error": str(e)}
             
         return state
 
@@ -2427,9 +2238,7 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
             return "fallback"
             
         service_route = state.get("service_route")
-        if service_route == "shap_analysis":
-            return "shap_analysis_service"
-        elif service_route == "data_exploration":
+        if service_route == "data_exploration":
             return "data_exploration_service"
         elif service_route == "general_processing":
             return "general_processing"
@@ -2476,7 +2285,6 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
             workflow.add_node("data_preprocessing", self._data_preprocessing_node)
             workflow.add_node("service_routing", self._service_routing_node)
             workflow.add_node("no_chart_exploration", self._no_chart_exploration_node)
-            workflow.add_node("shap_analysis_service", self._shap_analysis_service_node)
             workflow.add_node("data_exploration_service", self._data_exploration_service_node)
             workflow.add_node("general_processing", self._general_processing_node)
             workflow.add_node("create_visualization", self._visualization_node)
@@ -2519,7 +2327,6 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
                 "service_routing",
                 self._route_after_service_routing,
                 {
-                    "shap_analysis_service": "shap_analysis_service",
                     "data_exploration_service": "data_exploration_service",
                     "general_processing": "general_processing",
                     "fallback": "fallback"
@@ -2527,16 +2334,6 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
             )
             
             # Service nodes can either complete processing or continue
-            workflow.add_conditional_edges(
-                "shap_analysis_service",
-                self._route_after_service_processing,
-                {
-                    END: END,
-                    "visualization": "create_visualization", 
-                    "fallback": "fallback"
-                }
-            )
-            
             workflow.add_conditional_edges(
                 "data_exploration_service",
                 self._route_after_service_processing,

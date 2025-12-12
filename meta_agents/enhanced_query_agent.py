@@ -63,11 +63,6 @@ class EnhancedQueryAgent:
         
         # Enhanced intent classification with 9 primary categories
         self.intent_categories = {
-            "shap_analysis": {
-                "keywords": ["feature importance", "shap", "explain", "impact", "influence", "contribution", "drivers"],
-                "description": "Analyze feature importance and model explainability",
-                "services": ["data_processor", "insight_generator", "visualization"]
-            },
             "anomaly_detection": {
                 "keywords": ["anomaly", "outlier", "unusual", "abnormal", "detect", "exception", "irregular"],
                 "description": "Identify anomalies and outliers in data",
@@ -1885,17 +1880,16 @@ class EnhancedQueryAgent:
                 context_str = f"\nAvailable data columns: {', '.join(available_cols[:10])}"
         
         # Create comprehensive prompt for intent classification
-        system_prompt = f"""You are an expert data analyst assistant. Classify the user's query into ONE of these 9 intent categories:
+        system_prompt = f"""You are an expert data analyst assistant. Classify the user's query into ONE of these 8 intent categories:
 
-1. shap_analysis - Feature importance, model explainability, impact analysis
-2. anomaly_detection - Outlier detection, unusual patterns, exceptions
-3. trend_analysis - Temporal patterns, changes over time, progressions
-4. statistical_significance - Hypothesis testing, correlations, statistical analysis
-5. comparison - Comparing groups, segments, or categories
-6. top_bottom_analysis - Rankings, best/worst performers, extremes
-7. seasonality - Cyclical patterns, seasonal trends, periodic behavior
-8. prediction - Forecasting, future estimates, projections
-9. data_exploration - General analysis, summaries, insights
+1. anomaly_detection - Outlier detection, unusual patterns, exceptions
+2. trend_analysis - Temporal patterns, changes over time, progressions
+3. statistical_significance - Hypothesis testing, correlations, statistical analysis
+4. comparison - Comparing groups, segments, or categories
+5. top_bottom_analysis - Rankings, best/worst performers, extremes
+6. seasonality - Cyclical patterns, seasonal trends, periodic behavior
+7. prediction - Forecasting, future estimates, projections
+8. data_exploration - General analysis, summaries, insights, feature importance, impact analysis
 
 Respond with JSON: {{"intent": "category_name", "confidence": 0.0-1.0, "reasoning": "explanation"}}"""
 
@@ -2482,88 +2476,9 @@ Analyze carefully and ensure proper classification of business metrics vs dimens
                     logger.info(f"Found cached top 2 impactful columns for {chart_name} (workbook={selected_wb}): {top_2}")
                     return ", ".join(top_2)
             
-            # If not in cache, run SHAP causal analysis directly (no LLM path)
-            logger.info(f"No cache found for {chart_name}, invoking SHAP V6 causal analysis directly")
-            try:
-                import importlib
-                import pandas as pd
-                shap_module = importlib.import_module('services.shap_analysis_v6')
-                
-                # Resolve CSV path and load DataFrame
-                csv_path_resolved = csv_path_override or self._get_csv_path()
-                logger.info(f"[AUTO_ANALYSIS] CSV path resolved for SHAP causal: {csv_path_resolved}")
-                if not csv_path_resolved or not os.path.exists(csv_path_resolved):
-                    logger.error(f"[AUTO_ANALYSIS] CSV path not found: {csv_path_resolved}")
-                    return "CSV not found"
-                df = pd.read_csv(csv_path_resolved)
-                
-                # Simple axis inference from provided chart columns (mirror SHAP behavior)
-                def pick_x_axis(cols):
-                    indicators = ['month', 'date', 'time', 'year', 'day', 'week']
-                    for c in cols:
-                        cl = c.lower()
-                        if any(ind in cl for ind in indicators):
-                            return c
-                    return cols[0] if cols else None
-                
-                x_axis = pick_x_axis(chart_columns)
-                y_axes = [c for c in chart_columns if c != x_axis]
-
-                # Guard: ensure all selected y_axes exist in this df (multi-user/workbook safety)
-                if any(y not in df.columns for y in y_axes):
-                    missing = [y for y in y_axes if y not in df.columns]
-                    logger.error(f"[AUTO_ANALYSIS] Selected Y columns not present in resolved CSV: missing={missing}")
-                    # Filter to only those present; if none remain, fail fast
-                    y_axes = [y for y in y_axes if y in df.columns]
-                    if not y_axes:
-                        return "No drivers found"
-                
-                # Create or get SHAP instance
-                shap_instance = shap_module.shap_analysis(
-                    llm_client=self.llm_service.client,
-                    smart_agg_decider=self.smart_aggregation_decider,
-                    causal_cache_path="causal_analysis_cache.json"
-                )
-                
-                # Minimal state for SHAP internal causal runners
-                state = {
-                    "selected_chart": chart_name,
-                    "chart_context": {"workbook_id": workbook_id} if workbook_id else {},
-                    "stage1_columns": {
-                        "date_column": x_axis,
-                        "requires_multi_metric_analysis": len(y_axes) > 1,
-                        "target_metrics": y_axes,
-                        "target_metric_column": y_axes[0] if y_axes else None
-                    }
-                }
-                
-                # Invoke SHAP's causal analysis (writes nested cache internally)
-                if len(y_axes) > 1:
-                    result = shap_instance._run_multi_metric_causal_analysis(state, df)
-                else:
-                    result = shap_instance._run_causal_analysis(state, df)
-                
-                # Prefer returned drivers; fallback to cache read if needed
-                top_drivers = (result or {}).get("top_drivers", [])
-                if top_drivers:
-                    top_feature_names = [feat for feat, _ in top_drivers]
-                    return ", ".join(top_feature_names)
-                
-                # Try reading nested cache if SHAP wrote it
-                if os.path.exists(cache_file) and workbook_id:
-                    with open(cache_file, 'r') as f:
-                        try:
-                            cache_data = json.load(f)
-                            entry = cache_data.get(workbook_id, {}).get(chart_name)
-                            if entry and "top_5_features" in entry:
-                                return ", ".join(entry["top_5_features"])
-                        except Exception:
-                            pass
-                
-                return "No drivers found"
-            except Exception as e:
-                logger.error(f"[AUTO_ANALYSIS→SHAP] Error invoking SHAP causal: {e}")
-                return "Causal analysis failed"
+            # SHAP causal analysis temporarily disabled - shap_analysis_v6 removed
+            logger.info(f"No cache found for {chart_name}, SHAP analysis temporarily disabled")
+            return "Feature analysis temporarily unavailable"
                 
         except Exception as e:
             logger.warning(f"Error getting most impactful columns for {chart_name}: {e}")
