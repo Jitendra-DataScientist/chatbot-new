@@ -113,123 +113,177 @@ class TableauColumnMappingExtractor:
         
         return columns
     
-    def get_all_base_columns_recursive(self, field_name: str, dependencies: Dict, all_calculated_names: Set[str]) -> Set[str]:
+    def get_all_base_columns_iterative(self, field_name: str, dependencies: Dict, all_calculated_names: Set[str]) -> Set[str]:
         """
-        Recursively collect ONLY true base columns (not calculated fields).
-        FIXED: Now properly filters out calculated fields from base columns.
-        
+        Iteratively collect ONLY true base columns using stack-based graph traversal.
+        Handles circular dependencies gracefully without recursion limits.
+
+        This treats the problem as directed graph traversal:
+        - Nodes: field names
+        - Edges: dependencies (A uses B means A→B edge)
+        - Goal: find all leaf nodes (base columns)
+        - Challenge: cycles must be detected and handled
+
         Args:
             field_name: The calculated field name
             dependencies: Dictionary of all calculated field dependencies
             all_calculated_names: Set of ALL calculated field names (for filtering)
-            
+
         Returns:
             Set of TRUE base column names (not calculated fields)
         """
         base_cols = set()
-        
-        # Normalize field name for comparison
-        field_name_normalized = field_name.lower().replace(' ', '_')
-        
-        # If this field is not in dependencies, it's a base column
-        if field_name not in dependencies:
-            # Double-check it's not a calculated field
-            if field_name_normalized not in all_calculated_names:
-                return {field_name_normalized}
-            else:
-                return set()
-        
-        field_info = dependencies[field_name]
-        
-        # Extract all columns from formula
-        formula = field_info.get('formula', '')
-        formula_cols = self.extract_column_references(formula)
-        
-        for col in formula_cols:
-            col_normalized = col.lower().replace(' ', '_')
-            
-            # Check if this column is a calculated field
-            is_calculated = False
-            
-            # Search in dependencies (exact match)
-            for dep_name in dependencies.keys():
-                dep_normalized = dep_name.lower().replace(' ', '_')
-                if dep_normalized == col_normalized:
-                    is_calculated = True
-                    # Recursively get its base columns
-                    base_cols.update(self.get_all_base_columns_recursive(dep_name, dependencies, all_calculated_names))
-                    break
-            
-            # Also check in the global calculated names set
-            if not is_calculated and col_normalized in all_calculated_names:
-                is_calculated = True
-            
-            if not is_calculated:
-                # This is a TRUE base column
-                base_cols.add(col_normalized)
-        
+        stack = [field_name]
+        visited = set()  # Track all visited nodes globally
+
+        while stack:
+            current_field = stack.pop()
+
+            # Skip if already processed (cycle detection)
+            if current_field in visited:
+                continue
+
+            visited.add(current_field)
+
+            # Normalize for comparison
+            current_normalized = current_field.lower().replace(' ', '_')
+
+            # Check if this field is in dependencies dict
+            if current_field not in dependencies:
+                # Not a calculated field in our dependency graph
+                if current_normalized not in all_calculated_names:
+                    # This is a TRUE base column
+                    base_cols.add(current_normalized)
+                continue
+
+            # It's a calculated field - process its formula
+            field_info = dependencies[current_field]
+            formula = field_info.get('formula', '')
+            formula_cols = self.extract_column_references(formula)
+
+            for col in formula_cols:
+                col_normalized = col.lower().replace(' ', '_')
+
+                # Find if this is a calculated field
+                is_calculated = False
+                matching_calc_field = None
+
+                for dep_name in dependencies.keys():
+                    dep_normalized = dep_name.lower().replace(' ', '_')
+                    if dep_normalized == col_normalized:
+                        is_calculated = True
+                        matching_calc_field = dep_name
+                        break
+
+                if is_calculated and matching_calc_field not in visited:
+                    # Add to stack for processing (will be skipped if creates cycle)
+                    stack.append(matching_calc_field)
+                elif col_normalized not in all_calculated_names:
+                    # It's a base column
+                    base_cols.add(col_normalized)
+
         return base_cols
-    
+
+    def calculate_dependency_levels(self, dependencies: Dict) -> None:
+        """
+        Calculate dependency levels using Kahn's algorithm (topological sort).
+        Handles cycles gracefully by assigning them max level + 1.
+        """
+        # Initialize all levels to 0
+        for field_name in dependencies:
+            dependencies[field_name]['level'] = 0
+
+        # Count incoming edges for each node
+        in_degree = {name: 0 for name in dependencies}
+        for field_name, info in dependencies.items():
+            for dep in info['depends_on']:
+                if dep in in_degree:
+                    in_degree[dep] += 1
+
+        # Queue of nodes with no incoming edges
+        queue = [name for name, degree in in_degree.items() if degree == 0]
+        processed = []
+
+        # Process nodes level by level
+        while queue:
+            # Sort for deterministic ordering
+            queue.sort()
+            current = queue.pop(0)
+            processed.append(current)
+
+            # Check dependencies and update levels
+            for field_name, info in dependencies.items():
+                if current in info['depends_on']:
+                    # Update level: max of all dependencies + 1
+                    current_level = dependencies[current]['level']
+                    dependencies[field_name]['level'] = max(
+                        dependencies[field_name]['level'],
+                        current_level + 1
+                    )
+
+                    in_degree[field_name] -= 1
+                    if in_degree[field_name] == 0:
+                        queue.append(field_name)
+
+        # Handle cycles: any unprocessed nodes are in cycles
+        if len(processed) < len(dependencies):
+            max_level = max(info['level'] for info in dependencies.values())
+            cycle_nodes = set(dependencies.keys()) - set(processed)
+
+            print(f"⚠️  Detected circular dependencies in fields: {cycle_nodes}")
+
+            # Assign cycle nodes to max_level + 1
+            for node in cycle_nodes:
+                dependencies[node]['level'] = max_level + 1
+                dependencies[node]['has_cycle'] = True
+
     def analyze_calculated_field_dependencies(self, chart_calculated_fields: List[Dict]) -> tuple:
         """
         Analyze calculated fields to build dependency chains.
+        Uses cycle-safe algorithms throughout.
         Returns (dependencies dict, set of all calculated field names)
         """
         dependencies = {}
         all_calc_names = set()
-        
+
         # First pass: collect all calculated field names
         for calc_field in chart_calculated_fields:
             field_name = calc_field['name']
             all_calc_names.add(field_name.lower().replace(' ', '_'))
-        
+
         # Second pass: build dependencies
         for calc_field in chart_calculated_fields:
             field_name = calc_field['name']
             formula = calc_field.get('formula', '')
             datatype = calc_field.get('datatype', 'unknown')
-            
+
             # Find which other calculated fields this depends on
             depends_on = []
             for other_calc in chart_calculated_fields:
                 other_name = other_calc['name']
                 if other_name != field_name:
-                    # Check if other_name appears in formula (with or without brackets)
+                    # Check if other_name appears in formula
                     if f"[{other_name}]" in formula or other_name in formula:
                         depends_on.append(other_name)
-            
+
             # Extract all column references
             all_refs = self.extract_column_references(formula)
-            
+
             # Filter out calculated field names to get only base columns
             base_cols = [col for col in all_refs if col not in all_calc_names]
-            
+
             dependencies[field_name] = {
                 'formula': formula,
                 'datatype': datatype,
                 'depends_on': depends_on,
                 'base_columns_used': base_cols,
-                'level': 0
+                'level': 0,
+                'has_cycle': False
             }
-        
-        # Calculate dependency levels
-        max_iterations = 10
-        for _ in range(max_iterations):
-            changed = False
-            for field_name, info in dependencies.items():
-                if info['depends_on']:
-                    max_dep_level = max(
-                        dependencies[dep]['level'] 
-                        for dep in info['depends_on'] 
-                        if dep in dependencies
-                    )
-                    new_level = max_dep_level + 1
-                    if new_level != info['level']:
-                        info['level'] = new_level
-                        changed = True
-            if not changed:
-                break
-        
+
+        # Calculate dependency levels using topological sort
+        self.calculate_dependency_levels(dependencies)
+
         return dependencies, all_calc_names
     
     def _infer_column_type(self, column_name: str, datatype: str) -> str:
@@ -279,7 +333,30 @@ class TableauColumnMappingExtractor:
             return f"{readable} (count/volume metric)"
         else:
             return readable
-    
+
+    def _is_valid_metadata_file(self, file_path: Path) -> bool:
+        """
+        Validate that a JSON file is actually a Tableau metadata file.
+        Checks for expected structure rather than filename pattern.
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            # Check for required Tableau metadata keys
+            required_keys = ['charts_metadata_readable']
+            optional_keys = ['workbook_name', 'dashboards', 'worksheets']
+
+            # File must have at least one required key or multiple optional keys
+            has_required = any(key in data for key in required_keys)
+            has_optional = sum(1 for key in optional_keys if key in data) >= 2
+
+            return has_required or has_optional
+
+        except (json.JSONDecodeError, IOError, Exception) as e:
+            print(f"⚠️  Cannot validate {file_path.name}: {e}")
+            return False
+
     def process_dashboard(self, file_path: Path) -> Dict:
         """Process a single dashboard metadata file"""
         with open(file_path, 'r', encoding='utf-8') as f:
@@ -308,8 +385,8 @@ class TableauColumnMappingExtractor:
                 formula = y_detail.get('formula', '')
                 datatype = y_detail.get('datatype', '')
                 
-                # ✅ FIX: Recursively collect ALL TRUE base columns (no calculated fields)
-                all_base_columns = list(self.get_all_base_columns_recursive(field_name, dependencies, all_calc_names))
+                # ✅ FIX: Iteratively collect ALL TRUE base columns (no calculated fields)
+                all_base_columns = list(self.get_all_base_columns_iterative(field_name, dependencies, all_calc_names))
                 
                 # Get dependent calculated fields
                 dependent_fields = []
@@ -337,8 +414,8 @@ class TableauColumnMappingExtractor:
                 formula = calc_field.get('formula', '')
                 datatype = calc_field.get('datatype', '')
                 
-                # ✅ FIX: Recursively collect ALL TRUE base columns
-                all_base_columns = list(self.get_all_base_columns_recursive(field_name, dependencies, all_calc_names))
+                # ✅ FIX: Iteratively collect ALL TRUE base columns
+                all_base_columns = list(self.get_all_base_columns_iterative(field_name, dependencies, all_calc_names))
                 
                 # Get dependent calculated fields
                 dependent_fields = []
@@ -425,34 +502,69 @@ class TableauColumnMappingExtractor:
     
     def process_all_dashboards(self):
         """Process all JSON files in the metadata directory"""
-        json_files = list(self.metadata_dir.glob('*_metadata.json'))
-        
-        if not json_files:
-            print(f"❌ No metadata JSON files found in {self.metadata_dir}")
-            return
-        
-        print(f"📁 Found {len(json_files)} dashboard metadata files")
-        
-        # ✅ CLEAR existing dashboards to ensure fresh data
+        # Initialize summary immediately to prevent KeyError
+        self.results["summary"] = {
+            "total_dashboards": 0,
+            "total_charts": 0,
+            "total_unique_columns": 0,
+            "dashboards_processed": [],
+            "generation_timestamp": self._get_timestamp(),
+            "errors": []
+        }
+
+        # Clear existing data
         self.results["dashboards"] = []
         self.results["column_metadata"] = {}
         self.results["csv_column_mapping"] = {}
-        
+
+        # Recursive search for ALL JSON files
+        json_files = list(self.metadata_dir.rglob('*.json'))
+
+        if not json_files:
+            error_msg = f"No JSON files found in {self.metadata_dir} or its subdirectories"
+            print(f"❌ {error_msg}")
+            self.results["summary"]["errors"].append(error_msg)
+            return
+
+        print(f"📁 Found {len(json_files)} JSON files, validating...")
+
+        # Validate and filter for actual metadata files
+        valid_metadata_files = []
         for json_file in json_files:
-            print(f"📊 Processing: {json_file.name}")
-            dashboard_result = self.process_dashboard(json_file)
-            self.results["dashboards"].append(dashboard_result)
-        
-        # Add summary statistics
+            if self._is_valid_metadata_file(json_file):
+                valid_metadata_files.append(json_file)
+            else:
+                print(f"⏭️  Skipping non-metadata file: {json_file.name}")
+
+        if not valid_metadata_files:
+            error_msg = f"No valid Tableau metadata files found in {len(json_files)} JSON files"
+            print(f"❌ {error_msg}")
+            self.results["summary"]["errors"].append(error_msg)
+            return
+
+        print(f"✅ Found {len(valid_metadata_files)} valid metadata files")
+
+        # Process each valid metadata file
+        for json_file in valid_metadata_files:
+            try:
+                print(f"📊 Processing: {json_file.name}")
+                dashboard_result = self.process_dashboard(json_file)
+                self.results["dashboards"].append(dashboard_result)
+            except Exception as e:
+                error_msg = f"Failed to process {json_file.name}: {str(e)}"
+                print(f"❌ {error_msg}")
+                self.results["summary"]["errors"].append(error_msg)
+                # Continue processing other files instead of failing completely
+
+        # Update summary statistics
         total_charts = sum(len(d["charts"]) for d in self.results["dashboards"])
-        
-        self.results["summary"] = {
+
+        self.results["summary"].update({
             "total_dashboards": len(self.results["dashboards"]),
             "total_charts": total_charts,
             "total_unique_columns": len(self.results["column_metadata"]),
-            "dashboards_processed": [d["dashboard_name"] for d in self.results["dashboards"]],
-            "generation_timestamp": self._get_timestamp()
-        }
+            "dashboards_processed": [d["dashboard_name"] for d in self.results["dashboards"]]
+        })
     
     def _get_timestamp(self) -> str:
         """Get current timestamp for tracking"""

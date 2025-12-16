@@ -2532,12 +2532,17 @@ class CompleteWorkbookDataManager:
                         output_file="chart_column_mappings.json")
                     extractor.process_all_dashboards()
                     extractor.save_results()
-                    
+
                     master_logger.info(f"✅ Chart column mappings generated successfully")
+                    summary = extractor.results.get('summary', {})
                     master_logger.info(f"   Output: chart_column_mappings.json")
-                    master_logger.info(f"   Dashboards: {extractor.results['summary']['total_dashboards']}")
-                    master_logger.info(f"   Charts: {extractor.results['summary']['total_charts']}")
-                    
+                    master_logger.info(f"   Dashboards: {summary.get('total_dashboards', 0)}")
+                    master_logger.info(f"   Charts: {summary.get('total_charts', 0)}")
+
+                    if summary.get('errors'):
+                        for error in summary['errors']:
+                            master_logger.warning(f"   ⚠️  {error}")
+
                     return extractor.results
                     
                 except Exception as mapping_error:
