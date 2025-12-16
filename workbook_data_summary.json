@@ -2066,5 +2066,734 @@
     "generated_at": "2025-11-23T21:02:29.872276",
     "total_rows": 4108,
     "total_columns": 92
+  },
+  "FRO Dashboard_Updated_test": {
+    "data_description": "This dataset contains information on customer service cases, including numerical metrics related to ticket handling times and categorical details about case creation dates, enabling analysis of ticket volume and performance metrics over time.",
+    "numerical_columns": {
+      "gap_to_close_in_mins": {
+        "count": 3858.0,
+        "mean": 46450.038102643855,
+        "std": 108313.49045068884,
+        "min": 0.0,
+        "25%": 4385.75,
+        "50%": 10428.5,
+        "75%": 28442.0,
+        "max": 705564.0,
+        "column_type": "string_as_numeric",
+        "original_dtype": "object"
+      },
+      "pending_customer_time": {
+        "count": 4102.0,
+        "mean": 32224.93807898586,
+        "std": 99994.08114016135,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 4320.0,
+        "75%": 12433.0,
+        "max": 703024.0,
+        "column_type": "string_as_numeric",
+        "original_dtype": "object"
+      },
+      "case_gap_to_close_in_mins_c": {
+        "count": 3858.0,
+        "mean": 46450.038102643855,
+        "std": 108313.49045068884,
+        "min": 0.0,
+        "25%": 4385.75,
+        "50%": 10428.5,
+        "75%": 28442.0,
+        "max": 705564.0,
+        "column_type": "string_as_numeric",
+        "original_dtype": "object"
+      },
+      "pending_Internal_time": {
+        "count": 4102.0,
+        "mean": 32224.93807898586,
+        "std": 99994.08114016135,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 4320.0,
+        "75%": 12433.0,
+        "max": 703024.0,
+        "column_type": "string_as_numeric",
+        "original_dtype": "object"
+      },
+      "On_Hold_time": {
+        "count": 4108.0,
+        "mean": 564.199123661149,
+        "std": 3653.7290613616956,
+        "min": 0.0,
+        "25%": 0.0,
+        "50%": 0.0,
+        "75%": 0.0,
+        "max": 121516.0,
+        "column_type": "measure"
+      }
+    },
+    "categorical_columns": {
+      "create_day": {
+        "count": 4108,
+        "unique": 467,
+        "top": "2025-04-09 00:00:00.000",
+        "freq": 40,
+        "column_type": "categorical"
+      },
+      "create_week": {
+        "count": 4108,
+        "unique": 79,
+        "top": "2025-04-07 00:00:00.000",
+        "freq": 157,
+        "column_type": "categorical"
+      },
+      "create_month": {
+        "count": 4108,
+        "unique": 19,
+        "top": "2025-03-01 00:00:00.000",
+        "freq": 521,
+        "column_type": "categorical"
+      },
+      "case_id": {
+        "count": 4108,
+        "unique": 4108,
+        "top": "5004z00001taGFpAAM",
+        "freq": 1,
+        "column_type": "identifier"
+      },
+      "casenumber": {
+        "count": 4108,
+        "unique": 4108,
+        "top": "12596547",
+        "freq": 1,
+        "column_type": "identifier"
+      },
+      "createddate": {
+        "count": 4108,
+        "unique": 4107,
+        "top": "2024-09-12 06:20:02.000",
+        "freq": 2,
+        "column_type": "identifier"
+      },
+      "createddate_ist": {
+        "count": 4108,
+        "unique": 4107,
+        "top": "2024-09-12 11:50:02.000",
+        "freq": 2,
+        "column_type": "identifier"
+      },
+      "createddate_ist_time": {
+        "count": 4108,
+        "unique": 3984,
+        "top": "19:20:08",
+        "freq": 3,
+        "column_type": "identifier"
+      },
+      "created_weekday": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Tuesday",
+        "freq": 893,
+        "column_type": "categorical"
+      },
+      "closeddate": {
+        "count": 4108,
+        "unique": 3836,
+        "top": "\\N",
+        "freq": 250,
+        "column_type": "identifier"
+      },
+      "status": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Closed",
+        "freq": 3833,
+        "column_type": "categorical"
+      },
+      "eng_transfers": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 3619,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "PI_Time": {
+        "count": 4108,
+        "unique": 394,
+        "top": "\\N",
+        "freq": 3692,
+        "column_type": "categorical"
+      },
+      "OnHold_Time": {
+        "count": 4108,
+        "unique": 367,
+        "top": "\\N",
+        "freq": 3703,
+        "column_type": "categorical"
+      },
+      "age_in_hours": {
+        "count": 4108,
+        "unique": 1527,
+        "top": "0.2333333333333333",
+        "freq": 130,
+        "column_type": "categorical_numeric",
+        "original_dtype": "float64"
+      },
+      "date_assigned": {
+        "count": 4108,
+        "unique": 3021,
+        "top": "\\N",
+        "freq": 968,
+        "column_type": "identifier"
+      },
+      "product": {
+        "count": 4108,
+        "unique": 16,
+        "top": "Central",
+        "freq": 1047,
+        "column_type": "categorical"
+      },
+      "first_response_time": {
+        "count": 4108,
+        "unique": 2119,
+        "top": "\\N",
+        "freq": 1990,
+        "column_type": "identifier"
+      },
+      "outbound_email_count": {
+        "count": 4108,
+        "unique": 22,
+        "top": "1",
+        "freq": 1057,
+        "column_type": "categorical"
+      },
+      "initial_queue": {
+        "count": 4108,
+        "unique": 3,
+        "top": "U4B Business API Triage",
+        "freq": 3140,
+        "column_type": "categorical"
+      },
+      "last_queue": {
+        "count": 4108,
+        "unique": 1,
+        "top": "U4B Business API Triage",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "last_status_change_date": {
+        "count": 4108,
+        "unique": 4084,
+        "top": "2025-04-22 15:00:58.000",
+        "freq": 4,
+        "column_type": "identifier"
+      },
+      "lastmodifieddate": {
+        "count": 4108,
+        "unique": 3789,
+        "top": "2025-05-29 09:19:29.000",
+        "freq": 199,
+        "column_type": "identifier"
+      },
+      "level_2": {
+        "count": 4108,
+        "unique": 27,
+        "top": "Did not read documentation",
+        "freq": 1141,
+        "column_type": "categorical"
+      },
+      "level_3": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "level_4": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "accountid": {
+        "count": 4108,
+        "unique": 645,
+        "top": "0014z00001ooaWfAAI",
+        "freq": 357,
+        "column_type": "categorical"
+      },
+      "account_tier": {
+        "count": 4108,
+        "unique": 3,
+        "top": "\\N",
+        "freq": 4100,
+        "column_type": "categorical"
+      },
+      "account_status": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Prospect",
+        "freq": 2187,
+        "column_type": "categorical"
+      },
+      "account_country": {
+        "count": 4108,
+        "unique": 40,
+        "top": "United States",
+        "freq": 1888,
+        "column_type": "categorical"
+      },
+      "account_manager": {
+        "count": 4108,
+        "unique": 194,
+        "top": "U4B Prospect Accounts",
+        "freq": 1434,
+        "column_type": "categorical"
+      },
+      "service_area": {
+        "count": 4108,
+        "unique": 3,
+        "top": "\\N",
+        "freq": 4100,
+        "column_type": "categorical"
+      },
+      "Case_Owner_name": {
+        "count": 4108,
+        "unique": 26,
+        "top": "Pedro Candemil",
+        "freq": 631,
+        "column_type": "categorical"
+      },
+      "case_resolution_sla_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 2536,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "case_resolution_sla_without_pc_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "1",
+        "freq": 3270,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "case_acknowledgement_sla_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 2060,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "Origin": {
+        "count": 4108,
+        "unique": 2,
+        "top": "Email",
+        "freq": 4106,
+        "column_type": "categorical"
+      },
+      "priority": {
+        "count": 4106,
+        "unique": 1,
+        "top": "Medium (1-3 hours)",
+        "freq": 4106,
+        "column_type": "categorical"
+      },
+      "sla_status_reporting": {
+        "count": 4108,
+        "unique": 1,
+        "top": "Green",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "time_to_close": {
+        "count": 4108,
+        "unique": 1235,
+        "top": "\\N",
+        "freq": 968,
+        "column_type": "categorical"
+      },
+      "time_to_first_response": {
+        "count": 4108,
+        "unique": 1238,
+        "top": "\\N",
+        "freq": 1990,
+        "column_type": "categorical"
+      },
+      "agent_email": {
+        "count": 4108,
+        "unique": 26,
+        "top": "pedro.candemil@uber.com",
+        "freq": 631,
+        "column_type": "categorical"
+      },
+      "account_name_shorten_field": {
+        "count": 4108,
+        "unique": 645,
+        "top": "HealthPoint-0014z00001ooaWfAAI",
+        "freq": 357,
+        "column_type": "categorical"
+      },
+      "re_business_category": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "city_id": {
+        "count": 4108,
+        "unique": 308,
+        "top": "\\N",
+        "freq": 796,
+        "column_type": "categorical"
+      },
+      "eats_bulk_telescope_tag": {
+        "count": 4108,
+        "unique": 639,
+        "top": "HealthPoint",
+        "freq": 357,
+        "column_type": "categorical"
+      },
+      "ue_cuisine_category": {
+        "count": 4108,
+        "unique": 3,
+        "top": "\\N",
+        "freq": 4100,
+        "column_type": "categorical"
+      },
+      "type": {
+        "count": 4108,
+        "unique": 9,
+        "top": "Task",
+        "freq": 1542,
+        "column_type": "categorical"
+      },
+      "csat_rating": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "survey_sent_date": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "survey_response_date": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "csat_issue_resolved": {
+        "count": 4108,
+        "unique": 1,
+        "top": "\\N",
+        "freq": 4108,
+        "column_type": "categorical"
+      },
+      "gap_for_first_response_in_mins": {
+        "count": 4108,
+        "unique": 1241,
+        "top": "\\N",
+        "freq": 1990,
+        "column_type": "categorical"
+      },
+      "re_open": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 3576,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "re_open_date": {
+        "count": 4108,
+        "unique": 533,
+        "top": "\\N",
+        "freq": 3576,
+        "column_type": "categorical"
+      },
+      "abandoned_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "reopen_after_abandoned_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "escalation_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 3670,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "escalation_date": {
+        "count": 4108,
+        "unique": 439,
+        "top": "\\N",
+        "freq": 3670,
+        "column_type": "categorical"
+      },
+      "last_queue_assigned_date_calc": {
+        "count": 4108,
+        "unique": 4107,
+        "top": "2024-09-12 06:20:02.000",
+        "freq": 2,
+        "column_type": "identifier"
+      },
+      "Re_Open_Time": {
+        "count": 4108,
+        "unique": 507,
+        "top": "0",
+        "freq": 3584,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "Re_Open_Time_After_Assigned": {
+        "count": 4108,
+        "unique": 503,
+        "top": "0",
+        "freq": 3588,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "parentid": {
+        "count": 4108,
+        "unique": 2794,
+        "top": "\\N",
+        "freq": 1315,
+        "column_type": "identifier"
+      },
+      "response_time_calc": {
+        "count": 4108,
+        "unique": 2098,
+        "top": "\\N",
+        "freq": 2011,
+        "column_type": "identifier"
+      },
+      "total_inbound_email_count": {
+        "count": 4108,
+        "unique": 30,
+        "top": "\\N",
+        "freq": 1411,
+        "column_type": "categorical"
+      },
+      "total_outbound_email_count": {
+        "count": 4108,
+        "unique": 39,
+        "top": "\\N",
+        "freq": 2011,
+        "column_type": "categorical"
+      },
+      "case_fcr_flag": {
+        "count": 4108,
+        "unique": 2,
+        "top": "0",
+        "freq": 2131,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "survey_sent_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "survey_response_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "issue_non_resolution_flag": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "status_new": {
+        "count": 4108,
+        "unique": 7,
+        "top": "Closed",
+        "freq": 3833,
+        "column_type": "categorical"
+      },
+      "resolution": {
+        "count": 4108,
+        "unique": 2,
+        "top": "\\N",
+        "freq": 4098,
+        "column_type": "categorical"
+      },
+      "case_gap_for_second_response_in_mins_c": {
+        "count": 4108,
+        "unique": 1184,
+        "top": "\\N",
+        "freq": 2011,
+        "column_type": "categorical"
+      },
+      "case_gap_for_second_response_in_mins": {
+        "count": 4108,
+        "unique": 2606,
+        "top": "0",
+        "freq": 227,
+        "column_type": "identifier"
+      },
+      "case_gap_to_close_in_mins": {
+        "count": 4108,
+        "unique": 3488,
+        "top": "0",
+        "freq": 263,
+        "column_type": "identifier"
+      },
+      "case_SLA_buckets_day": {
+        "count": 4108,
+        "unique": 6,
+        "top": ">5day",
+        "freq": 2582,
+        "column_type": "categorical"
+      },
+      "case_SLA_buckets_hour": {
+        "count": 4108,
+        "unique": 8,
+        "top": ">1day",
+        "freq": 3245,
+        "column_type": "categorical"
+      },
+      "case_sla_buckets_without_pc_day": {
+        "count": 4108,
+        "unique": 6,
+        "top": "1day",
+        "freq": 1815,
+        "column_type": "categorical"
+      },
+      "case_sla_buckets_without_pc_hour": {
+        "count": 4108,
+        "unique": 8,
+        "top": ">1day",
+        "freq": 2293,
+        "column_type": "categorical"
+      },
+      "isescalated": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "escalated": {
+        "count": 4108,
+        "unique": 1,
+        "top": "0",
+        "freq": 4108,
+        "column_type": "categorical_numeric",
+        "original_dtype": "int64"
+      },
+      "datestr": {
+        "count": 4108,
+        "unique": 467,
+        "top": "2025-04-09",
+        "freq": 40,
+        "column_type": "categorical"
+      },
+      "Number of Tickets": {
+        "count": 4108,
+        "unique": 4108,
+        "top": "12596547",
+        "freq": 1,
+        "column_type": "identifier"
+      },
+      "Closed_volume": {
+        "count": 4108,
+        "unique": 3834,
+        "top": "nan",
+        "freq": 275,
+        "column_type": "identifier"
+      },
+      "Open_Volume": {
+        "count": 4108,
+        "unique": 276,
+        "top": "nan",
+        "freq": 3833,
+        "column_type": "identifier"
+      },
+      "Eng_Trans": {
+        "count": 4108,
+        "unique": 27,
+        "top": "nan",
+        "freq": 4082,
+        "column_type": "identifier"
+      },
+      "On Hold Tickets": {
+        "count": 4108,
+        "unique": 9,
+        "top": "nan",
+        "freq": 4100,
+        "column_type": "identifier"
+      }
+    },
+    "calculated_columns": {
+      "Number of Tickets": {
+        "formula": "IF [last_queue] = 'U4B Business API Triage' OR [initial_queue] = 'U4B Business API Triage' THEN [casenumber] ELSE NULL END",
+        "datatype": "integer"
+      },
+      "case_AHT": {
+        "formula": "case_gap_to_close_in_mins\r\n  - (COALESCE(On_Hold_time, 0) + COALESCE(pending_Internal_time, 0))",
+        "datatype": "integer"
+      },
+      "AHT": {
+        "formula": "SUM([case_AHT]) / COUNTD([Number of Tickets])",
+        "datatype": "real"
+      },
+      "Closed_volume": {
+        "formula": "IF [status] = \"Closed\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "Open_Volume": {
+        "formula": "IF [status] != \"Closed\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "Eng_Trans": {
+        "formula": "IF [status] = \"Pending Internal\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "On Hold Tickets": {
+        "formula": "IF [status] = \"On Hold\" THEN [casenumber] END",
+        "datatype": "integer"
+      },
+      "Escalations Rate": {
+        "formula": "COUNTD([On Hold Tickets]) / COUNTD([Closed_volume])",
+        "datatype": "real"
+      }
+    },
+    "generated_at": "2025-12-16T12:35:33.611282",
+    "total_rows": 4108,
+    "total_columns": 92
   }
 }

@@ -747,5 +747,33 @@
     "confidence": "very_high",
     "source": "tableau_hint_explicit",
     "column_type": "tableau_defined"
+  },
+  "casenumber": {
+    "aggregation": "COUNT_DISTINCT",
+    "reasoning": "The column 'casenumber' contains unique identifiers for cases, as indicated by the high unique count (4108 unique values out of 4108 total rows). The user query is about finding the correlation between 'time to close' and other metrics, which suggests that we need to identify distinct cases to analyze their respective metrics. Therefore, COUNT_DISTINCT is appropriate to ensure we are considering each case only once in the analysis.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "age_in_hours": {
+    "aggregation": "AVG",
+    "reasoning": "The user is interested in the correlation between 'time to close' (represented by 'age_in_hours') and other metrics. To analyze correlation, we typically look at the average values of the continuous variable in question. Given that 'age_in_hours' is a numeric column with a float64 data type, using the average (AVG) will provide a meaningful representation of the central tendency of this metric, which is essential for correlation analysis.",
+    "confidence": "medium",
+    "source": "llm",
+    "column_type": "identifier"
+  },
+  "case_gap_for_second_response_in_mins": {
+    "aggregation": "CORRELATION",
+    "reasoning": "The user is interested in the correlation between 'time to close' (represented by the 'case_gap_for_second_response_in_mins' column) and other metrics. Correlation is a statistical measure that expresses the extent to which two variables are linearly related. Therefore, the appropriate approach is to calculate the correlation coefficient between this column and the other relevant metrics, rather than using a traditional aggregation function like SUM or AVG.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "measure"
+  },
+  "case_gap_to_close_in_mins": {
+    "aggregation": "CORRELATION",
+    "reasoning": "The user is interested in the correlation between 'time to close' (case_gap_to_close_in_mins) and other metrics. Correlation is a statistical measure that expresses the extent to which two variables are linearly related. Since the query does not ask for a specific aggregation like SUM or AVG, but rather a relationship between this metric and others, the appropriate approach is to calculate the correlation coefficient. This will provide insight into how changes in 'time to close' relate to changes in other metrics.",
+    "confidence": "high",
+    "source": "llm",
+    "column_type": "identifier"
   }
 }

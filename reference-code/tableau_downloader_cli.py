@@ -42,8 +42,25 @@ import tempfile
 import shutil
 from pathlib import Path
 
-# Import master logger for comprehensive logging
-from master_logger import get_master_logger, function_logger, setup_module_logger
+# Simple print-based logger for CLI (no master_logger dependency)
+class SimplePrintLogger:
+    """Simple logger that just prints to console"""
+    def info(self, msg): pass  # Silent for clean output
+    def debug(self, msg): pass  # Silent
+    def warning(self, msg): print(f"⚠️  {msg}")
+    def error(self, msg): print(f"❌ {msg}")
+
+def function_logger(name):
+    """Decorator that does nothing - just for compatibility"""
+    def decorator(func):
+        return func
+    return decorator
+
+def setup_module_logger(name):
+    """Returns a simple print logger"""
+    return SimplePrintLogger()
+
+get_master_logger = setup_module_logger  # Alias for compatibility
 
 # Import enhanced services
 try:
@@ -64,6 +81,162 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 master_logger = setup_module_logger('tableau_backend')
 master_logger.info("TABLEAU BACKEND MODULE INITIALIZATION STARTED")
 master_logger.info("Warnings suppressed for urllib3 SSL verification")
+
+
+# ============================================================================
+# EMBEDDED TABLEAU PAT SERVICE (from tableau_pat_service.py)
+# ============================================================================
+
+import yaml
+
+class TableauPATService:
+    """Service for fetching Tableau PAT credentials from uSecret (secrets.yaml)"""
+
+    def __init__(self, secrets_path: Optional[str] = None):
+        """
+        Initialize the PAT service with path to secrets.yaml
+
+        Args:
+            secrets_path: Path to secrets.yaml. If None, uses default Uber path for tableau_chatbot service
+        """
+        if secrets_path is None:
+            # Default path for Up services - using tableau_chatbot service
+            service_name = os.getenv('SERVICE_NAME', 'tableau_chatbot')
+            self.secrets_path = f'/langley/udocker/{service_name}/current/secrets.yaml'
+        else:
+            self.secrets_path = secrets_path
+
+        self._secrets_cache = None
+        self._cache_timestamp = None
+        self.cache_duration_seconds = 300  # 5 minutes
+
+    def _load_secrets(self) -> Dict[str, Any]:
+        """Load secrets from secrets.yaml file"""
+        try:
+            with open(self.secrets_path, 'r') as f:
+                secrets = yaml.safe_load(f)
+            return secrets
+        except FileNotFoundError:
+            raise FileNotFoundError(
+                f"Secrets file not found at {self.secrets_path}. "
+                "Ensure your service is deployed and secrets are configured in uSecret.v2 at https://secrets.uberinternal.com"
+            )
+        except Exception as e:
+            raise Exception(f"Error loading secrets: {str(e)}")
+
+    def _is_cache_valid(self) -> bool:
+        """Check if cache is valid"""
+        if self._cache_timestamp is None or self._secrets_cache is None:
+            return False
+        age = (datetime.now() - self._cache_timestamp).total_seconds()
+        return age < self.cache_duration_seconds
+
+    def _get_secrets(self, force_refresh: bool = False) -> Dict[str, Any]:
+        """Get secrets with caching"""
+        if not force_refresh and self._is_cache_valid():
+            return self._secrets_cache
+
+        secrets = self._load_secrets()
+        self._secrets_cache = secrets
+        self._cache_timestamp = datetime.now()
+        return secrets
+
+    def extract_site_content_url_from_url(self, tableau_url: str) -> Optional[str]:
+        """Extract site_content_url from Tableau URL"""
+        patterns = [r'/#/site/([^/]+)', r'/t/([^/]+)', r'/site/([^/]+)']
+        for pattern in patterns:
+            match = re.search(pattern, tableau_url)
+            if match:
+                return match.group(1).strip()
+        return None
+
+    def get_credentials_by_site_content_url(self, site_content_url: str) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
+        """
+        Fetch Tableau PAT credentials by site_content_url from secrets.yaml
+
+        Expected secrets.yaml structure:
+        tableau_credentials:
+          site1:
+            tableau_server_url: "https://tableau.uberinternal.com"
+            api_version: "3.19"
+            site_content_url: "site1"
+            personal_access_token_name: "token_name"
+            personal_access_token_secret: "token_secret"
+          site2:
+            ...
+        """
+        try:
+            secrets = self._get_secrets()
+
+            # Navigate to tableau_credentials section
+            if 'tableau_credentials' not in secrets:
+                return False, None, "No 'tableau_credentials' section found in secrets.yaml"
+
+            tableau_creds = secrets['tableau_credentials']
+
+            # Find matching site
+            for site_key, site_config in tableau_creds.items():
+                if site_config.get('site_content_url') == site_content_url:
+                    credentials = {
+                        'tableau_server_url': site_config.get('tableau_server_url', '').strip(),
+                        'api_version': str(site_config.get('api_version', '3.19')).strip(),
+                        'site_content_url': site_content_url.strip()
+                    }
+
+                    # PAT credentials
+                    pat_name = site_config.get('personal_access_token_name', '').strip()
+                    pat_secret = site_config.get('personal_access_token_secret', '').strip()
+
+                    if pat_name and pat_secret:
+                        credentials['personal_access_token_name'] = pat_name
+                        credentials['personal_access_token_secret'] = pat_secret
+                        credentials['auth_type'] = 'personal_access_token'
+                        return True, credentials, None
+
+            return False, None, f"No credentials found for site: {site_content_url}"
+
+        except Exception as e:
+            return False, None, f"Error fetching credentials: {str(e)}"
+
+    def get_all_credentials_by_site_content_url(self, site_content_url: str) -> Tuple[bool, Optional[List[Dict[str, Any]]], Optional[str]]:
+        """Fetch ALL credentials for a site (for fallback support)"""
+        try:
+            secrets = self._get_secrets()
+
+            if 'tableau_credentials' not in secrets:
+                return False, None, "No 'tableau_credentials' section found in secrets.yaml"
+
+            tableau_creds = secrets['tableau_credentials']
+            credentials_list = []
+
+            for site_key, site_config in tableau_creds.items():
+                if site_config.get('site_content_url') == site_content_url:
+                    credentials = {
+                        'tableau_server_url': site_config.get('tableau_server_url', '').strip(),
+                        'api_version': str(site_config.get('api_version', '3.19')).strip(),
+                        'site_content_url': site_content_url.strip(),
+                        '_site_key': site_key
+                    }
+
+                    pat_name = site_config.get('personal_access_token_name', '').strip()
+                    pat_secret = site_config.get('personal_access_token_secret', '').strip()
+
+                    if pat_name and pat_secret:
+                        credentials['personal_access_token_name'] = pat_name
+                        credentials['personal_access_token_secret'] = pat_secret
+                        credentials['auth_type'] = 'personal_access_token'
+                        credentials_list.append(credentials)
+
+            if not credentials_list:
+                return False, None, f"No valid credentials found for site: {site_content_url}"
+
+            return True, credentials_list, None
+
+        except Exception as e:
+            return False, None, f"Error fetching credentials: {str(e)}"
+
+# Global instance
+tableau_pat_service = TableauPATService()
 
 
 # ============================================================================
@@ -196,7 +369,7 @@ def load_tableau_config(filepath: str = None, site_content_url: str = None, tabl
         If get_all_fallbacks=True:
             List of Dict containing all credentials for the site (ordered by priority)
     """
-    from services.tableau_pat_service import tableau_pat_service
+    # tableau_pat_service is now embedded in this file (see above)
 
     master_logger.info("[CONFIG] Configuration mode: Google Sheets PAT Service (Direct API)")
     master_logger.info("[CONFIG] Fetching credentials from Google Sheets...")
@@ -296,8 +469,10 @@ def load_tableau_config(filepath: str = None, site_content_url: str = None, tabl
         print("  4. Or provide a valid tableau_config.json as fallback")
         raise RuntimeError(f"Failed to load Tableau credentials: {e}")
 
-TABLEAU_CONFIG = load_tableau_config()
-master_logger.info("Global Tableau configuration loaded")
+# For CLI mode, TABLEAU_CONFIG will be loaded dynamically from URL
+# Set a placeholder that will be replaced when CLI runs
+TABLEAU_CONFIG = None
+master_logger.info("Tableau configuration will be loaded dynamically")
 
 # Retry decorator for handling network issues
 @function_logger('tableau_backend.retry_decorator')
@@ -720,19 +895,24 @@ class TWBParser:
                 if elements:
                     found_patterns[pattern] = len(elements)
                     master_logger.info(f"✅ Found {len(elements)} '{pattern}' elements")
-                    
+
+                    # Build parent map for ElementTree (since getparent() is lxml-only)
+                    parent_map = {c: p for p in self.workbook_xml.iter() for c in p}
+
                     # Log first few examples with more context
                     for i, elem in enumerate(elements[:5]):  # Show more examples
                         if elem.text and elem.text.strip():
-                            parent_info = f"Parent: {elem.getparent().tag if elem.getparent() is not None else 'root'}"
+                            parent = parent_map.get(elem)
+                            parent_tag = parent.tag if parent is not None else 'root'
+                            parent_info = f"Parent: {parent_tag}"
                             text_preview = elem.text.strip()[:150]
                             master_logger.info(f"  📄 Example {i+1}: {parent_info} -> '{text_preview}{'...' if len(elem.text.strip()) > 150 else ''}'")
-                            
+
                             # For run elements, also check their parent structure
-                            if pattern == 'run' and elem.getparent() is not None:
-                                parent = elem.getparent()
-                                grandparent = parent.getparent() if parent.getparent() is not None else None
-                                hierarchy = f"{grandparent.tag if grandparent is not None else 'root'} > {parent.tag} > {elem.tag}"
+                            if pattern == 'run' and parent is not None:
+                                grandparent = parent_map.get(parent)
+                                grandparent_tag = grandparent.tag if grandparent is not None else 'root'
+                                hierarchy = f"{grandparent_tag} > {parent.tag} > {elem.tag}"
                                 master_logger.debug(f"    Hierarchy: {hierarchy}")
                 else:
                     master_logger.info(f"❌ No '{pattern}' elements found")
@@ -2763,13 +2943,34 @@ class CompleteWorkbookDataManager:
                             master_logger.info("🔄 Attempting VizQL extraction for live connection workbook...")
 
                             # Get available views for VizQL extraction
+                            views = None
                             try:
+                                # Try REST API first
+                                master_logger.info("Attempting to get views via REST API...")
                                 views = self.connection_manager.get_workbook_views(site_id, workbook_id, auth_token)
+                                master_logger.info(f"✅ Got {len(views)} views via REST API")
+                            except Exception as rest_error:
+                                master_logger.warning(f"REST API failed: {rest_error}")
+                                master_logger.info("Falling back to metadata-based views...")
 
-                                if views:
-                                    master_logger.info(f"Found {len(views)} views for VizQL extraction")
+                                # Fall back to using views from TWB metadata
+                                if result.get('metadata') and result['metadata'].get('twb_metadata'):
+                                    charts = result['metadata']['twb_metadata'].get('charts', [])
+                                    if charts:
+                                        # Convert chart names to view format for VizQL
+                                        views = [{'name': chart, 'id': None} for chart in charts]
+                                        master_logger.info(f"✅ Using {len(views)} views from TWB metadata")
+                                    else:
+                                        master_logger.warning("No charts found in metadata")
+                                else:
+                                    master_logger.warning("No metadata available for fallback")
 
-                                    # Extract data using VizQL
+                            # Proceed with VizQL extraction if we have views
+                            if views:
+                                try:
+                                    master_logger.info(f"🚀 Starting VizQL Trust Auth extraction for {len(views)} views...")
+
+                                    # Extract data using VizQL with Trust Auth
                                     vizql_data = await self._extract_data_via_vizql(
                                         workbook_id=workbook_id,
                                         workbook_name=workbook_name,
@@ -2785,12 +2986,12 @@ class CompleteWorkbookDataManager:
                                         master_logger.info(f"✅ VizQL extraction successful: {len(vizql_data)} view(s) extracted")
                                     else:
                                         master_logger.warning("⚠️  VizQL extraction returned no data")
-                                else:
-                                    master_logger.warning("No views found for VizQL extraction")
 
-                            except Exception as vizql_error:
-                                master_logger.error(f"VizQL extraction failed: {vizql_error}")
-                                master_logger.error(traceback.format_exc())
+                                except Exception as vizql_error:
+                                    master_logger.error(f"❌ VizQL Trust Auth extraction failed: {vizql_error}")
+                                    master_logger.error(traceback.format_exc())
+                            else:
+                                master_logger.warning("❌ No views available for VizQL extraction")
 
                 except Exception as extract_error:
                     master_logger.error(f"Error extracting data from .twbx: {extract_error}")
@@ -2815,12 +3016,11 @@ class CompleteWorkbookDataManager:
                             
                     # Get available views from connection manager
                     try:
-                        views_response = self.connection_manager.get_views_for_site(site_id, auth_token)
-                        if views_response and 'views' in views_response:
+                        views_list = self.connection_manager.get_workbook_views(site_id, workbook_id, auth_token)
+                        if views_list:
                             available_views = [
                                 {'name': view.get('name'), 'id': view.get('id')}
-                                for view in views_response['views'].get('view', [])
-                                if workbook_name in view.get('workbook', {}).get('name', '')
+                                for view in views_list
                             ]
                         else:
                             available_views = []
@@ -2835,6 +3035,7 @@ class CompleteWorkbookDataManager:
                         
                         # Use data processor to get worksheet data with progress reporting
                         data_processor = TableauDataProcessor()
+                        data_processor.config = self.connection_manager.config  # Use connection manager's config
                         total_worksheets = len(available_views)
                         for idx, view in enumerate(available_views, 1):
                             # Report worksheet progress
@@ -2878,17 +3079,7 @@ class CompleteWorkbookDataManager:
                 master_logger.info("CSV export disabled")
             
             result['success'] = True
-            
-            # Report final completion with accurate counts
-            report_progress(
-                stage='complete',
-                message='Dashboard data ready! You can now ask questions.',
-                worksheets_processed=len(worksheets_data),
-                total_worksheets=len(worksheets_data),
-                datasources_processed=len(result['datasources_data']),
-                total_datasources=len(result['datasources_data'])
-            )
-            
+
             # Log summary of what was extracted
             master_logger.info(f"=" * 80)
             master_logger.info(f"COMPLETE WORKBOOK DATA EXTRACTION SUMMARY")
@@ -2931,7 +3122,7 @@ class CompleteWorkbookDataManager:
     
     # Live connection changes by Aniket - VizQL with Trusted Authentication for production
     async def _extract_data_via_vizql(self, workbook_id: str, workbook_name: str, site_id: str, auth_token: str,
-                                      views: List[dict], progress_callback: callable = None) -> Dict[str, pd.DataFrame]:
+                                      views: List[dict], progress_callback: callable = None) -> Dict[str, pl.DataFrame]:
         """
         Extract data from live connection workbooks using VizQL with Trusted Authentication
 
@@ -2941,7 +3132,7 @@ class CompleteWorkbookDataManager:
         1. Request trusted ticket from Tableau Server
         2. Redeem ticket for VizQL session cookies
         3. Query views via VizQL to get underlying data
-        4. Parse and return full DataFrames
+        4. Parse and return full Polars DataFrames (optimized for large data)
 
         Args:
             workbook_id: Workbook ID
@@ -2952,7 +3143,7 @@ class CompleteWorkbookDataManager:
             progress_callback: Optional progress callback
 
         Returns:
-            Dict mapping view names to DataFrames with FULL underlying data
+            Dict mapping view names to Polars DataFrames with FULL underlying data
         """
         master_logger.info("=" * 80)
         master_logger.info("LIVE CONNECTION DATA EXTRACTION VIA VIZQL (Trusted Auth) - by Aniket")
@@ -2974,6 +3165,36 @@ class CompleteWorkbookDataManager:
         # For now, use a placeholder - admin will configure this
         username = self.connection_manager.config.get('tableau_username', 'tableau_user')
         master_logger.info(f"[VIZQL] Using username: {username}")
+
+        # STEP 2: Test trusted authentication ONCE before looping through all views
+        # This prevents wasting time retrying for every view when server config is wrong
+        master_logger.info("[VIZQL] ⚠️  PRE-FLIGHT CHECK: Testing trusted authentication before processing all views...")
+
+        try:
+            test_ticket = await self.connection_manager._get_trusted_ticket(
+                username=username,
+                site_content_url=self.connection_manager.config.get('site_content_url', '')
+            )
+
+            if not test_ticket:
+                master_logger.error("=" * 80)
+                master_logger.error("[VIZQL] ❌ TRUSTED AUTHENTICATION PRE-FLIGHT CHECK FAILED")
+                master_logger.error("[VIZQL] Aborting VizQL extraction - no views will be processed")
+                master_logger.error("[VIZQL] ")
+                master_logger.error("[VIZQL] To fix this, configure Trusted Authentication on Tableau Server:")
+                master_logger.error("[VIZQL]   1. Enable Trusted Authentication in Tableau Server settings")
+                master_logger.error("[VIZQL]   2. Add your server IP to the trusted hosts list")
+                master_logger.error("[VIZQL]   3. Verify the username is correct in config")
+                master_logger.error("=" * 80)
+                return vizql_data  # Return empty dict immediately - don't process any views
+
+            master_logger.info("[VIZQL] ✅ Pre-flight check passed - trusted authentication is working!")
+        except Exception as preflight_error:
+            master_logger.error("=" * 80)
+            master_logger.error(f"[VIZQL] ❌ PRE-FLIGHT CHECK ERROR: {preflight_error}")
+            master_logger.error("[VIZQL] Aborting VizQL extraction for all views")
+            master_logger.error("=" * 80)
+            return vizql_data  # Return empty dict on any error
 
         for idx, view in enumerate(views, 1):
             view_id = view.get('id')
@@ -2999,13 +3220,13 @@ class CompleteWorkbookDataManager:
                     site_content_url=self.connection_manager.config.get('site_content_url', '')
                 )
 
-                if df is not None and not df.empty:
+                if df is not None and df.height > 0:  # Polars: use .height instead of .empty
                     vizql_data[view_name] = df
-                    master_logger.info(f"[VIZQL] ✅ Successfully extracted data from {view_name}: {df.shape[0]} rows × {df.shape[1]} columns")
+                    master_logger.info(f"[VIZQL] ✅ Successfully extracted data from {view_name}: {df.height} rows × {df.width} columns")
 
                     report_progress(
                         stage='vizql_extraction',
-                        message=f'Completed view {idx}/{total_views}: {view_name} ({df.shape[0]} rows)',
+                        message=f'Completed view {idx}/{total_views}: {view_name} ({df.height} rows)',
                         views_processed=idx,
                         total_views=total_views,
                         current_item=view_name
@@ -3057,17 +3278,23 @@ class TableauConnectionManager:
     
     def __init__(self):
         master_logger.info("Initializing TableauConnectionManager")
-        
-        self.config = TABLEAU_CONFIG
-        
-        # Import and initialize persistent auth storage
-        from auth_storage import AuthTokenStorage
-        self.auth_storage = AuthTokenStorage("auth_cache.pickle", cache_timeout_minutes=450)
-        
+
+        # Config will be set dynamically in CLI mode
+        self.config = TABLEAU_CONFIG if TABLEAU_CONFIG else {}
+
+        # Import and initialize persistent auth storage (optional in CLI mode)
+        try:
+            from auth_storage import AuthTokenStorage
+            self.auth_storage = AuthTokenStorage("auth_cache.pickle", cache_timeout_minutes=450)
+        except ImportError:
+            # CLI mode - auth_storage not available, that's OK
+            self.auth_storage = None
+            master_logger.info("Auth storage not available (CLI mode)")
+
         self._lock = threading.Lock()
         self._auth_lock = threading.Lock()  # Add authentication lock
         self._active_auth_requests = set()  # Track active auth requests
-        
+
         master_logger.info("TableauConnectionManager initialized")
         master_logger.debug(f"Configuration keys available: {list(self.config.keys()) if self.config else 'No config'}")
         if self.config and 'tableau_server_url' in self.config:
@@ -3076,8 +3303,11 @@ class TableauConnectionManager:
     @function_logger('tableau_backend.TableauConnectionManager.authenticate')
     def authenticate(self, content_url="") -> Tuple[str, str]:
         """Authenticate to Tableau Server using configured method (PAT or username/password)"""
+        if not self.config:
+            raise RuntimeError("Configuration not loaded. Ensure config is set before authenticating.")
+
         auth_type = self.config.get('auth_type', 'personal_access_token')
-        
+
         if auth_type == 'username_password':
             return self.sign_in_with_username_password(content_url)
         else:
@@ -3086,10 +3316,13 @@ class TableauConnectionManager:
     @function_logger('tableau_backend.TableauConnectionManager.sign_in_with_username_password')
     def sign_in_with_username_password(self, content_url="") -> Tuple[str, str]:
         """Sign in to Tableau Server using Username and Password"""
+        if not self.config:
+            raise RuntimeError("Configuration not loaded. Ensure config is set before authenticating.")
+
         master_logger.info(f"=== TABLEAU USERNAME/PASSWORD AUTHENTICATION STARTED ===")
         master_logger.info(f"Content URL: '{content_url}'")
         master_logger.info(f"Thread ID: {threading.current_thread().ident}")
-        
+
         # Create a unique key for this auth request
         auth_key = f"{content_url}_{threading.current_thread().ident}"
         master_logger.debug(f"Generated auth key: {auth_key}")
@@ -3216,10 +3449,13 @@ class TableauConnectionManager:
     @function_logger('tableau_backend.TableauConnectionManager.sign_in_with_pat')
     def sign_in_with_pat(self, content_url="") -> Tuple[str, str]:
         """Sign in to Tableau Server using Personal Access Token with race condition protection"""
+        if not self.config:
+            raise RuntimeError("Configuration not loaded. Ensure config is set before authenticating.")
+
         master_logger.info(f"=== TABLEAU AUTHENTICATION STARTED ===")
         master_logger.info(f"Content URL: '{content_url}'")
         master_logger.info(f"Thread ID: {threading.current_thread().ident}")
-        
+
         # Create a unique key for this auth request
         auth_key = f"{content_url}_{threading.current_thread().ident}"
         master_logger.debug(f"Generated auth key: {auth_key}")
@@ -3357,10 +3593,14 @@ class TableauConnectionManager:
     
     def _get_cached_auth(self, content_url):
         """Get cached authentication from persistent storage if still valid"""
+        if self.auth_storage is None:
+            return None  # CLI mode - no caching
         return self.auth_storage.get_auth_token(content_url)
-    
+
     def _cache_auth(self, content_url, auth_token, site_id):
         """Cache authentication result in persistent storage"""
+        if self.auth_storage is None:
+            return  # CLI mode - no caching
         self.auth_storage.store_auth_token(content_url, auth_token, site_id)
     
     def validate_token(self, auth_token: str, site_id: str) -> bool:
@@ -3733,8 +3973,8 @@ class TableauConnectionManager:
             return None
 
     async def _vizql_get_data(self, session: requests.Session, workbook_name: str, view_name: str,
-                             site_content_url: str = "") -> Optional[pd.DataFrame]:
-        """Get data from Tableau view using VizQL (uses Polars internally for large data performance)"""
+                             site_content_url: str = "") -> Optional[pl.DataFrame]:
+        """Get data from Tableau view using VizQL (returns Polars DataFrame for large data)"""
         try:
             import urllib.parse
             import re
@@ -3839,6 +4079,7 @@ class TableauConnectionManager:
 
                         # Try to parse as CSV using Polars for better performance
                         try:
+                            from io import StringIO
                             df = pl.read_csv(StringIO(data_response.text))
 
                             if df.height > 0:  # Polars uses .height instead of .shape[0]
@@ -3879,7 +4120,7 @@ class TableauConnectionManager:
                     master_logger.error(f"[VIZQL] Error processing worksheet {worksheet_name}: {worksheet_error}")
                     master_logger.debug(traceback.format_exc())
 
-            # STEP 4: Combine all dataframes and convert to pandas
+            # STEP 4: Combine all dataframes
             if all_dataframes:
                 if len(all_dataframes) == 1:
                     final_df = all_dataframes[0]
@@ -3893,9 +4134,7 @@ class TableauConnectionManager:
                         final_df = all_dataframes[0]
 
                 master_logger.info(f"[VIZQL] ✅ Final data: {final_df.height} rows × {final_df.width} columns")
-                
-                # Convert Polars DataFrame to Pandas for compatibility with rest of codebase
-                return final_df.to_pandas()
+                return final_df
             else:
                 master_logger.warning("[VIZQL] ⚠️  No data extracted from any worksheet")
                 return None
@@ -5058,7 +5297,13 @@ def initialize_tableau_connection(dashboard_context: Optional[Dict] = None) -> T
     
     try:
         master_logger.info("Using global TableauConnectionManager")
-        from app import connection_manager
+        try:
+            from app import connection_manager
+        except ImportError:
+            # CLI mode - connection_manager should be in globals()
+            connection_manager = globals().get('connection_manager')
+            if not connection_manager:
+                raise RuntimeError("connection_manager not found. In CLI mode, ensure it's initialized before calling this function.")
 
         # Extract context details
         master_logger.info("Extracting workbook context")
@@ -5503,3 +5748,109 @@ master_logger.info("  ✅ Enhanced initialization with metadata support")
 master_logger.info("="*80)
 
 # Additional utility functions can be added here as needed
+# ============================================================================
+# COMMAND LINE INTERFACE - ADDED FOR STANDALONE USE
+# ============================================================================
+
+if __name__ == "__main__":
+    import sys
+    import asyncio
+    
+    print("="*80)
+    print("TABLEAU DASHBOARD DOWNLOADER - Command Line Interface")
+    print("="*80)
+
+    # HARDCODED URL - change this to test different dashboards
+    HARDCODED_URL = "https://tableau.uberinternal.com/#/site/uMetricAnalytics/views/MTDMobilityMarketplaceDashboard/MTDMobilityMarketplaceDimensionComparison?:iid=1"
+
+    # Use hardcoded URL if no argument provided
+    if len(sys.argv) < 2:
+        print(f"\n⚠️  No URL provided, using hardcoded URL")
+        dashboard_url = HARDCODED_URL
+    else:
+        dashboard_url = sys.argv[1]
+
+    output_dir = sys.argv[2] if len(sys.argv) > 2 else "tableau_exports"
+    
+    print(f"\nDashboard URL: {dashboard_url}")
+    print(f"Output directory: {output_dir}\n")
+
+    # Initialize connection manager globally
+    global connection_manager
+    connection_manager = TableauConnectionManager()
+
+    # Make it available in globals for initialize_tableau_connection
+    globals()['connection_manager'] = connection_manager
+
+    # Extract workbook name from URL
+    # URL format: https://tableau.uberinternal.com/#/site/CODS/views/WORKBOOK/VIEW
+    workbook_name = None
+    view_name = None
+
+    if '/views/' in dashboard_url:
+        try:
+            views_part = dashboard_url.split('/views/')[1]
+            views_part = views_part.split('?')[0].split('#')[0]  # Remove query params
+            parts = views_part.split('/')
+            if len(parts) >= 2:
+                workbook_name = urllib.parse.unquote(parts[0])
+                view_name = urllib.parse.unquote(parts[1])
+                print(f"✓ Extracted from URL:")
+                print(f"  Workbook: {workbook_name}")
+                print(f"  View: {view_name}\n")
+        except Exception as e:
+            print(f"⚠️  Could not extract workbook name from URL: {e}")
+
+    # Create dashboard context from URL
+    dashboard_context = {
+        "url": dashboard_url,
+        "workbook_name": workbook_name,
+        "dashboard_name": view_name if view_name else "Dashboard"
+    }
+
+    # Run the connection initialization
+    success, result = initialize_tableau_connection(dashboard_context)
+
+    if success:
+        print("\n✅ Connection successful!")
+        print(f"✓ Workbook: {result.workbook_name}")
+        print(f"✓ Site ID: {result.site_id}")
+        print(f"✓ Workbook ID: {result.workbook_id}")
+        print(f"✓ Available views: {len(result.available_views)}")
+
+        # Create CompleteWorkbookDataManager to download the data
+        print("\n📥 Starting workbook data download...")
+        data_manager = CompleteWorkbookDataManager(connection_manager)
+
+        # Run async download
+        async def download_data():
+            workbook_result = await data_manager.fetch_complete_workbook_data(
+                workbook_name=result.workbook_name,
+                workbook_id=result.workbook_id,
+                site_id=result.site_id,
+                auth_token=result.auth_token,
+                export_to_csv=True
+            )
+            return workbook_result
+
+        workbook_result = asyncio.run(download_data())
+
+        if workbook_result.get('success'):
+            print(f"\n✅ Download complete!")
+            print(f"📁 Output directory: {workbook_result.get('csv_export_dir', 'N/A')}")
+
+            # Print summary
+            metadata = workbook_result.get('metadata', {})
+            datasources = workbook_result.get('datasources_data', {})
+            print(f"\n📊 Summary:")
+            print(f"  - Datasources: {len(datasources)}")
+            if metadata:
+                print(f"  - Worksheets: {len(metadata.get('worksheets', []))}")
+                print(f"  - Dashboards: {len(metadata.get('dashboards', []))}")
+        else:
+            print(f"\n❌ Download failed: {workbook_result.get('error')}")
+            sys.exit(1)
+    else:
+        print(f"\n❌ Connection failed: {result}")
+        sys.exit(1)
+
