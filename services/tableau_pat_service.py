@@ -182,12 +182,13 @@ class TableauPATService:
         Examples:
             https://tableau-aws.uberinternal.com/#/site/uMetricAnalytics/views/... -> uMetricAnalytics
             https://tableau-aws.uberinternal.com/t/uMetricAnalytics/views/... -> uMetricAnalytics
+            https://tableau.uberinternal.com/#/views/... -> Default (default site)
 
         Args:
             tableau_url: Full Tableau URL
 
         Returns:
-            site_content_url or None if not found
+            site_content_url or "Default" if no site is specified (default site)
         """
         try:
             # Pattern 1: /#/site/{site_content_url}/
@@ -214,12 +215,14 @@ class TableauPATService:
                 master_logger.info(f"Extracted site_content_url from URL (pattern 3): {site_content_url}")
                 return site_content_url
 
-            master_logger.warning(f"Could not extract site_content_url from URL: {tableau_url}")
-            return None
+            # fixed for default sitecontenturl
+            master_logger.info(f"No site_content_url in URL, using 'Default' for default site: {tableau_url}")
+            return "Default"
 
         except Exception as e:
-            master_logger.error(f"Error extracting site_content_url from URL: {e}")
-            return None
+            # fixed for default sitecontenturl
+            master_logger.error(f"Error extracting site_content_url from URL: {e}, using 'Default'")
+            return "Default"
 
     def get_credentials_by_site_content_url(self, site_content_url: str) -> Tuple[bool, Optional[Dict[str, Any]], Optional[str]]:
         """
@@ -234,6 +237,11 @@ class TableauPATService:
                                       tableau_server_url, api_version, site_content_url
         """
         try:
+            # fixed for default sitecontenturl
+            if not site_content_url:
+                site_content_url = "Default"
+                master_logger.info(f"Empty site_content_url provided, using 'Default'")
+
             master_logger.info(f"Fetching credentials for site_content_url: {site_content_url}")
 
             # Get credentials DataFrame

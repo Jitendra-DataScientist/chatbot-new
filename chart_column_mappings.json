@@ -14,52 +14,5 @@
     "CONTAINS": "str.contains() - Check if string contains substring",
     "DATEPART": "dt.year, dt.month, etc. - Extract date parts",
     "DATEDIFF": "(date2 - date1).dt.days - Calculate date difference"
-  },
-  "FRO Dashboard_Updated_test": {
-    "last_updated": "2025-12-16T08:16:28.015213Z",
-    "chart_count": 1,
-    "charts": {
-      "Closed_Volume & Open_volume Brief": {
-        "original_columns": [
-          "Measure Names",
-          "Month of Create Month",
-          "Distinct count of Closed_volume",
-          "Distinct count of Open_Volume"
-        ],
-        "cleaned_columns": {
-          "Measure Names": "names",
-          "Month of Create Month": "create_month",
-          "Distinct count of Closed_volume": "closed_volume",
-          "Distinct count of Open_Volume": "open_volume"
-        },
-        "csv_matched_columns": {
-          "Measure Names": null,
-          "Month of Create Month": null,
-          "Distinct count of Closed_volume": null,
-          "Distinct count of Open_Volume": null
-        },
-        "x_axis_detected": "Month of Create Month",
-        "x_axis_cleaned": "create_month",
-        "x_axis_csv_matched": null,
-        "y_axis_detected": "Distinct count of Closed_volume",
-        "y_axis_cleaned": "closed_volume",
-        "y_axis_csv_matched": null,
-        "hue_detected": [
-          "Measure Names"
-        ],
-        "hue_cleaned": [
-          "names"
-        ],
-        "hue_csv_matched": [
-          null
-        ],
-        "mapping_confidence": {
-          "x_axis": 0.0,
-          "y_axis": 0.0,
-          "csv_matching_success_rate": 0.0
-        },
-        "chart_timestamp": "2025-12-16T08:16:28.014214Z"
-      }
-    }
   }
 }

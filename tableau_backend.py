@@ -210,8 +210,10 @@ def load_tableau_config(filepath: str = None, site_content_url: str = None, tabl
         elif tableau_url:
             master_logger.info(f"Extracting site_content_url from URL: {tableau_url}")
             site_content_url = tableau_pat_service.extract_site_content_url_from_url(tableau_url)
+            # fixed for default sitecontenturl
             if not site_content_url:
-                raise ValueError(f"Could not extract site_content_url from URL: {tableau_url}")
+                site_content_url = "Default"
+                master_logger.info(f"No site_content_url extracted, using 'Default' for default site")
             master_logger.info(f"Extracted site_content_url: {site_content_url}")
 
         # Priority 3: Check environment variable
@@ -3076,8 +3078,13 @@ class TableauConnectionManager:
     @function_logger('tableau_backend.TableauConnectionManager.authenticate')
     def authenticate(self, content_url="") -> Tuple[str, str]:
         """Authenticate to Tableau Server using configured method (PAT or username/password)"""
+        # fixed for default sitecontenturl - convert "Default" to empty string for authentication
+        if content_url == "Default":
+            content_url = ""
+            master_logger.info(f"Converting 'Default' site to empty string for Tableau authentication")
+
         auth_type = self.config.get('auth_type', 'personal_access_token')
-        
+
         if auth_type == 'username_password':
             return self.sign_in_with_username_password(content_url)
         else:
