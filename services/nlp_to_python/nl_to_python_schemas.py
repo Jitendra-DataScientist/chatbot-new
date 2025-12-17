@@ -451,7 +451,27 @@ def create_stage1_schema(df_columns: List[str], column_samples: Dict[str, List[A
         
         JSON strict mode ensures LLM cannot hallucinate column names.
         All columns MUST be from the actual dataframe.
+        
+        🆕 Enhanced with calculated field support: If chart metadata provides
+        calculated field hints (e.g., CPW = SUM(cost)/SUM(twc)), the LLM can
+        choose to use the calculated field instead of a raw column.
         """
+        
+        # 🆕 NEW: Metric type (column or calculated_field)
+        metric_type: Optional[Literal["column", "calculated_field"]] = Field(
+            "column",
+            description="Type of metric: 'column' for raw dataframe column, 'calculated_field' for chart-defined calculated metric"
+        )
+        
+        # 🆕 NEW: Calculated field information (if metric_type='calculated_field')
+        calculated_field_name: Optional[str] = Field(
+            None,
+            description="Name of the calculated field from chart metadata (e.g., 'CPW')"
+        )
+        calculated_field_formula: Optional[Dict[str, str]] = Field(
+            None,
+            description="Formula for calculated field as dict with 'numerator' and 'denominator' keys"
+        )
         
         # Primary filter (if any)
         filter_column: Optional[ColumnEnum] = Field(
@@ -479,10 +499,10 @@ def create_stage1_schema(df_columns: List[str], column_samples: Dict[str, List[A
             description="Columns to group by (each MUST be from available columns)"
         )
         
-        # Metric/aggregation column
+        # Metric/aggregation column (for metric_type='column')
         metric_column: Optional[ColumnEnum] = Field(
             None,
-            description="Column containing the metric to calculate (MUST be from available columns)"
+            description="Column containing the metric to calculate (MUST be from available columns). Use this for metric_type='column'."
         )
         
         # Date/time column

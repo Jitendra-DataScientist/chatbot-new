@@ -467,6 +467,90 @@ class NLToPythonGeneratorV5:
             self.logger.error(f"[METADATA] Failed to load workbook metadata: {e}", exc_info=True)
             return {}
     
+    def _load_chart_calculated_fields(self, chart_name: str, workbook_name: str) -> List[Dict]:
+        """
+        Load calculated field definitions from chart metadata as hints for Stage 1.
+        
+        These hints help the LLM understand that queries like "cpw in may" should
+        use the calculated field formula (SUM(cost)/SUM(twc)) rather than the raw
+        cpw_std_all column.
+        
+        Args:
+            chart_name: Name of the selected chart
+            workbook_name: Name of the workbook
+        
+        Returns:
+            List of calculated field hints:
+            [
+                {
+                    "name": "CPW",
+                    "type": "ratio",
+                    "numerator": "cost",
+                    "denominator": "twc",
+                    "formula_display": "SUM([cost]) / SUM([twc])"
+                },
+                ...
+            ]
+        """
+        if not chart_name or not workbook_name:
+            return []
+        
+        try:
+            # Load Tableau metadata
+            safe_name = workbook_name.replace(' ', '')
+            metadata_path = os.path.join(
+                'tableau_metadata',
+                safe_name,
+                f'metadata_{safe_name}.json'
+            )
+            
+            if not os.path.exists(metadata_path):
+                self.logger.debug(f"[STAGE1_HINTS] No Tableau metadata at: {metadata_path}")
+                return []
+            
+            with open(metadata_path, 'r') as f:
+                metadata = json.load(f)
+            
+            # Find the chart
+            chart_metadata = None
+            for sheet in metadata.get('worksheets', []):
+                if sheet.get('name') == chart_name:
+                    chart_metadata = sheet
+                    break
+            
+            if not chart_metadata:
+                self.logger.debug(f"[STAGE1_HINTS] Chart '{chart_name}' not found in metadata")
+                return []
+            
+            # Parse calculated fields for ratio formulas
+            hints = []
+            for calc_field in chart_metadata.get('calculated_fields_ordered', []):
+                formula = calc_field.get('formula', '')
+                name = calc_field.get('name', '')
+                
+                # Parse ratio formulas: SUM([x])/SUM([y])
+                ratio_match = re.search(
+                    r'SUM\(\[([^\]]+)\]\)\s*/\s*SUM\(\[([^\]]+)\]\)',
+                    formula,
+                    re.IGNORECASE
+                )
+                
+                if ratio_match:
+                    hints.append({
+                        'name': name,
+                        'type': 'ratio',
+                        'numerator': ratio_match.group(1),
+                        'denominator': ratio_match.group(2),
+                        'formula_display': f"SUM([{ratio_match.group(1)}]) / SUM([{ratio_match.group(2)}])"
+                    })
+                    self.logger.info(f"[STAGE1_HINTS] Found ratio field: {name} = {ratio_match.group(1)}/{ratio_match.group(2)}")
+            
+            return hints
+            
+        except Exception as e:
+            self.logger.warning(f"[STAGE1_HINTS] Could not load chart hints: {e}")
+            return []
+    
     def _is_identifier_column(self, column_name: str, workbook_name: str, df_sample: pl.DataFrame) -> bool:
         """
         Multi-signal identifier detection using workbook metadata
@@ -611,12 +695,15 @@ class NLToPythonGeneratorV5:
         
         self.logger.info(f"[GENERATE] Processing query: {query}")
         
+        # Extract selected_chart from kwargs if available
+        selected_chart = kwargs.get('selected_chart', None)
+        
         try:
             # For now, use a simplified approach that delegates to the stage methods
             # This ensures compatibility while using the new modular components
             
-            # Stage 1: Column & Filter Selection
-            stage1_result = self._stage1_column_filter_selection(query, df_columns, df_sample)
+            # Stage 1: Column & Filter Selection (with optional chart hints)
+            stage1_result = self._stage1_column_filter_selection(query, df_columns, df_sample, selected_chart=selected_chart)
             if not stage1_result:
                 self.logger.error("[GENERATE] Stage 1 failed")
                 return None
@@ -681,30 +768,56 @@ class NLToPythonGeneratorV5:
             self.logger.error(f"[GENERATE] ❌ Error: {str(e)}", exc_info=True)
             return None
     
-    def _stage1_column_filter_selection(self, query: str, df_columns: List[str], df_sample: pl.DataFrame):
-        """Stage 1: Column & Filter Selection using strict schema"""
+    def _stage1_column_filter_selection(self, query: str, df_columns: List[str], df_sample: pl.DataFrame, selected_chart: Optional[str] = None):
+        """
+        Stage 1: Column & Filter Selection using strict schema
+        
+        🆕 Enhanced with calculated field hints from chart metadata
+        """
         if not self.use_agentic_mode:
             return self._fallback_stage1(query, df_columns)
         
-        # Let normal LLM flow handle column descriptions too
+        # 🆕 Load calculated field hints from chart metadata (if chart is selected)
+        calc_field_hints = []
+        if selected_chart and self._current_workbook_name:
+            calc_field_hints = self._load_chart_calculated_fields(
+                chart_name=selected_chart,
+                workbook_name=self._current_workbook_name
+            )
+        
+        # Build hints section for prompt
+        hints_section = ""
+        if calc_field_hints:
+            hints_section = "\n\n📊 CALCULATED FIELDS FROM CHART (optional hints):\n"
+            for hint in calc_field_hints:
+                hints_section += f"  • '{hint['name']}' (ratio): {hint['numerator']} ÷ {hint['denominator']}\n"
+                hints_section += f"    Formula: {hint['formula_display']}\n"
+            hints_section += "\n💡 If the query asks for a ratio metric (cost per X, X per Y, etc.) AND a matching calculated field exists above, use metric_type='calculated_field'.\n"
         
         try:
             # Create strict schema
             column_samples = {col: df_sample[col].drop_nulls().unique().limit(5).to_list() for col in df_columns}
             Stage1Schema = create_stage1_schema(df_columns, column_samples)
             
-            # LLM call for structured output
+            # Enhanced LLM prompt with calculated field hints
             messages = [
                 {"role": "system", "content": f"""You are a data analysis assistant. Extract column selections and filters from natural language queries.
 
 Available columns: {df_columns}
-Column samples: {column_samples}
+Column samples: {column_samples}{hints_section}
 
 Rules:
 1. ONLY select columns that exist in the available columns list
 2. For filters, extract the intent but don't validate values yet (Stage 1.5 will handle that)
 3. Identify temporal expressions (dates, quarters, etc.) in temporal_intent
 4. Identify the high-level operation type in operation_intent
+
+🆕 CALCULATED FIELD RULES:
+- If the query asks for a ratio/rate (e.g., "cost per word", "price per unit", "X per Y")
+  AND a matching calculated field exists in the hints above
+  → Set metric_type='calculated_field' and provide calculated_field_name and calculated_field_formula
+- Otherwise (simple column lookup, totals, counts, etc.)
+  → Set metric_type='column' and provide metric_column
 
 Column Description Queries:
 - If user asks "what does X mean", "describe X", "explain X", "tell me about X" where X is a column/field, set operation_intent='column_description'
@@ -832,6 +945,41 @@ Column Description Queries:
                     'filter_column': stage1_grounded.filter_column
                 }
                 self.logger.info(f"[STAGE2] Temporal filter expected: {filter_value_lower} (month={month_mapping[filter_value_lower]}) - will fix-up if LLM misses it")
+        
+        # 🆕 NEW: Check if Stage 1 identified a calculated field
+        metric_type = getattr(stage1_grounded, 'metric_type', 'column')
+        
+        if metric_type == 'calculated_field':
+            calc_field_name = getattr(stage1_grounded, 'calculated_field_name', None)
+            formula = getattr(stage1_grounded, 'calculated_field_formula', None)
+            
+            if formula and isinstance(formula, dict) and 'numerator' in formula and 'denominator' in formula:
+                self.logger.info(f"[STAGE2] ✅ Stage 1 identified calculated field: {calc_field_name}")
+                self.logger.info(f"[STAGE2]    Formula: {formula['numerator']} / {formula['denominator']}")
+                self.logger.info(f"[STAGE2]    Skipping LLM aggregation - using deterministic ratio formula")
+                
+                # Build temporal filters from Stage 1 (existing logic for month filters)
+                temporal_filters = []
+                if temporal_filter_expected:
+                    from .nl_to_python_schemas import TemporalFilter
+                    temporal_filters.append(TemporalFilter(
+                        filter_type=temporal_filter_expected['filter_type'],
+                        month=temporal_filter_expected['month']
+                    ))
+                
+                # Create a Stage2AgenticPlan for ratio operation
+                from .nl_to_python_schemas import Stage2AgenticPlan
+                return Stage2AgenticPlan(
+                    operations=['ratio'],
+                    temporal_filters=temporal_filters,
+                    agg_functions=[],  # Not used for ratios
+                    group_by_columns=stage1_grounded.group_by_columns or [],
+                    confidence=1.0,
+                    reasoning=f"Calculated field '{calc_field_name}' with ratio formula: {formula['numerator']}/{formula['denominator']}",
+                    # Store formula info in custom fields (will be accessed in Stage 3)
+                    numerator_column=formula['numerator'],
+                    column=formula['denominator']  # Using 'column' field to store denominator
+                )
         
         try:
             messages = [
@@ -1166,6 +1314,11 @@ Create execution plan:"""}
             # Get the primary operation
             operation_type = stage2_result.operations[0] if stage2_result.operations else 'grouped_aggregation'
             
+            # 🆕 NEW: Handle ratio operation (from calculated field)
+            if operation_type == 'ratio':
+                self.logger.info("[STAGE3] Generating ratio aggregation code (from calculated field)")
+                return self._generate_ratio_code(stage1_grounded, stage2_result, df_sample)
+            
             # Get the appropriate code generator
             code_generator_class = CODE_GENERATORS.get(operation_type)
             if not code_generator_class:
@@ -1202,6 +1355,100 @@ Create execution plan:"""}
             self.logger.error(f"[STAGE3] Error: {e}")
             # Fallback to basic aggregation
             return self._generate_fallback_code(stage1_grounded)
+    
+    def _generate_ratio_code(self, stage1_grounded, stage2_result, df_sample: pl.DataFrame) -> str:
+        """
+        Generate polars code for ratio metrics (from calculated fields)
+        
+        Args:
+            stage1_grounded: Stage 1 results
+            stage2_result: Stage 2 results with ratio formula
+            df_sample: Sample dataframe
+            
+        Returns:
+            Generated polars code for ratio computation
+        """
+        self.logger.info("[RATIO_CODE] Generating ratio aggregation code")
+        
+        # Extract formula from Stage 2
+        numerator = getattr(stage2_result, 'numerator_column', None)
+        denominator = getattr(stage2_result, 'column', None)  # Stored in 'column' field
+        
+        if not numerator or not denominator:
+            self.logger.error(f"[RATIO_CODE] Missing formula: numerator={numerator}, denominator={denominator}")
+            return self._generate_fallback_code(stage1_grounded)
+        
+        self.logger.info(f"[RATIO_CODE] Formula: {numerator} / {denominator}")
+        
+        # Build filter expression from temporal filters
+        filter_expr = "True"  # Default: no filter
+        
+        if stage2_result.temporal_filters:
+            # Get date column
+            date_column = stage1_grounded.date_column
+            if not date_column:
+                # Try to find date column
+                date_column = self._discover_and_validate_date_column(stage1_grounded, stage2_result, df_sample)
+            
+            if date_column and stage2_result.temporal_filters:
+                temporal_filter = stage2_result.temporal_filters[0]
+                if temporal_filter.filter_type == 'specific_month' and temporal_filter.month:
+                    month = temporal_filter.month
+                    # Default to current year if not specified
+                    year = temporal_filter.year if hasattr(temporal_filter, 'year') and temporal_filter.year else self.CURRENT_YEAR
+                    filter_expr = f"((df['{date_column}'].dt.month() == {month}) & (df['{date_column}'].dt.year() == {year}))"
+                    self.logger.info(f"[RATIO_CODE] Added temporal filter: month={month}, year={year}")
+        
+        # Get group by columns
+        group_by_columns = stage2_result.group_by_columns or []
+        
+        # Generate data cleaning code for numerator and denominator
+        cleaning_code = f"""# Clean and convert date column to datetime
+if '{stage1_grounded.date_column}' in df.columns:
+    try:
+        df = df.with_columns(
+            pl.col('{stage1_grounded.date_column}').str.to_datetime(strict=False).alias('{stage1_grounded.date_column}')
+        )
+    except:
+        pass
+
+# Clean and convert numeric columns
+for col in ['{numerator}', '{denominator}']:
+    if col in df.columns:
+        df = df.with_columns(
+            pl.col(col).cast(pl.Float64, strict=False).alias(col)
+        )
+"""
+        
+        # Generate ratio aggregation code
+        if group_by_columns and len(group_by_columns) > 0:
+            # Grouped ratio aggregation
+            group_cols_str = ', '.join([f'"{col}"' for col in group_by_columns])
+            aggregation_code = f"""
+# Apply filters
+df_filtered = df.filter({filter_expr})
+
+# Grouped ratio aggregation: {numerator} / {denominator}
+result = df_filtered.group_by([{group_cols_str}]).agg([
+    (pl.sum("{numerator}") / pl.sum("{denominator}")).alias("result")
+])
+"""
+        else:
+            # Simple ratio aggregation (no grouping)
+            aggregation_code = f"""
+# Apply filters
+df_filtered = df.filter({filter_expr})
+
+# Simple ratio aggregation: {numerator} / {denominator}
+result = df_filtered.select([
+    (pl.sum("{numerator}") / pl.sum("{denominator}")).alias("result")
+])
+"""
+        
+        final_code = cleaning_code + aggregation_code
+        self.logger.info(f"[RATIO_CODE] ✅ Generated ratio code: {numerator}/{denominator}")
+        
+        return final_code
     
     def _discover_and_validate_date_column(self, stage1_result, stage2_result, df_sample: pl.DataFrame) -> Optional[str]:
         """
