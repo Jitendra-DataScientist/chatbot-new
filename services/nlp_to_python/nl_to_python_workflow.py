@@ -738,7 +738,7 @@ Column Description Queries:
                 self.filter_value = None
                 self.additional_filters = None
                 self.group_by_columns = None
-                self.metric_column = 'case_id' if 'case_id' in df_columns else df_columns[0]
+                self.metric_column = None
                 self.date_column = None
                 self.secondary_columns = None
                 self.temporal_intent = None
@@ -804,10 +804,11 @@ Column Description Queries:
         # Let LLM handle all operations including column descriptions
         
         if not self.use_agentic_mode:
-            return self._fallback_stage2(stage1_grounded)
+            return self._fallback_stage2(stage1_grounded, query)
         
-        # Check if Stage 1 identified a month name as filter but missed temporal intent
-        should_use_fallback = False
+        # 🔥 ROBUST FIX: Detect if temporal filter is expected (for fix-up after LLM)
+        # Don't bypass LLM - let it determine agg_functions correctly
+        temporal_filter_expected = None
         if (hasattr(stage1_grounded, 'filter_value') and 
             hasattr(stage1_grounded, 'filter_column') and
             isinstance(stage1_grounded.filter_value, str)):
@@ -815,15 +816,22 @@ Column Description Queries:
             month_names = ['january', 'february', 'march', 'april', 'may', 'june',
                            'july', 'august', 'september', 'october', 'november', 'december']
             
-            if (stage1_grounded.filter_value.lower() in month_names and 
+            filter_value_lower = stage1_grounded.filter_value.lower()
+            if (filter_value_lower in month_names and 
                 stage1_grounded.filter_column and 
                 any(keyword in stage1_grounded.filter_column.lower() for keyword in ['date', 'month', 'time', 'created'])):
                 
-                self.logger.info(f"[STAGE2] Detected month filter '{stage1_grounded.filter_value}' on date column '{stage1_grounded.filter_column}' - using temporal fallback")
-                should_use_fallback = True
-        
-        if should_use_fallback:
-            return self._fallback_stage2(stage1_grounded)
+                # Store expected temporal filter info for fix-up (but don't bypass LLM)
+                month_mapping = {
+                    'january': 1, 'february': 2, 'march': 3, 'april': 4, 'may': 5, 'june': 6,
+                    'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+                }
+                temporal_filter_expected = {
+                    'filter_type': 'specific_month',
+                    'month': month_mapping[filter_value_lower],
+                    'filter_column': stage1_grounded.filter_column
+                }
+                self.logger.info(f"[STAGE2] Temporal filter expected: {filter_value_lower} (month={month_mapping[filter_value_lower]}) - will fix-up if LLM misses it")
         
         try:
             messages = [
@@ -937,15 +945,43 @@ Create execution plan:"""}
             self.logger.info(f"[STAGE2] ✅ Plan: operations={result.operations}, confidence={result.confidence}")
             self.logger.info(f"[STAGE2_DEBUG] group_by_columns from Stage 2: {result.group_by_columns}")
             self.logger.info(f"[STAGE2_DEBUG] compare_periods from Stage 2: {getattr(result, 'compare_periods', None)}")
+            self.logger.info(f"[STAGE2_DEBUG] agg_functions from Stage 2: {getattr(result, 'agg_functions', None)}")
             
             # Validate and correct Stage 2 results
             result = self._validate_and_correct_stage2(result, query)
+            
+            # 🔥 ROBUST FIX: Fix-up temporal filter if LLM missed it (but keep LLM's agg_functions)
+            if temporal_filter_expected:
+                has_temporal_filters = hasattr(result, 'temporal_filters') and result.temporal_filters
+                if not has_temporal_filters:
+                    self.logger.info(f"[STAGE2_FIXUP] LLM missed temporal filter, adding: {temporal_filter_expected}")
+                    
+                    # Create temporal filter object
+                    class TemporalFilterFixup:
+                        def __init__(self, filter_type, month=None, year=None):
+                            self.filter_type = filter_type
+                            self.month = month
+                            self.year = year
+                            self.quarter = None
+                            self.n_value = None
+                            self.start_date = None
+                            self.end_date = None
+                    
+                    temporal_filter = TemporalFilterFixup(
+                        filter_type=temporal_filter_expected['filter_type'],
+                        month=temporal_filter_expected['month'],
+                        year=None  # Will default to current year in filter expression builder
+                    )
+                    result.temporal_filters = [temporal_filter]
+                    self.logger.info(f"[STAGE2_FIXUP] ✅ Added temporal filter (kept LLM's agg_functions={getattr(result, 'agg_functions', None)})")
+                else:
+                    self.logger.info(f"[STAGE2] LLM correctly created temporal filters: {len(result.temporal_filters)} filter(s)")
             
             return result
             
         except Exception as e:
             self.logger.error(f"[STAGE2] Error: {e}")
-            return self._fallback_stage2(stage1_grounded)
+            return self._fallback_stage2(stage1_grounded, query)
     
     def _validate_and_correct_stage2(self, stage2_result, query: str):
         """
@@ -990,19 +1026,29 @@ Create execution plan:"""}
             
         return stage2_result
     
-    def _fallback_stage2(self, stage1_grounded):
-        """Fallback Stage 2 when LLM is not available"""
+    def _fallback_stage2(self, stage1_grounded, query: str = ""):
+        """Fallback Stage 2 when LLM is not available or fails
+        
+        🔥 ROBUST FIX: This fallback now determines agg_functions based on:
+        1. Query keywords (average, median, max, min, etc.)
+        2. If metric_column exists → default to 'sum' (user wants metric value)
+        3. If no metric_column → default to 'count' (user wants row count)
+        """
+        # Determine aggregation function from query and context
+        agg_functions = self._determine_agg_function_from_query(query, stage1_grounded)
+        
         class FallbackPlan:
-            def __init__(self):
+            def __init__(self, agg_funcs):
                 self.temporal_filters = []
                 self.operations = ['grouped_aggregation']
-                self.agg_functions = ['count']
+                self.agg_functions = agg_funcs  # 🔥 No longer hardcoded!
                 self.group_by_columns = []  # 🔥 COLLISION DETECTION FIX BY ANIKET - Added missing attribute
                 self.confidence = 0.5
                 self.reasoning = 'Fallback plan - basic aggregation'
                 self.ambiguities = []
         
-        plan = FallbackPlan()
+        plan = FallbackPlan(agg_functions)
+        self.logger.info(f"[FALLBACK_STAGE2] 🔥 Using intelligent agg_functions={agg_functions} (not hardcoded 'count')")
         
         # 🔥 COLLISION DETECTION FIX BY ANIKET - START
         # Extract group_by_columns from Stage 1 to prevent NoneType errors
@@ -1059,6 +1105,60 @@ Create execution plan:"""}
                 self.logger.info(f"[FALLBACK_STAGE2] Created temporal filter: {temporal_intent} -> month={month_mapping[temporal_intent]}, year will default to current")
         
         return plan
+    
+    def _determine_agg_function_from_query(self, query: str, stage1_result) -> list:
+        """
+        🔥 ROBUST FIX: Determine aggregation function from query keywords and context.
+        
+        This method is used by _fallback_stage2 when Stage 2 LLM fails or is unavailable.
+        Instead of hardcoding 'count', we intelligently determine the aggregation based on:
+        1. Explicit keywords in the query (average, median, max, min, sum, total)
+        2. If metric_column exists → default to 'sum' (user wants metric value)
+        3. If no metric_column → default to 'count' (user wants row count)
+        
+        Args:
+            query: The original user query
+            stage1_result: Stage 1 result containing metric_column info
+            
+        Returns:
+            List of aggregation functions (e.g., ['sum'], ['mean'], ['count'])
+        """
+        query_lower = query.lower()
+        
+        # Check for explicit aggregation keywords
+        if any(kw in query_lower for kw in ['average', 'avg', 'mean']):
+            self.logger.info("[AGG_DETECT] Detected 'average/avg/mean' keyword → agg_functions=['mean']")
+            return ['mean']
+        
+        if 'median' in query_lower:
+            self.logger.info("[AGG_DETECT] Detected 'median' keyword → agg_functions=['median']")
+            return ['median']
+        
+        if any(kw in query_lower for kw in ['maximum', 'max ']):  # space after max to avoid matching 'may'
+            self.logger.info("[AGG_DETECT] Detected 'max/maximum' keyword → agg_functions=['max']")
+            return ['max']
+        
+        if any(kw in query_lower for kw in ['minimum', 'min ']):  # space after min to avoid false positives
+            self.logger.info("[AGG_DETECT] Detected 'min/minimum' keyword → agg_functions=['min']")
+            return ['min']
+        
+        if any(kw in query_lower for kw in ['total', 'sum ']):  # explicit sum
+            self.logger.info("[AGG_DETECT] Detected 'total/sum' keyword → agg_functions=['sum']")
+            return ['sum']
+        
+        # Check for count keywords (only if no metric column - otherwise user wants metric value)
+        has_metric = hasattr(stage1_result, 'metric_column') and stage1_result.metric_column
+        if any(kw in query_lower for kw in ['count', 'number of', 'how many']) and not has_metric:
+            self.logger.info("[AGG_DETECT] Detected count keyword without metric → agg_functions=['count']")
+            return ['count']
+        
+        # Default based on metric_column presence
+        if has_metric:
+            self.logger.info(f"[AGG_DETECT] No explicit keyword, but metric_column='{stage1_result.metric_column}' exists → agg_functions=['sum']")
+            return ['sum']
+        else:
+            self.logger.info("[AGG_DETECT] No explicit keyword, no metric_column → agg_functions=['count']")
+            return ['count']
     
     def _stage3_code_generation(self, stage1_grounded, stage2_result, query: str, df_sample: pl.DataFrame) -> str:
         """Stage 3: Code Generation using the new modular code generators"""
@@ -1580,17 +1680,10 @@ Create execution plan:"""}
         else:
             column_param = getattr(stage2_result, 'column', None) or stage1_result.metric_column
         
-        # 🆕 CRITICAL FIX: Handle None metric_column case
-        # If metric_column is None, provide sensible defaults based on operation type
+        # metric_column - no fallback to hardcoded column names
         metric_column = stage1_result.metric_column
         if metric_column is None:
-            # For counting operations, use a common ID column
-            if primary_operation in ['time_series', 'grouped_aggregation', 'breakdown', 'ranking']:
-                metric_column = 'case_id'  # Default to case_id for counting
-                self.logger.info(f"[PARAM_FIX] metric_column was None, defaulting to 'case_id' for {primary_operation}")
-            else:
-                metric_column = 'case_id'  # General fallback
-                self.logger.info(f"[PARAM_FIX] metric_column was None, using fallback 'case_id'")
+            self.logger.warning(f"[PARAM_FIX] metric_column is None for {primary_operation} - no fallback applied")
         
         # Also fix column_param if it's None
         if column_param is None:
@@ -1723,7 +1816,7 @@ Create execution plan:"""}
     def _generate_fallback_code(self, stage1_result) -> str:
         """Generate fallback polars code for basic aggregation"""
         group_by = stage1_result.group_by_columns or []
-        metric = stage1_result.metric_column or 'case_id'
+        metric = stage1_result.metric_column
         
         if group_by:
             # 🔥 FIX: Use polars syntax instead of pandas

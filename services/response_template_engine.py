@@ -246,6 +246,11 @@ Here's the percentage breakdown across different {entity_name}:
             # Format results nicely - pass NL result for better column detection
             formatted_results = self._format_ranking_results(df, is_top, nl_result)
             
+            # 🔥 GRACEFUL FALLBACK: If ranking format failed, use fallback markdown
+            if formatted_results is None:
+                master_logger.info("[TEMPLATE] Ranking format not possible, using fallback markdown")
+                return fallback
+            
             # Generate insights - pass NL result for better column detection
             if is_top:
                 insight = self._generate_top_insight(df, entity_name, metric_name, nl_result)
@@ -329,7 +334,11 @@ Here's the percentage breakdown across different {entity_name}:
         return cat_col, num_col
     
     def _format_ranking_results(self, df: pd.DataFrame, is_top: bool, nl_result=None) -> str:
-        """Format ranking results cleanly"""
+        """Format ranking results cleanly
+        
+        Returns:
+            str: Formatted results, or None if formatting not possible (caller should use fallback)
+        """
         try:
             results = []
             
@@ -340,8 +349,37 @@ Here's the percentage breakdown across different {entity_name}:
             master_logger.info(f"[TEMPLATE] Available columns: {list(df.columns)}")
             
             if not cat_col or not num_col:
-                master_logger.error(f"[TEMPLATE] Missing columns - cat_col: {cat_col}, num_col: {num_col}")
-                return "Unable to format results"
+                master_logger.warning(f"[TEMPLATE] Missing columns for ranking format - cat_col: {cat_col}, num_col: {num_col}")
+                
+                # 🔥 GRACEFUL FALLBACK: Handle single-value aggregations
+                if num_col and len(df) > 0:
+                    # We have a numeric column - format as simple aggregation result
+                    value = df.iloc[0][num_col]
+                    if isinstance(value, (int, np.integer)):
+                        formatted_value = f"{value:,}"
+                    elif isinstance(value, (float, np.floating)):
+                        formatted_value = f"{value:,.2f}"
+                    else:
+                        formatted_value = str(value)
+                    master_logger.info(f"[TEMPLATE] Using simple value format: {formatted_value}")
+                    return f"**Result:** {formatted_value}"
+                elif not num_col and len(df.columns) > 0:
+                    # Try to find ANY numeric column in the dataframe
+                    for col in df.columns:
+                        if pd.api.types.is_numeric_dtype(df[col]) and len(df) > 0:
+                            value = df.iloc[0][col]
+                            if isinstance(value, (int, np.integer)):
+                                formatted_value = f"{value:,}"
+                            elif isinstance(value, (float, np.floating)):
+                                formatted_value = f"{value:,.2f}"
+                            else:
+                                formatted_value = str(value)
+                            master_logger.info(f"[TEMPLATE] Found numeric column '{col}', using simple format: {formatted_value}")
+                            return f"**Result:** {formatted_value}"
+                
+                # No suitable columns found - return None to signal caller to use fallback
+                master_logger.warning(f"[TEMPLATE] Cannot format results, signaling caller to use fallback")
+                return None
             
             for i, (_, row) in enumerate(df.iterrows()):
                 entity = str(row[cat_col])
