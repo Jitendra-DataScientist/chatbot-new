@@ -333,7 +333,7 @@ class TableauDataProcessor:
         """
         try:
             # Generate pandas code
-            nl_result = self.nl_to_python.generate_pandas_code(query, df.columns.tolist(), df)
+            nl_result = self.nl_to_python.generate_python_code(query, df.columns.tolist(), df)
             
             # Execute the code
             result, status = self.nl_to_python.execute_code(nl_result.generated_code, df)

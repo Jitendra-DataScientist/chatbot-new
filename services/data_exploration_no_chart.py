@@ -167,7 +167,7 @@ class data_exploration:
                                         query_metadata: Optional[Dict] = None) -> Dict[str, Any]:
         # Convert pandas to polars if needed (DataManager returns pandas)
         if csv_data is not None and isinstance(csv_data, pd.DataFrame):
-            csv_data = pl.from_pandas(csv_data)
+            csv_data = pl.from_pandas(csv_data, include_index=False)
             master_logger.info("Converted pandas DataFrame to polars")
         """Process query using ConversationOrchestrator"""
         master_logger.info("[ORCHESTRATOR] Processing with conversational support")
@@ -257,9 +257,9 @@ class data_exploration:
         """Process query using single-turn logic"""
         # Convert pandas to polars if needed (DataManager returns pandas)
         if csv_data is not None and isinstance(csv_data, pd.DataFrame):
-            csv_data = pl.from_pandas(csv_data)
+            csv_data = pl.from_pandas(csv_data, include_index=False)
             master_logger.info("Converted pandas DataFrame to polars")
-        
+
         if csv_data is not None:
             master_logger.info(f"Original CSV data shape: {csv_data.shape}")
             master_logger.info(f"Original CSV columns: {list(csv_data.columns)}")

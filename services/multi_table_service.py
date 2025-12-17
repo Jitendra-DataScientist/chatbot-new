@@ -231,7 +231,7 @@ class TableauMultiTableService:
                 return {'error': f'No matching records found when joining on {join_key}'}
             
             # Generate aggregation based on query
-            aggregation_result = self.nl_to_python.generate_pandas_code(
+            aggregation_result = self.nl_to_python.generate_python_code(
                 query, merged_df.columns.tolist(), merged_df
             )
             
@@ -319,7 +319,7 @@ class TableauMultiTableService:
                 df = self.worksheets[ws_name]
                 
                 # Generate pandas code for the query
-                aggregation_result = self.nl_to_python.generate_pandas_code(
+                aggregation_result = self.nl_to_python.generate_python_code(
                     query, df.columns.tolist(), df
                 )
                 

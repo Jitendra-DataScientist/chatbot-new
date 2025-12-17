@@ -160,9 +160,11 @@ class data_exploration:
             
             # Check if result is scalar or singular value (single row) - no visualization needed
             is_scalar_result = False
-            if analysis_result and analysis_result.get('pandas_execution'):
-                result_type = analysis_result['pandas_execution'].get('result', {}).get('type')
-                result_shape = analysis_result['pandas_execution'].get('result', {}).get('shape', (0, 0))
+            if analysis_result and analysis_result.get('pandas_execution') is not None:
+                pandas_exec = analysis_result['pandas_execution']
+                result_data = pandas_exec.get('result', {}) if pandas_exec else {}
+                result_type = result_data.get('type') if result_data else None
+                result_shape = result_data.get('shape', (0, 0)) if result_data else (0, 0)
                 
                 # Check for both true scalars and singular value DataFrames (1 row = singular answer)
                 is_scalar_result = (result_type == 'scalar') or (result_type == 'dataframe' and result_shape[0] == 1)
@@ -924,9 +926,9 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
             
             # Use original CSV if available, else fall back to provided df
             df_for_code = self.original_csv_data if self.original_csv_data is not None else df
-            
+
             # Generate code using date-aware 3-layer defense
-            nl_result = self.nl_to_python.generate_pandas_code(
+            nl_result = self.nl_to_python.generate_python_code(
                 query=query,
                 df_columns=list(df_for_code.columns),
                 df_sample=df_for_code

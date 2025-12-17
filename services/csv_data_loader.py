@@ -139,6 +139,25 @@ class CSVDataLoader:
         try:
             # Load CSV data
             self.data = pd.read_csv(self.csv_file_path)
+
+            # ============================================================
+            # FIX: Normalize mixed-type object columns for PyArrow/Polars
+            # Problem: Large CSVs cause pandas to infer types per-chunk,
+            #          creating columns with MIXED types (str, bool, int, float).
+            #          PyArrow fails with "Expected bytes, got a 'X' object"
+            # Solution: Convert non-string values to strings in object columns
+            # ============================================================
+            for col in self.data.columns:
+                if self.data[col].dtype == 'object':
+                    # Convert any non-string, non-null value to string
+                    self.data[col] = self.data[col].apply(
+                        lambda x: x if pd.isna(x) or isinstance(x, str) else str(x)
+                    )
+            self.logger.info("✓ Normalized object columns for PyArrow compatibility")
+
+            # Apply convert_dtypes() to handle remaining type conversions
+            self.data = self.data.convert_dtypes()
+
             self.logger.info(f"Successfully loaded CSV with {len(self.data)} rows and {len(self.data.columns)} columns")
             
             # Generate summary statistics

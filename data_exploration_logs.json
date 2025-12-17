@@ -1,0 +1,92 @@
+[
+  {
+    "timestamp": "2025-12-16T17:29:44.976155",
+    "user_query": "twc value in may 2025",
+    "generated_code": "",
+    "generated_answer": "Error: 'NoneType' object has no attribute 'get'",
+    "execution_status": "failed",
+    "chart_selected": "none",
+    "data_shape": "(2464795, 48)",
+    "session_id": "anonymous"
+  },
+  {
+    "timestamp": "2025-12-16T17:52:53.995773",
+    "user_query": "twc value in may",
+    "generated_code": "",
+    "generated_answer": "Analysis completed. Unable to format results: 'NoneType' object has no attribute 'get'",
+    "execution_status": "success",
+    "chart_selected": "none",
+    "data_shape": "(2464795, 48)",
+    "session_id": "anonymous"
+  },
+  {
+    "timestamp": "2025-12-16T18:32:04.221619",
+    "user_query": "twc value in may?",
+    "generated_code": "",
+    "generated_answer": "Analysis completed. Unable to format results: 'NoneType' object has no attribute 'get'",
+    "execution_status": "success",
+    "chart_selected": "none",
+    "data_shape": "(2464795, 48)",
+    "session_id": "anonymous"
+  },
+  {
+    "timestamp": "2025-12-16T18:44:21.598026",
+    "user_query": "twc value in may",
+    "generated_code": "",
+    "generated_answer": "Analysis completed. Unable to format results: 'NoneType' object has no attribute 'get'",
+    "execution_status": "success",
+    "chart_selected": "none",
+    "data_shape": "(2464795, 48)",
+    "session_id": "anonymous"
+  },
+  {
+    "timestamp": "2025-12-16T18:55:11.306253",
+    "user_query": "twc value in may 2025",
+    "generated_code": "",
+    "generated_answer": "Analysis completed. Unable to format results: 'NoneType' object has no attribute 'get'",
+    "execution_status": "success",
+    "chart_selected": "none",
+    "data_shape": "(2464795, 48)",
+    "session_id": "anonymous"
+  },
+  {
+    "timestamp": "2025-12-16T19:06:36.612945",
+    "user_query": "twc value in may 2025",
+    "generated_code": "",
+    "generated_answer": "Analysis completed. Unable to format results: 'NoneType' object has no attribute 'get'",
+    "execution_status": "success",
+    "chart_selected": "none",
+    "data_shape": "(2464795, 48)",
+    "session_id": "anonymous"
+  },
+  {
+    "timestamp": "2025-12-16T19:13:04.336936",
+    "user_query": "twc value in may 2025",
+    "generated_code": "",
+    "generated_answer": "Analysis completed. Unable to format results: 'NoneType' object has no attribute 'get'",
+    "execution_status": "success",
+    "chart_selected": "none",
+    "data_shape": "(2464795, 48)",
+    "session_id": "anonymous"
+  },
+  {
+    "timestamp": "2025-12-16T19:55:38.062561",
+    "user_query": "twc value in may",
+    "generated_code": "",
+    "generated_answer": "Analysis completed. Unable to format results: 'NoneType' object has no attribute 'get'",
+    "execution_status": "success",
+    "chart_selected": "none",
+    "data_shape": "(2464795, 48)",
+    "session_id": "anonymous"
+  },
+  {
+    "timestamp": "2025-12-16T20:03:55.856269",
+    "user_query": "twc value in may",
+    "generated_code": "",
+    "generated_answer": "Analysis completed. Unable to format results: 'NoneType' object has no attribute 'get'",
+    "execution_status": "success",
+    "chart_selected": "none",
+    "data_shape": "(2464795, 48)",
+    "session_id": "anonymous"
+  }
+]
