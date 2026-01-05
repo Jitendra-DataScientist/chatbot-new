@@ -908,14 +908,98 @@ Column Description Queries:
         return result
     
     def _stage1_5_value_grounding(self, stage1_result, df_sample: pl.DataFrame, state: Dict[str, Any]):
-        """Stage 1.5: Value Grounding & Validation"""
-        # For now, return the original result - value grounding can be enhanced later
+        """
+        Stage 1.5: Value Grounding & Validation
+
+        ✅ FIX #4: Validate and correct Stage 1 metric column selection
+        """
+        # Get query from state
+        query = state.get('query', '').lower()
+
+        # ✅ FIX #4: Validate metric column selection
+        if hasattr(stage1_result, 'metric_column') and stage1_result.metric_column:
+            corrected_metric = self._validate_and_correct_metric_column(
+                query=query,
+                selected_metric=stage1_result.metric_column,
+                df_columns=list(df_sample.columns),
+                df_sample=df_sample
+            )
+
+            if corrected_metric != stage1_result.metric_column:
+                self.logger.info(f"[STAGE1.5] ✅ FIX #4: Corrected metric column: '{stage1_result.metric_column}' → '{corrected_metric}'")
+                stage1_result.metric_column = corrected_metric
+
         return stage1_result
-    
+
+    def _validate_and_correct_metric_column(self, query: str, selected_metric: str, df_columns: List[str], df_sample: pl.DataFrame) -> str:
+        """
+        ✅ FIX #4: Validate and correct metric column selection from Stage 1.
+
+        Problem: LLM-based Stage 1 sometimes selects wrong metric column when query has temporal context.
+        Example: "count of tickets in march 2025" → selects "case_id" instead of "Number of Tickets"
+
+        Strategy: Check if selected metric is an identifier column, and if query mentions a specific
+        metric keyword (tickets, cases, records, etc.), prefer the dedicated metric column.
+
+        Args:
+            query: User's query (lowercased)
+            selected_metric: The metric column selected by Stage 1
+            df_columns: List of available columns
+            df_sample: Sample dataframe
+
+        Returns:
+            Corrected metric column (or original if no correction needed)
+        """
+        # Keywords that suggest counting records (not summing identifiers)
+        count_keywords = ['count', 'number', 'total', 'how many']
+
+        # Check if query is about counting
+        is_count_query = any(keyword in query for keyword in count_keywords)
+
+        if not is_count_query:
+            # Not a count query, selected metric is probably correct
+            return selected_metric
+
+        # Check if selected metric is an identifier column
+        is_identifier = self._is_identifier_column(selected_metric, self._current_workbook_name)
+
+        if not is_identifier:
+            # Selected metric is not an identifier, probably correct
+            return selected_metric
+
+        # Selected metric IS an identifier in a count query - try to find better metric
+        self.logger.info(f"[METRIC_VALIDATION] Selected metric '{selected_metric}' is an identifier in a count query")
+
+        # Extract entity keywords from query (tickets, cases, issues, records, etc.)
+        entity_keywords = {
+            'ticket': ['Number of Tickets', 'Tickets', 'Ticket Count', 'Total Tickets'],
+            'case': ['Number of Cases', 'Cases', 'Case Count', 'Total Cases'],
+            'issue': ['Number of Issues', 'Issues', 'Issue Count', 'Total Issues'],
+            'record': ['Number of Records', 'Records', 'Record Count', 'Total Records'],
+            'request': ['Number of Requests', 'Requests', 'Request Count', 'Total Requests'],
+        }
+
+        # Find which entity is mentioned in the query
+        for entity, candidate_columns in entity_keywords.items():
+            if entity in query:
+                # Check if any candidate column exists in dataframe
+                for candidate in candidate_columns:
+                    if candidate in df_columns:
+                        # Found a better metric column!
+                        self.logger.info(f"[METRIC_VALIDATION] Found better metric column: '{candidate}' for entity '{entity}'")
+                        return candidate
+
+        # No better column found, keep original
+        self.logger.info(f"[METRIC_VALIDATION] No better metric column found, keeping '{selected_metric}'")
+        return selected_metric
+
     def _stage2_agentic_planning(self, stage1_grounded, df_sample: pl.DataFrame, query: str = ""):
         """Stage 2: Agentic Planning"""
+        # ✅ FIX #1: Import Stage2AgenticPlan at method start to ensure it's always available
+        from .nl_to_python_schemas import Stage2AgenticPlan
+
         # Let LLM handle all operations including column descriptions
-        
+
         if not self.use_agentic_mode:
             return self._fallback_stage2(stage1_grounded, query)
         
@@ -966,9 +1050,9 @@ Column Description Queries:
                         filter_type=temporal_filter_expected['filter_type'],
                         month=temporal_filter_expected['month']
                     ))
-                
+
                 # Create a Stage2AgenticPlan for ratio operation
-                from .nl_to_python_schemas import Stage2AgenticPlan
+                # (Already imported at method start - Fix #1)
                 return Stage2AgenticPlan(
                     operations=['ratio'],
                     temporal_filters=temporal_filters,
@@ -1697,8 +1781,14 @@ result = df_filtered.select([
                     # Year is explicitly provided
                     return f"(({datetime_expr}.dt.month() == {month}) & ({datetime_expr}.dt.year() == {year}))"
                 else:
-                    # 🔥 FIX: No year provided, default to current year
-                    return f"(({datetime_expr}.dt.month() == {month}) & ({datetime_expr}.dt.year() == datetime.datetime.now().year))"
+                    # ✅ FIX #3: Use smart default year from data, not current system year
+                    if df_sample is not None:
+                        smart_year = self._get_smart_default_year(df_sample, date_column)
+                        self.logger.info(f"[TEMPORAL_FILTER] Using smart default year: {smart_year}")
+                        return f"(({datetime_expr}.dt.month() == {month}) & ({datetime_expr}.dt.year() == {smart_year}))"
+                    else:
+                        # Fallback if no df_sample provided
+                        return f"(({datetime_expr}.dt.month() == {month}) & ({datetime_expr}.dt.year() == datetime.datetime.now().year))"
         
         elif filter_type == 'specific_year':
             year = temp_filter.year
@@ -1711,8 +1801,14 @@ result = df_filtered.select([
             if quarter and year:
                 return f"(({datetime_expr}.dt.quarter() == {quarter}) & ({datetime_expr}.dt.year() == {year}))"
             elif quarter:
-                # 🔥 FIX: No year provided, default to current year
-                return f"(({datetime_expr}.dt.quarter() == {quarter}) & ({datetime_expr}.dt.year() == datetime.datetime.now().year))"
+                # ✅ FIX #3: Use smart default year from data, not current system year
+                if df_sample is not None:
+                    smart_year = self._get_smart_default_year(df_sample, date_column)
+                    self.logger.info(f"[TEMPORAL_FILTER] Using smart default year: {smart_year}")
+                    return f"(({datetime_expr}.dt.quarter() == {quarter}) & ({datetime_expr}.dt.year() == {smart_year}))"
+                else:
+                    # Fallback if no df_sample provided
+                    return f"(({datetime_expr}.dt.quarter() == {quarter}) & ({datetime_expr}.dt.year() == datetime.datetime.now().year))"
         
         elif filter_type == 'date_range':
             start = temp_filter.start_date
@@ -1785,6 +1881,19 @@ result = df_filtered.select([
                     is_temporal_filter = True
                     self.logger.info(f"[PARAM_BUILD] Skipping filter on date column '{filter_column}' - handled by temporal filter")
             
+            # ✅ FIX #2: Additional validation - prevent datetime column string comparisons
+            if not is_temporal_filter and filter_column in df_sample.columns:
+                col_dtype = df_sample[filter_column].dtype
+
+                # Check if trying to compare datetime column to string
+                if col_dtype in [pl.Date, pl.Datetime, pl.Time]:
+                    if isinstance(filter_value, str):
+                        # This would cause polars InvalidOperationError
+                        self.logger.warning(f"[PARAM_BUILD] ✅ FIX #2: Blocking datetime-to-string comparison")
+                        self.logger.warning(f"[PARAM_BUILD] Column '{filter_column}' is {col_dtype}, but filter_value is string: '{filter_value}'")
+                        self.logger.warning(f"[PARAM_BUILD] This should be handled as temporal filter, not regular filter")
+                        is_temporal_filter = True  # Mark as temporal to skip adding regular filter
+
             # Only add regular filter if it's not being handled temporally
             if not is_temporal_filter:
                 filters.append({
@@ -1816,7 +1925,18 @@ result = df_filtered.select([
                     if any(keyword in filter_col_lower for keyword in date_keywords):
                         is_temporal_filter = True
                         self.logger.info(f"[PARAM_BUILD] Skipping additional filter on date column '{filter_column}' - handled by temporal filter")
-                
+
+                # ✅ FIX #2: Additional validation for additional_filters too
+                if not is_temporal_filter and filter_column in df_sample.columns:
+                    col_dtype = df_sample[filter_column].dtype
+
+                    # Check if trying to compare datetime column to string
+                    if col_dtype in [pl.Date, pl.Datetime, pl.Time]:
+                        if isinstance(filter_value, str):
+                            self.logger.warning(f"[PARAM_BUILD] ✅ FIX #2: Blocking datetime-to-string comparison in additional_filter")
+                            self.logger.warning(f"[PARAM_BUILD] Column '{filter_column}' is {col_dtype}, but filter_value is string: '{filter_value}'")
+                            is_temporal_filter = True  # Mark as temporal to skip
+
                 # Only add if not temporal
                 if not is_temporal_filter:
                     filters.append({
@@ -2487,6 +2607,60 @@ if '{metric_column}' in df.columns:
         self.logger.debug(f"[YEAR_DETECTION] No explicit year found in query")
         return False
 
+    def _get_smart_default_year(self, df: pl.DataFrame, date_column: str) -> int:
+        """
+        ✅ FIX #3: Analyze the date column to find the most recent year with data.
+        This is used as a smart default when user doesn't specify a year.
+
+        Strategy: Use the maximum (most recent) year in the data, not the current system year.
+        This prevents queries like "tickets in March" from returning 0 when data doesn't
+        include the current year.
+
+        Args:
+            df: DataFrame with data
+            date_column: Name of the date column to analyze
+
+        Returns:
+            Most recent year found in the data, or current year as fallback
+        """
+        try:
+            # Ensure date column exists
+            if date_column not in df.columns:
+                self.logger.warning(f"[SMART_YEAR] Date column '{date_column}' not found in dataframe")
+                return datetime.now().year
+
+            # Get the maximum date in the column
+            # First, ensure it's in datetime format
+            col_dtype = df[date_column].dtype
+
+            if col_dtype in [pl.Date, pl.Datetime]:
+                # Already datetime, get max directly
+                max_date = df.select(pl.col(date_column).max()).item()
+            elif col_dtype == pl.String or col_dtype == pl.Utf8:
+                # String column - try to parse and get max
+                try:
+                    max_date = df.select(
+                        pl.col(date_column).str.to_datetime(strict=False).max()
+                    ).item()
+                except:
+                    self.logger.warning(f"[SMART_YEAR] Could not parse string dates in '{date_column}'")
+                    return datetime.now().year
+            else:
+                self.logger.warning(f"[SMART_YEAR] Unsupported date column type: {col_dtype}")
+                return datetime.now().year
+
+            # Extract year from max date
+            if max_date and hasattr(max_date, 'year'):
+                max_year = max_date.year
+                self.logger.info(f"[SMART_YEAR] ✅ Found most recent year in data: {max_year}")
+                return max_year
+            else:
+                self.logger.warning(f"[SMART_YEAR] Could not extract year from max date: {max_date}")
+                return datetime.now().year
+
+        except Exception as e:
+            self.logger.error(f"[SMART_YEAR] Error analyzing date column '{date_column}': {e}")
+            return datetime.now().year
 
     def _handle_column_description_direct(self, stage1_grounded, stage2_result, query: str, df_sample: pl.DataFrame) -> Optional[NLToPythonResult]:
         """
