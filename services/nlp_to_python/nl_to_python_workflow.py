@@ -432,7 +432,17 @@ class NLToPythonGeneratorV5:
         # 🆕 Load workbook metadata for identifier detection
         self.workbook_metadata = self._load_all_workbook_metadata()
         self.logger.info(f"[METADATA] Loaded metadata for {len(self.workbook_metadata)} workbook(s)")
-        
+
+        # 🆕 Load chart column mappings for aggregation semantics
+        self.chart_column_mappings = self._load_chart_column_mappings()
+        if self.chart_column_mappings:
+            total_columns = len(self.chart_column_mappings.get('column_metadata', {}))
+            columns_with_semantics = sum(1 for col in self.chart_column_mappings.get('column_metadata', {}).values()
+                                         if col.get('aggregation_semantics'))
+            self.logger.info(f"[CHART_MAPPINGS] Loaded column mappings: {total_columns} columns, {columns_with_semantics} with aggregation semantics")
+        else:
+            self.logger.warning("[CHART_MAPPINGS] Chart column mappings not available - will use fallback behavior")
+
         # 🆕 Initialize observability and performance tracking (ALWAYS ON)
         self.performance_tracker = LangGraphPerformanceTracker()
         self.state_logger = LangGraphStateLogger(self.logger)
@@ -466,7 +476,97 @@ class NLToPythonGeneratorV5:
         except Exception as e:
             self.logger.error(f"[METADATA] Failed to load workbook metadata: {e}", exc_info=True)
             return {}
-    
+
+    def _load_chart_column_mappings(self) -> Optional[Dict[str, Any]]:
+        """
+        Load chart_column_mappings.json for aggregation semantics and column metadata.
+
+        This file contains:
+        - Column metadata with type information
+        - Aggregation semantics (typical aggregation functions for each column)
+        - Calculated field formulas from all charts
+
+        Returns:
+            Dict with dashboards, column_metadata, and summary, or None if file doesn't exist
+        """
+        try:
+            mappings_path = os.path.join(os.getcwd(), 'chart_column_mappings.json')
+            if os.path.exists(mappings_path):
+                with open(mappings_path, 'r', encoding='utf-8') as f:
+                    mappings = json.load(f)
+                    self.logger.debug(f"[CHART_MAPPINGS] Loaded from {mappings_path}")
+                    return mappings
+            else:
+                self.logger.debug(f"[CHART_MAPPINGS] File not found at {mappings_path} - using fallback")
+                return None
+        except Exception as e:
+            self.logger.error(f"[CHART_MAPPINGS] Failed to load chart column mappings: {e}", exc_info=True)
+            return None
+
+    def _get_column_aggregation_semantic(self, column_name: str, workbook_name: Optional[str] = None) -> Optional[Dict]:
+        """
+        Get aggregation semantic information for a column.
+
+        Args:
+            column_name: Name of the column (normalized)
+            workbook_name: Optional workbook name for context
+
+        Returns:
+            Dict with aggregation semantic info:
+            {
+                "typical_aggregation": "SUM",
+                "aggregations": {"SUM": 47, "AVG": 3},
+                "confidence": 0.94
+            }
+            Or None if no semantic data available
+        """
+        if not self.chart_column_mappings:
+            return None
+
+        column_metadata = self.chart_column_mappings.get('column_metadata', {})
+        col_normalized = column_name.lower().strip()
+
+        # Direct lookup
+        if col_normalized in column_metadata:
+            col_info = column_metadata[col_normalized]
+            return col_info.get('aggregation_semantics')
+
+        # Try without underscores
+        col_no_underscores = col_normalized.replace('_', '')
+        for col_key, col_info in column_metadata.items():
+            if col_key.replace('_', '') == col_no_underscores:
+                return col_info.get('aggregation_semantics')
+
+        return None
+
+    def _get_column_type_from_metadata(self, column_name: str) -> Optional[str]:
+        """
+        Get column type from chart_column_mappings metadata.
+
+        Args:
+            column_name: Name of the column (normalized)
+
+        Returns:
+            Column type ('numeric', 'identifier', 'categorical', 'datetime') or None
+        """
+        if not self.chart_column_mappings:
+            return None
+
+        column_metadata = self.chart_column_mappings.get('column_metadata', {})
+        col_normalized = column_name.lower().strip()
+
+        # Direct lookup
+        if col_normalized in column_metadata:
+            return column_metadata[col_normalized].get('type')
+
+        # Try without underscores
+        col_no_underscores = col_normalized.replace('_', '')
+        for col_key, col_info in column_metadata.items():
+            if col_key.replace('_', '') == col_no_underscores:
+                return col_info.get('type')
+
+        return None
+
     def _load_chart_calculated_fields(self, chart_name: str, workbook_name: str) -> List[Dict]:
         """
         Load calculated field definitions from chart metadata as hints for Stage 1.
@@ -1181,7 +1281,10 @@ Create execution plan:"""}
             
             # Validate and correct Stage 2 results
             result = self._validate_and_correct_stage2(result, query)
-            
+
+            # 🆕 NEW: Enhance aggregation functions using chart column mappings semantic data
+            result = self._enhance_agg_with_semantics(result, stage1_grounded, query)
+
             # 🔥 ROBUST FIX: Fix-up temporal filter if LLM missed it (but keep LLM's agg_functions)
             if temporal_filter_expected:
                 has_temporal_filters = hasattr(result, 'temporal_filters') and result.temporal_filters
@@ -1214,7 +1317,88 @@ Create execution plan:"""}
         except Exception as e:
             self.logger.error(f"[STAGE2] Error: {e}")
             return self._fallback_stage2(stage1_grounded, query)
-    
+
+    def _enhance_agg_with_semantics(self, stage2_result, stage1_grounded, query: str):
+        """
+        Enhance aggregation functions using chart_column_mappings semantic data.
+
+        Uses aggregation semantics to determine the correct aggregation function
+        based on how the column is typically used in Tableau charts.
+
+        Args:
+            stage2_result: Stage 2 plan from LLM
+            stage1_grounded: Stage 1 column selections
+            query: Original user query
+
+        Returns:
+            Enhanced Stage 2 plan with corrected aggregation functions
+        """
+        if not self.chart_column_mappings:
+            return stage2_result
+
+        # Only enhance if this is a grouped_aggregation operation
+        if not hasattr(stage2_result, 'operations') or 'grouped_aggregation' not in stage2_result.operations:
+            return stage2_result
+
+        metric_column = getattr(stage1_grounded, 'metric_column', None)
+        if not metric_column:
+            return stage2_result
+
+        # Get aggregation semantic information for this column
+        agg_semantic = self._get_column_aggregation_semantic(metric_column)
+        if not agg_semantic:
+            self.logger.debug(f"[AGG_SEMANTIC] No semantic data for column '{metric_column}'")
+            return stage2_result
+
+        typical_agg = agg_semantic.get('typical_aggregation', '').upper()
+        confidence = agg_semantic.get('confidence', 0.0)
+
+        # Get current agg_functions from Stage 2
+        current_agg_functions = getattr(stage2_result, 'agg_functions', ['count'])
+        if isinstance(current_agg_functions, str):
+            current_agg_functions = [current_agg_functions]
+
+        # Determine if we should use semantic information
+        query_lower = query.lower()
+        is_count_query = any(word in query_lower for word in ['count', 'number of', 'how many'])
+        is_sum_query = any(word in query_lower for word in ['total', 'sum'])
+        is_avg_query = any(word in query_lower for word in ['average', 'avg', 'mean'])
+
+        # Decision logic
+        should_override = False
+        suggested_agg = typical_agg.lower()
+
+        if typical_agg == 'SUM' and confidence >= 0.7:
+            # Column is typically SUMmed (like 'twc')
+            if is_count_query:
+                # User asked for "count of twc" but twc is a numeric metric that should be summed
+                should_override = True
+                suggested_agg = 'sum'
+                self.logger.info(f"[AGG_SEMANTIC] '{metric_column}' is typically SUMmed ({confidence:.0%} confidence)")
+                self.logger.info(f"[AGG_SEMANTIC] Query uses 'count' but column semantic suggests SUM - overriding")
+            elif current_agg_functions == ['count'] or not current_agg_functions:
+                # Default count aggregation, but semantic suggests SUM
+                should_override = True
+                suggested_agg = 'sum'
+                self.logger.info(f"[AGG_SEMANTIC] '{metric_column}' is typically SUMmed - using SUM instead of COUNT")
+
+        elif typical_agg == 'COUNTD':
+            # Column is typically COUNTDed (like identifiers)
+            if current_agg_functions == ['sum']:
+                should_override = True
+                suggested_agg = 'count'  # Use COUNT as polars doesn't have n_unique in agg context the same way
+                self.logger.info(f"[AGG_SEMANTIC] '{metric_column}' is an identifier (COUNTD) - using COUNT instead of SUM")
+
+        # Apply the override if needed
+        if should_override:
+            stage2_result.agg_functions = [suggested_agg]
+            self.logger.info(f"[AGG_SEMANTIC] ✅ Updated agg_functions: {current_agg_functions} → [{suggested_agg}]")
+            self.logger.info(f"[AGG_SEMANTIC]    Reason: Semantic data shows '{metric_column}' used with {typical_agg} in {agg_semantic.get('total_aggregation_uses', 0)} charts")
+        else:
+            self.logger.debug(f"[AGG_SEMANTIC] Keeping LLM's agg_functions={current_agg_functions} for '{metric_column}'")
+
+        return stage2_result
+
     def _validate_and_correct_stage2(self, stage2_result, query: str):
         """
         Validate and correct common Stage 2 LLM mistakes

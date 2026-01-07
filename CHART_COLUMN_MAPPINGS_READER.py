@@ -285,7 +285,138 @@ class TableauColumnMappingExtractor:
         self.calculate_dependency_levels(dependencies)
 
         return dependencies, all_calc_names
-    
+
+    def _extract_aggregations_from_formula(self, formula: str) -> Dict[str, List[str]]:
+        """
+        Extract aggregation functions and their target columns from a formula.
+
+        Returns:
+            Dict mapping column names to list of aggregations used on them
+            Example: {"twc": ["SUM", "SUM"], "case_id": ["COUNTD"]}
+        """
+        if not formula:
+            return {}
+
+        aggregations = {}
+
+        # Tableau aggregation functions to detect
+        agg_functions = ['SUM', 'COUNT', 'COUNTD', 'AVG', 'MIN', 'MAX', 'MEDIAN', 'STDEV', 'VAR']
+
+        for agg_func in agg_functions:
+            # Pattern: AGG_FUNC([column_name])
+            # Use regex to find all instances
+            pattern = rf'{agg_func}\s*\(\s*\[([^\]]+)\]\s*\)'
+            matches = re.findall(pattern, formula, re.IGNORECASE)
+
+            for col_name in matches:
+                col_normalized = col_name.strip().lower().replace(' ', '_')
+
+                if col_normalized not in aggregations:
+                    aggregations[col_normalized] = []
+                aggregations[col_normalized].append(agg_func.upper())
+
+        return aggregations
+
+    def _analyze_aggregation_semantics(self) -> Dict[str, Dict]:
+        """
+        Analyze all formulas to determine typical aggregation for each base column.
+
+        Returns:
+            Dict mapping column names to aggregation statistics
+            Example: {
+                "twc": {
+                    "aggregations": {"SUM": 47, "AVG": 3},
+                    "most_common": "SUM",
+                    "usage_frequency": 50,
+                    "typical_aggregation": "SUM"
+                }
+            }
+        """
+        aggregation_stats = {}
+
+        # Analyze all calculated fields across all dashboards
+        for dashboard in self.results.get('dashboards', []):
+            for chart in dashboard.get('charts', []):
+                for calc_field in chart.get('all_calculated_fields', []):
+                    formula = calc_field.get('formula', '')
+
+                    # Extract aggregations from this formula
+                    formula_aggs = self._extract_aggregations_from_formula(formula)
+
+                    # Accumulate statistics
+                    for col_name, agg_list in formula_aggs.items():
+                        if col_name not in aggregation_stats:
+                            aggregation_stats[col_name] = {}
+
+                        for agg in agg_list:
+                            if agg not in aggregation_stats[col_name]:
+                                aggregation_stats[col_name][agg] = 0
+                            aggregation_stats[col_name][agg] += 1
+
+        # Process statistics to determine typical aggregation
+        semantic_data = {}
+        for col_name, agg_counts in aggregation_stats.items():
+            if not agg_counts:
+                continue
+
+            # Find most common aggregation
+            most_common = max(agg_counts.items(), key=lambda x: x[1])
+            total_uses = sum(agg_counts.values())
+
+            semantic_data[col_name] = {
+                "aggregations": agg_counts,
+                "most_common_aggregation": most_common[0],
+                "most_common_count": most_common[1],
+                "total_aggregation_uses": total_uses,
+                "typical_aggregation": most_common[0],  # For easy access
+                "confidence": round(most_common[1] / total_uses, 2) if total_uses > 0 else 0.0
+            }
+
+        return semantic_data
+
+    def _infer_column_type_from_usage(self, column_name: str, aggregation_semantic: Dict) -> str:
+        """
+        Infer column type from how it's used in formulas.
+        More reliable than keyword-based inference.
+
+        Args:
+            column_name: The column name
+            aggregation_semantic: Aggregation semantic data for this column
+
+        Returns:
+            Column type: 'numeric', 'identifier', 'categorical', 'datetime'
+        """
+        col_lower = column_name.lower()
+
+        # Priority 1: Usage-based inference (most reliable)
+        if aggregation_semantic:
+            typical_agg = aggregation_semantic.get('typical_aggregation', '')
+
+            # Columns used with SUM, AVG, MIN, MAX are numeric
+            if typical_agg in ['SUM', 'AVG', 'MIN', 'MAX', 'MEDIAN', 'STDEV', 'VAR']:
+                return 'numeric'
+
+            # Columns used with COUNTD are likely identifiers
+            elif typical_agg == 'COUNTD':
+                return 'identifier'
+
+            # Columns used with COUNT might be categorical
+            elif typical_agg == 'COUNT':
+                return 'categorical'
+
+        # Priority 2: Name-based inference
+        if any(keyword in col_lower for keyword in ['date', 'time', 'month', 'year', 'day', 'week', 'created', 'updated']):
+            return 'datetime'
+        elif any(keyword in col_lower for keyword in ['id', 'number', 'case', 'ticket']):
+            return 'identifier'
+        elif any(keyword in col_lower for keyword in ['queue', 'status', 'country', 'type', 'category', 'state', 'priority']):
+            return 'categorical'
+        elif any(keyword in col_lower for keyword in ['count', 'amount', 'total', 'sum', 'avg', 'rate', 'percent', 'aht', 'volume', 'twc', 'wwc', 'cost', 'spend', 'price']):
+            return 'numeric'
+
+        # Default
+        return 'categorical'
+
     def _infer_column_type(self, column_name: str, datatype: str) -> str:
         """
         Infer column type from name and datatype.
@@ -556,13 +687,36 @@ class TableauColumnMappingExtractor:
                 self.results["summary"]["errors"].append(error_msg)
                 # Continue processing other files instead of failing completely
 
+        # ✅ NEW: Analyze aggregation semantics across all formulas
+        print(f"\n🔍 Analyzing aggregation semantics from formulas...")
+        aggregation_semantics = self._analyze_aggregation_semantics()
+        print(f"   Found aggregation patterns for {len(aggregation_semantics)} columns")
+
+        # ✅ NEW: Enhance column_metadata with aggregation semantics and fix types
+        for col_name, col_meta in self.results["column_metadata"].items():
+            agg_semantic = aggregation_semantics.get(col_name, {})
+
+            # Add aggregation semantic information
+            if agg_semantic:
+                col_meta["aggregation_semantics"] = agg_semantic
+
+                # Update column type based on usage (more reliable than keywords)
+                updated_type = self._infer_column_type_from_usage(col_name, agg_semantic)
+                if updated_type != col_meta["type"]:
+                    print(f"   ✓ Updated '{col_name}' type: {col_meta['type']} → {updated_type} (based on {agg_semantic['typical_aggregation']} usage)")
+                    col_meta["type"] = updated_type
+            else:
+                col_meta["aggregation_semantics"] = None
+
         # Update summary statistics
         total_charts = sum(len(d["charts"]) for d in self.results["dashboards"])
+        columns_with_semantics = sum(1 for col in self.results["column_metadata"].values() if col.get("aggregation_semantics"))
 
         self.results["summary"].update({
             "total_dashboards": len(self.results["dashboards"]),
             "total_charts": total_charts,
             "total_unique_columns": len(self.results["column_metadata"]),
+            "columns_with_aggregation_semantics": columns_with_semantics,
             "dashboards_processed": [d["dashboard_name"] for d in self.results["dashboards"]]
         })
     
