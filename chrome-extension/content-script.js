@@ -846,22 +846,76 @@
   }
 
   // Enhanced message handling with static chart support
+  // 🆕 PHASE 5: Render applied filter information
+  function renderAppliedFilters(container, filterInfo) {
+    try {
+      if (!filterInfo || !filterInfo.filters_applied || !filterInfo.dashboard_filters || filterInfo.dashboard_filters.length === 0) {
+        return; // No filters to display
+      }
+
+      ContentLogger.debug('[PHASE5] Rendering applied filters', {
+        filterCount: filterInfo.filter_count,
+        filters: filterInfo.dashboard_filters
+      });
+
+      const filterDiv = document.createElement('div');
+      filterDiv.className = 'applied-filters-info';
+      filterDiv.style.cssText = `
+        margin: 12px 0 0 0;
+        padding: 10px 14px;
+        background: #eff6ff;
+        border-left: 3px solid #3b82f6;
+        border-radius: 4px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #1e40af;
+      `;
+
+      const filterTitle = document.createElement('div');
+      filterTitle.innerHTML = `<strong>🔍 Dashboard Filters Applied:</strong>`;
+      filterTitle.style.marginBottom = '6px';
+      filterDiv.appendChild(filterTitle);
+
+      const filterList = document.createElement('div');
+      filterList.style.cssText = `
+        margin-left: 8px;
+        font-size: 11px;
+        color: #1e3a8a;
+      `;
+
+      filterInfo.dashboard_filters.forEach(filter => {
+        const filterItem = document.createElement('div');
+        filterItem.textContent = `• ${filter}`;
+        filterItem.style.marginBottom = '2px';
+        filterList.appendChild(filterItem);
+      });
+
+      filterDiv.appendChild(filterList);
+      container.appendChild(filterDiv);
+
+      ContentLogger.info('[PHASE5] Applied filters rendered successfully');
+
+    } catch (error) {
+      ContentLogger.warn('[PHASE5] Error rendering filter info', { error: error.message });
+    }
+  }
+
   function appendMessage(text, type, data = null, messageId = null) {
     const div = document.createElement('div');
     div.className = `tableau-msg ${type}`;
-    
+
     // Add ID if provided for later updates
     if (messageId) {
       div.id = messageId;
     }
-    
+
     // Handle different message types
     if (type.includes('error')) {
       div.classList.add('error');
     } else if (type.includes('status')) {
       div.classList.add('status');
     }
-    
+
     // Handle 7-layer interpretive analysis with collapsible sections
     if (data && (data.analysis_type === 'interpretive_multi_metric' || data.analysis_type === 'interpretive')) {
       debugLog('Rendering 7-layer interpretive analysis', data);
@@ -882,17 +936,26 @@
       // Convert markdown to HTML
       text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
       text = text.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      text = text.replace(/`(.*?)`/g, '<code>$1</code>');
       text = text.replace(/\n/g, '<br>');
       text = text.replace(/#{1,6}\s+(.*)/g, '<strong>$1</strong>'); // Headers
       div.innerHTML = text;
     } else {
       div.textContent = text;
     }
-    
+
+    // 🆕 PHASE 5: Add filter information if available
+    if (data && type.includes('bot') && !type.includes('error')) {
+      const filterInfo = {
+        filters_applied: data.filters_applied || false,
+        dashboard_filters: data.dashboard_filters || [],
+        filter_count: data.filter_count || 0
+      };
+      renderAppliedFilters(div, filterInfo);
+    }
+
     ui.chatLog.appendChild(div);
     ui.chatLog.scrollTop = ui.chatLog.scrollHeight;
-    
+
     debugLog(`Message appended: [${type}] ${text}`);
   }
 
@@ -4254,6 +4317,859 @@
     // Note: submitBtn state is managed by input event listener, not manually disabled here
   }
 
+  // ============================================================================
+  // PHASE 3: TABLEAU FILTER CAPTURE
+  // ============================================================================
+
+  /**
+   * Clean Tableau field name to extract the actual field name
+   * Tableau uses internal format like "[federated.xxx][none:client:nk]"
+   * We need to extract "client" from this
+   */
+  function cleanTableauFieldName(fieldName) {
+    if (!fieldName) return '';
+
+    try {
+      // Pattern 1: [none|yr|mn|dy|qr|sum|avg|cnt:FIELDNAME:...]
+      const match1 = fieldName.match(/\[(?:none|yr|mn|dy|qr|sum|avg|cnt):([^:]+):/);
+      if (match1) {
+        return match1[1].toLowerCase();
+      }
+
+      // Pattern 2: Last segment after colon
+      const segments = fieldName.split(':');
+      if (segments.length > 1) {
+        const lastSegment = segments[segments.length - 1];
+        return lastSegment.replace(/[\[\]]/g, '').toLowerCase();
+      }
+
+      // Fallback: remove all brackets
+      return fieldName.replace(/[\[\]]/g, '').toLowerCase();
+    } catch (error) {
+      ContentLogger.warn('[FILTER_CAPTURE] Error cleaning field name', { fieldName, error: error.message });
+      return fieldName.toLowerCase();
+    }
+  }
+
+  /**
+   * Capture active Tableau dashboard filters using Tableau JavaScript API
+   * Returns structured filter data or null if filters cannot be captured
+   */
+  async function getActiveTableauFilters() {
+    try {
+      ContentLogger.debug('[FILTER_CAPTURE] Starting filter capture...');
+
+      // Check if Tableau JavaScript API is available
+      if (typeof tableau === 'undefined') {
+        ContentLogger.debug('[FILTER_CAPTURE] Tableau API not available (window.tableau undefined)');
+        return null;
+      }
+
+      // Check for VizManager (used in embedded views)
+      if (!tableau.VizManager) {
+        ContentLogger.debug('[FILTER_CAPTURE] Tableau VizManager not available, trying Extensions API...');
+
+        // Try Extensions API as fallback (for dashboard extensions)
+        if (tableau.extensions && tableau.extensions.dashboardContent) {
+          const dashboard = tableau.extensions.dashboardContent.dashboard;
+          if (dashboard && dashboard.worksheets && dashboard.worksheets.length > 0) {
+            ContentLogger.debug('[FILTER_CAPTURE] Using Extensions API to get filters');
+            const worksheet = dashboard.worksheets[0];
+
+            const filters = await worksheet.getFiltersAsync();
+            return parseFiltersFromExtensionsAPI(filters);
+          }
+        }
+
+        ContentLogger.debug('[FILTER_CAPTURE] No supported Tableau API found');
+        return null;
+      }
+
+      // Get viz instances
+      const vizList = tableau.VizManager.getVizs();
+      if (!vizList || vizList.length === 0) {
+        ContentLogger.debug('[FILTER_CAPTURE] No Tableau viz found');
+        return null;
+      }
+
+      const viz = vizList[0];
+      const workbook = viz.getWorkbook();
+      const activeSheet = workbook.getActiveSheet();
+
+      ContentLogger.debug('[FILTER_CAPTURE] Found active sheet', {
+        sheetName: activeSheet.getName(),
+        sheetType: activeSheet.getSheetType()
+      });
+
+      // Get filters from the active sheet
+      const filters = await activeSheet.getFiltersAsync();
+
+      ContentLogger.debug('[FILTER_CAPTURE] Retrieved filters', {
+        filterCount: filters ? filters.length : 0
+      });
+
+      if (!filters || filters.length === 0) {
+        ContentLogger.debug('[FILTER_CAPTURE] No active filters found');
+        return null;
+      }
+
+      // Parse filters into structured format
+      const filterState = {};
+
+      for (const filter of filters) {
+        try {
+          const fieldName = filter.getFieldName();
+          const filterType = filter.getFilterType();
+
+          // Clean field name (remove Tableau internal formatting)
+          const cleanFieldName = cleanTableauFieldName(fieldName);
+
+          let filterData = {
+            type: filterType,
+            field_name_raw: fieldName
+          };
+
+          // Get filter values based on type
+          if (filterType === 'categorical') {
+            filterData.values = filter.getAppliedValues().map(v => v.value);
+            filterData.is_exclude = filter.getIsExcludeMode();
+
+            ContentLogger.debug('[FILTER_CAPTURE] Categorical filter', {
+              field: cleanFieldName,
+              values: filterData.values,
+              isExclude: filterData.is_exclude
+            });
+
+          } else if (filterType === 'range') {
+            filterData.min = filter.getMin();
+            filterData.max = filter.getMax();
+
+            ContentLogger.debug('[FILTER_CAPTURE] Range filter', {
+              field: cleanFieldName,
+              min: filterData.min,
+              max: filterData.max
+            });
+
+          } else if (filterType === 'relative-date') {
+            filterData.period_type = filter.getPeriodType();
+            filterData.range_n = filter.getRangeN();
+            filterData.range_type = filter.getRangeType();
+
+            ContentLogger.debug('[FILTER_CAPTURE] Relative date filter', {
+              field: cleanFieldName,
+              periodType: filterData.period_type,
+              rangeN: filterData.range_n,
+              rangeType: filterData.range_type
+            });
+          }
+
+          filterState[cleanFieldName] = filterData;
+
+        } catch (filterError) {
+          ContentLogger.warn('[FILTER_CAPTURE] Error processing filter', {
+            error: filterError.message
+          });
+        }
+      }
+
+      ContentLogger.info('[FILTER_CAPTURE] Successfully captured filters', {
+        filterCount: Object.keys(filterState).length,
+        fields: Object.keys(filterState)
+      });
+
+      return filterState;
+
+    } catch (error) {
+      ContentLogger.warn('[FILTER_CAPTURE] Error capturing filters', {
+        error: error.message,
+        stack: error.stack
+      });
+      return null;
+    }
+  }
+
+  /**
+   * Parse filters from Tableau Extensions API format
+   * (Fallback when VizManager is not available)
+   */
+  function parseFiltersFromExtensionsAPI(filters) {
+    if (!filters || filters.length === 0) return null;
+
+    const filterState = {};
+
+    for (const filter of filters) {
+      try {
+        const fieldName = filter.fieldName || filter.getFieldName();
+        const cleanFieldName = cleanTableauFieldName(fieldName);
+
+        filterState[cleanFieldName] = {
+          type: filter.filterType || 'categorical',
+          field_name_raw: fieldName,
+          values: filter.appliedValues || [],
+          is_exclude: false
+        };
+      } catch (error) {
+        ContentLogger.warn('[FILTER_CAPTURE] Error parsing Extensions API filter', { error: error.message });
+      }
+    }
+
+    return Object.keys(filterState).length > 0 ? filterState : null;
+  }
+
+  /**
+   * PHASE 4: Detect filter mentions in user query using NLP patterns
+   * @param {string} query - User's natural language query
+   * @returns {Object} - Detected filter key-value pairs from query
+   */
+  function detectQueryFilters(query) {
+    if (!query) return {};
+
+    ContentLogger.debug('[QUERY_FILTER_DETECT] Analyzing query for filter mentions', { query });
+
+    const queryFilters = {};
+    const queryLower = query.toLowerCase();
+
+    try {
+      // Month detection
+      const monthMatch = queryLower.match(/\b(?:in|for|during)\s+(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)\b/i);
+      if (monthMatch) {
+        queryFilters.month = monthMatch[1];
+        ContentLogger.debug('[QUERY_FILTER_DETECT] Detected month filter', { month: monthMatch[1] });
+      }
+
+      // Year detection
+      const yearMatch = queryLower.match(/\b(?:in|for|year|during)\s+(20\d{2})\b/);
+      if (yearMatch) {
+        queryFilters.year = yearMatch[1];
+        ContentLogger.debug('[QUERY_FILTER_DETECT] Detected year filter', { year: yearMatch[1] });
+      }
+
+      // Client detection - look for "for client", "client:", "client ="
+      const clientMatch = query.match(/\b(?:for\s+client|client[:=]?)\s+([A-Za-z0-9\s\-_]+?)(?:\s+and|\s+in|\s+for|,|$)/i);
+      if (clientMatch) {
+        queryFilters.client = clientMatch[1].trim();
+        ContentLogger.debug('[QUERY_FILTER_DETECT] Detected client filter', { client: clientMatch[1].trim() });
+      }
+
+      // Vendor detection
+      const vendorMatch = query.match(/\b(?:vendor|from\s+vendor|vendor[:=]?)\s+([A-Za-z0-9\s\-_]+?)(?:\s+and|\s+in|\s+for|,|$)/i);
+      if (vendorMatch) {
+        queryFilters.vendor = vendorMatch[1].trim();
+        ContentLogger.debug('[QUERY_FILTER_DETECT] Detected vendor filter', { vendor: vendorMatch[1].trim() });
+      }
+
+      // Domain detection
+      const domainMatch = query.match(/\b(?:domain|in\s+domain|domain[:=]?)\s+([A-Za-z0-9\s\-_]+?)(?:\s+and|\s+in|\s+for|,|$)/i);
+      if (domainMatch) {
+        queryFilters.domain = domainMatch[1].trim();
+        ContentLogger.debug('[QUERY_FILTER_DETECT] Detected domain filter', { domain: domainMatch[1].trim() });
+      }
+
+      ContentLogger.info('[QUERY_FILTER_DETECT] Query filter detection complete', {
+        detectedCount: Object.keys(queryFilters).length,
+        filters: queryFilters
+      });
+
+    } catch (error) {
+      ContentLogger.warn('[QUERY_FILTER_DETECT] Error during filter detection', {
+        error: error.message,
+        query
+      });
+    }
+
+    return queryFilters;
+  }
+
+  /**
+   * PHASE 4: Detect conflicts between dashboard filters and query filters
+   * @param {Object} dashboardFilters - Filters active in Tableau dashboard
+   * @param {Object} queryFilters - Filters detected from user query
+   * @returns {Array} - Array of conflict objects
+   */
+  function detectFilterConflicts(dashboardFilters, queryFilters) {
+    const conflicts = [];
+
+    if (!dashboardFilters || !queryFilters) return conflicts;
+
+    for (const [field, queryValue] of Object.entries(queryFilters)) {
+      if (dashboardFilters[field]) {
+        const dashboardFilterData = dashboardFilters[field];
+
+        // For categorical filters, check if values match
+        if (dashboardFilterData.type === 'categorical') {
+          const dashboardValues = dashboardFilterData.values || [];
+          const queryValueLower = queryValue.toLowerCase();
+
+          // Check if query value is in dashboard values
+          const matchFound = dashboardValues.some(v =>
+            v.toLowerCase().includes(queryValueLower) ||
+            queryValueLower.includes(v.toLowerCase())
+          );
+
+          if (!matchFound) {
+            conflicts.push({
+              field: field,
+              dashboardValue: dashboardValues.join(', '),
+              queryValue: queryValue,
+              type: 'value_mismatch'
+            });
+          }
+        }
+      }
+    }
+
+    if (conflicts.length > 0) {
+      ContentLogger.info('[FILTER_CONFLICT] Detected conflicts between dashboard and query filters', {
+        conflictCount: conflicts.length,
+        conflicts
+      });
+    }
+
+    return conflicts;
+  }
+
+  /**
+   * PHASE 4: Show filter prompt UI modal to let user choose filter behavior
+   * @param {string} query - User's query text
+   * @param {Object} dashboardFilters - Active dashboard filters
+   * @param {Object} queryFilters - Detected query filters
+   * @param {Array} conflicts - Array of detected conflicts
+   * @returns {Promise<Object>} - Resolves with user's choice { applyFilters: boolean }
+   */
+  function showFilterPromptModal(query, dashboardFilters, queryFilters, conflicts) {
+    return new Promise((resolve) => {
+      ContentLogger.debug('[FILTER_PROMPT] Showing filter prompt modal');
+
+      // Create overlay
+      const overlay = document.createElement('div');
+      overlay.className = 'filter-prompt-overlay';
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 2147483650;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s ease-out;
+      `;
+
+      // Create modal content
+      const modal = document.createElement('div');
+      modal.className = 'filter-prompt-modal';
+      modal.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+        animation: slideUp 0.3s ease-out;
+      `;
+
+      // Header
+      const header = document.createElement('div');
+      header.style.cssText = `
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid #e2e8f0;
+      `;
+
+      const title = document.createElement('h3');
+      title.textContent = '🔍 Dashboard Filters Detected';
+      title.style.cssText = `
+        margin: 0 0 8px 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #1e293b;
+      `;
+
+      const subtitle = document.createElement('p');
+      subtitle.textContent = 'Your dashboard has active filters. How should I process your query?';
+      subtitle.style.cssText = `
+        margin: 0;
+        font-size: 14px;
+        color: #64748b;
+      `;
+
+      header.appendChild(title);
+      header.appendChild(subtitle);
+
+      // Dashboard filters section
+      const dashboardSection = document.createElement('div');
+      dashboardSection.style.cssText = `
+        margin-bottom: 16px;
+        padding: 16px;
+        background: #f8fafc;
+        border-radius: 8px;
+        border-left: 4px solid #3b82f6;
+      `;
+
+      const dashboardTitle = document.createElement('h4');
+      dashboardTitle.textContent = '📊 Active Dashboard Filters:';
+      dashboardTitle.style.cssText = `
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+      `;
+      dashboardSection.appendChild(dashboardTitle);
+
+      const dashboardList = document.createElement('ul');
+      dashboardList.style.cssText = `
+        margin: 0;
+        padding-left: 20px;
+        list-style-type: none;
+      `;
+
+      for (const [field, filterData] of Object.entries(dashboardFilters)) {
+        const li = document.createElement('li');
+        li.style.cssText = `
+          margin-bottom: 8px;
+          font-size: 13px;
+          color: #475569;
+        `;
+
+        let valueDisplay = '';
+        if (filterData.type === 'categorical') {
+          valueDisplay = filterData.values.join(', ');
+          if (filterData.is_exclude) {
+            valueDisplay = `NOT (${valueDisplay})`;
+          }
+        } else if (filterData.type === 'range') {
+          valueDisplay = `${filterData.min || '∞'} to ${filterData.max || '∞'}`;
+        }
+
+        li.innerHTML = `<strong style="color: #1e293b;">${field}:</strong> <span style="color: #3b82f6;">${valueDisplay}</span>`;
+        dashboardList.appendChild(li);
+      }
+
+      dashboardSection.appendChild(dashboardList);
+
+      // Query section
+      const querySection = document.createElement('div');
+      querySection.style.cssText = `
+        margin-bottom: 16px;
+        padding: 16px;
+        background: #fef3c7;
+        border-radius: 8px;
+        border-left: 4px solid #f59e0b;
+      `;
+
+      const queryTitle = document.createElement('h4');
+      queryTitle.textContent = '💬 Your Query:';
+      queryTitle.style.cssText = `
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+      `;
+
+      const queryText = document.createElement('p');
+      queryText.textContent = `"${query}"`;
+      queryText.style.cssText = `
+        margin: 0;
+        font-size: 13px;
+        color: #475569;
+        font-style: italic;
+      `;
+
+      querySection.appendChild(queryTitle);
+      querySection.appendChild(queryText);
+
+      // Query filters detected (if any)
+      if (Object.keys(queryFilters).length > 0) {
+        const queryFiltersTitle = document.createElement('p');
+        queryFiltersTitle.textContent = 'Detected filters from your query:';
+        queryFiltersTitle.style.cssText = `
+          margin: 12px 0 8px 0;
+          font-size: 13px;
+          font-weight: 600;
+          color: #92400e;
+        `;
+        querySection.appendChild(queryFiltersTitle);
+
+        const queryFiltersList = document.createElement('ul');
+        queryFiltersList.style.cssText = `
+          margin: 0;
+          padding-left: 20px;
+          list-style-type: none;
+        `;
+
+        for (const [field, value] of Object.entries(queryFilters)) {
+          const li = document.createElement('li');
+          li.style.cssText = `
+            margin-bottom: 4px;
+            font-size: 13px;
+            color: #78350f;
+          `;
+          li.innerHTML = `<strong>${field}:</strong> ${value}`;
+          queryFiltersList.appendChild(li);
+        }
+
+        querySection.appendChild(queryFiltersList);
+      }
+
+      // Conflicts warning (if any)
+      if (conflicts.length > 0) {
+        const conflictSection = document.createElement('div');
+        conflictSection.style.cssText = `
+          margin-bottom: 16px;
+          padding: 16px;
+          background: #fee2e2;
+          border-radius: 8px;
+          border-left: 4px solid #ef4444;
+        `;
+
+        const conflictTitle = document.createElement('h4');
+        conflictTitle.textContent = '⚠️ Conflicts Detected:';
+        conflictTitle.style.cssText = `
+          margin: 0 0 8px 0;
+          font-size: 14px;
+          font-weight: 600;
+          color: #991b1b;
+        `;
+
+        const conflictText = document.createElement('p');
+        conflictText.style.cssText = `
+          margin: 0 0 8px 0;
+          font-size: 13px;
+          color: #7f1d1d;
+        `;
+
+        const conflictDetails = conflicts.map(c =>
+          `<strong>${c.field}</strong>: Dashboard has "${c.dashboardValue}" but query asks for "${c.queryValue}"`
+        ).join('<br>');
+
+        conflictText.innerHTML = conflictDetails;
+
+        const conflictNote = document.createElement('p');
+        conflictNote.textContent = 'If you apply dashboard filters, both filters will be combined (may result in no data).';
+        conflictNote.style.cssText = `
+          margin: 8px 0 0 0;
+          font-size: 12px;
+          color: #991b1b;
+          font-style: italic;
+        `;
+
+        conflictSection.appendChild(conflictTitle);
+        conflictSection.appendChild(conflictText);
+        conflictSection.appendChild(conflictNote);
+
+        modal.appendChild(conflictSection);
+      }
+
+      // Options section
+      const optionsSection = document.createElement('div');
+      optionsSection.style.cssText = `
+        margin-bottom: 20px;
+      `;
+
+      const optionsTitle = document.createElement('p');
+      optionsTitle.textContent = 'How should I answer your query?';
+      optionsTitle.style.cssText = `
+        margin: 0 0 12px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: #1e293b;
+      `;
+
+      const optionsContainer = document.createElement('div');
+      optionsContainer.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      `;
+
+      // Option 1: Apply filters
+      const applyOption = document.createElement('label');
+      applyOption.style.cssText = `
+        display: flex;
+        align-items: start;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `;
+
+      // 🆕 PHASE 5: Load saved filter preference from session
+      let savedPreference = 'apply'; // Default to 'apply'
+      try {
+        const saved = sessionStorage.getItem('tableau_chatbot_filter_preference');
+        if (saved === 'apply' || saved === 'ignore') {
+          savedPreference = saved;
+          ContentLogger.debug('[PHASE5] Loaded filter preference from session', {
+            preference: savedPreference
+          });
+        }
+      } catch (error) {
+        ContentLogger.warn('[PHASE5] Could not load filter preference', {
+          error: error.message
+        });
+      }
+
+      const applyRadio = document.createElement('input');
+      applyRadio.type = 'radio';
+      applyRadio.name = 'filter-choice';
+      applyRadio.value = 'apply';
+      applyRadio.checked = (savedPreference === 'apply'); // 🆕 Use saved preference
+      applyRadio.style.cssText = `
+        margin-right: 12px;
+        margin-top: 2px;
+        cursor: pointer;
+      `;
+
+      const applyText = document.createElement('div');
+      applyText.innerHTML = `
+        <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">✅ Apply dashboard filters</div>
+        <div style="font-size: 13px; color: #64748b;">Show results that match both the dashboard filters and your query (filtered view)</div>
+      `;
+
+      applyOption.appendChild(applyRadio);
+      applyOption.appendChild(applyText);
+
+      applyOption.addEventListener('mouseenter', function() {
+        this.style.borderColor = '#3b82f6';
+        this.style.background = '#eff6ff';
+      });
+
+      applyOption.addEventListener('mouseleave', function() {
+        this.style.borderColor = '#e2e8f0';
+        this.style.background = 'white';
+      });
+
+      // Option 2: Ignore filters
+      const ignoreOption = document.createElement('label');
+      ignoreOption.style.cssText = `
+        display: flex;
+        align-items: start;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `;
+
+      const ignoreRadio = document.createElement('input');
+      ignoreRadio.type = 'radio';
+      ignoreRadio.name = 'filter-choice';
+      ignoreRadio.value = 'ignore';
+      ignoreRadio.checked = (savedPreference === 'ignore'); // 🆕 Use saved preference
+      ignoreRadio.style.cssText = `
+        margin-right: 12px;
+        margin-top: 2px;
+        cursor: pointer;
+      `;
+
+      const ignoreText = document.createElement('div');
+      ignoreText.innerHTML = `
+        <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">🌐 Ignore dashboard filters</div>
+        <div style="font-size: 13px; color: #64748b;">Show total/unfiltered results based only on your query</div>
+      `;
+
+      ignoreOption.appendChild(ignoreRadio);
+      ignoreOption.appendChild(ignoreText);
+
+      ignoreOption.addEventListener('mouseenter', function() {
+        this.style.borderColor = '#3b82f6';
+        this.style.background = '#eff6ff';
+      });
+
+      ignoreOption.addEventListener('mouseleave', function() {
+        this.style.borderColor = '#e2e8f0';
+        this.style.background = 'white';
+      });
+
+      optionsContainer.appendChild(applyOption);
+      optionsContainer.appendChild(ignoreOption);
+
+      optionsSection.appendChild(optionsTitle);
+      optionsSection.appendChild(optionsContainer);
+
+      // Buttons
+      const buttonsSection = document.createElement('div');
+      buttonsSection.style.cssText = `
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+      `;
+
+      const cancelButton = document.createElement('button');
+      cancelButton.textContent = 'Cancel';
+      cancelButton.type = 'button';
+      cancelButton.style.cssText = `
+        padding: 10px 20px;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: white;
+        color: #475569;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `;
+
+      cancelButton.addEventListener('mouseenter', function() {
+        this.style.background = '#f1f5f9';
+        this.style.borderColor = '#cbd5e1';
+      });
+
+      cancelButton.addEventListener('mouseleave', function() {
+        this.style.background = 'white';
+        this.style.borderColor = '#e2e8f0';
+      });
+
+      cancelButton.addEventListener('click', () => {
+        overlay.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => {
+          overlay.remove();
+          resolve(null); // User cancelled
+        }, 200);
+      });
+
+      const submitButton = document.createElement('button');
+      submitButton.textContent = 'Submit Query';
+      submitButton.type = 'button';
+      submitButton.style.cssText = `
+        padding: 10px 24px;
+        border: none;
+        border-radius: 6px;
+        background: #3b82f6;
+        color: white;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `;
+
+      submitButton.addEventListener('mouseenter', function() {
+        this.style.background = '#2563eb';
+      });
+
+      submitButton.addEventListener('mouseleave', function() {
+        this.style.background = '#3b82f6';
+      });
+
+      submitButton.addEventListener('click', () => {
+        const selectedOption = modal.querySelector('input[name="filter-choice"]:checked');
+        const applyFilters = selectedOption.value === 'apply';
+
+        ContentLogger.info('[FILTER_PROMPT] User selected option', {
+          choice: selectedOption.value,
+          applyFilters
+        });
+
+        // 🆕 PHASE 5: Save user preference for this session
+        try {
+          sessionStorage.setItem('tableau_chatbot_filter_preference', selectedOption.value);
+          ContentLogger.debug('[PHASE5] Saved filter preference to session', {
+            preference: selectedOption.value
+          });
+        } catch (error) {
+          ContentLogger.warn('[PHASE5] Could not save filter preference', {
+            error: error.message
+          });
+        }
+
+        overlay.style.animation = 'fadeOut 0.2s ease-out';
+        setTimeout(() => {
+          overlay.remove();
+          resolve({ applyFilters });
+        }, 200);
+      });
+
+      buttonsSection.appendChild(cancelButton);
+      buttonsSection.appendChild(submitButton);
+
+      // Assemble modal
+      modal.appendChild(header);
+      modal.appendChild(dashboardSection);
+      modal.appendChild(querySection);
+      modal.appendChild(optionsSection);
+      modal.appendChild(buttonsSection);
+
+      // Assemble overlay
+      overlay.appendChild(modal);
+
+      // Add to DOM
+      document.body.appendChild(overlay);
+
+      // Close on overlay click (but not modal click)
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          cancelButton.click();
+        }
+      });
+
+      // 🆕 PHASE 5: Add keyboard shortcuts
+      const keyboardHandler = (e) => {
+        switch(e.key) {
+          case 'Escape':
+            e.preventDefault();
+            cancelButton.click();
+            ContentLogger.debug('[PHASE5] Keyboard shortcut: Escape pressed - canceling');
+            break;
+
+          case 'Enter':
+            e.preventDefault();
+            submitButton.click();
+            ContentLogger.debug('[PHASE5] Keyboard shortcut: Enter pressed - submitting');
+            break;
+
+          case ' ':
+            // Toggle between options
+            e.preventDefault();
+            const currentlyChecked = modal.querySelector('input[name="filter-choice"]:checked');
+            if (currentlyChecked.value === 'apply') {
+              ignoreRadio.checked = true;
+              ContentLogger.debug('[PHASE5] Keyboard shortcut: Space pressed - toggled to ignore');
+            } else {
+              applyRadio.checked = true;
+              ContentLogger.debug('[PHASE5] Keyboard shortcut: Space pressed - toggled to apply');
+            }
+            break;
+        }
+      };
+
+      document.addEventListener('keydown', keyboardHandler);
+
+      // Remove keyboard handler when modal closes
+      const originalRemove = overlay.remove;
+      overlay.remove = function() {
+        document.removeEventListener('keydown', keyboardHandler);
+        ContentLogger.debug('[PHASE5] Keyboard shortcuts removed');
+        originalRemove.call(this);
+      };
+
+      // Add CSS animations if not already present
+      if (!document.getElementById('filter-prompt-animations')) {
+        const style = document.createElement('style');
+        style.id = 'filter-prompt-animations';
+        style.textContent = `
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+          }
+          @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+          }
+          @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    });
+  }
+
   // Handle chat form submission
   async function handleChatSubmit(ev) {
     ev.preventDefault();
@@ -4314,12 +5230,75 @@
       }
       
       updateStatus('Preparing request for enhanced analysis...');
-      
+
       // Log the chat request
       ContentLogger.logChatRequest(text, selectedChart ? selectedChart.name : null, connectionKey);
-      
-      const requestBody = { 
-        message: text, 
+
+      // PHASE 3: Capture active Tableau dashboard filters
+      let dashboardFilters = null;
+      try {
+        ContentLogger.debug('[FILTER_CAPTURE] Attempting to capture dashboard filters...');
+        dashboardFilters = await getActiveTableauFilters();
+
+        if (dashboardFilters && Object.keys(dashboardFilters).length > 0) {
+          ContentLogger.info('[FILTER_CAPTURE] Dashboard filters captured successfully', {
+            filterCount: Object.keys(dashboardFilters).length,
+            filterFields: Object.keys(dashboardFilters)
+          });
+        } else {
+          ContentLogger.debug('[FILTER_CAPTURE] No dashboard filters active');
+        }
+      } catch (filterError) {
+        ContentLogger.warn('[FILTER_CAPTURE] Failed to capture filters, continuing without them', {
+          error: filterError.message
+        });
+      }
+
+      // PHASE 4: Detect query filters and show user prompt if dashboard filters exist
+      let useDashboardFilters = false;
+      let queryFilters = null;
+
+      if (dashboardFilters && Object.keys(dashboardFilters).length > 0) {
+        // Detect filters mentioned in the query
+        queryFilters = detectQueryFilters(text);
+
+        // Detect conflicts between dashboard and query filters
+        const conflicts = detectFilterConflicts(dashboardFilters, queryFilters);
+
+        // Show filter prompt modal to let user choose
+        updateStatus('Dashboard filters detected - waiting for your choice...');
+
+        try {
+          const userChoice = await showFilterPromptModal(text, dashboardFilters, queryFilters, conflicts);
+
+          if (userChoice === null) {
+            // User cancelled - don't proceed with query
+            ContentLogger.info('[FILTER_PROMPT] User cancelled query');
+            updateMessageById(loadingId, 'Query cancelled.', 'bot status');
+            return;
+          }
+
+          useDashboardFilters = userChoice.applyFilters;
+          ContentLogger.info('[FILTER_PROMPT] User choice received', {
+            applyFilters: useDashboardFilters,
+            hasQueryFilters: queryFilters && Object.keys(queryFilters).length > 0,
+            hasConflicts: conflicts.length > 0
+          });
+
+        } catch (promptError) {
+          ContentLogger.warn('[FILTER_PROMPT] Error showing filter prompt, defaulting to ignore filters', {
+            error: promptError.message
+          });
+          useDashboardFilters = false;
+        }
+
+        updateStatus('Preparing request with your filter preferences...');
+      } else {
+        ContentLogger.debug('[FILTER_PROMPT] No dashboard filters active, skipping prompt');
+      }
+
+      const requestBody = {
+        message: text,
         context: extensionState.context,
         tableauReady: extensionState.ready,
         timestamp: new Date().toISOString(),
@@ -4330,7 +5309,11 @@
           chart_type: selectedChart.type || 'unknown'
         } : null,
         connection_key: connectionKey,
-        source: 'chrome_extension'
+        source: 'chrome_extension',
+        // PHASE 4: Include dashboard filter parameters based on user choice
+        use_dashboard_filters: useDashboardFilters,
+        dashboard_filters: dashboardFilters,
+        query_filters: queryFilters
       };
       
       debugLog('Chat request body:', requestBody);

@@ -1,0 +1,225 @@
+/**
+ * Google Apps Script for Tableau Credentials Management
+ * 
+ * SETUP INSTRUCTIONS:
+ * 1. Create a new Google Sheet with these columns:
+ *    A: username
+ *    B: password
+ *    C: site_content_url
+ *    D: tableau_server_url (optional, defaults to prod-in-a.online.tableau.com)
+ *    E: api_version (optional, defaults to 3.21)
+ * 
+ * 2. Add your credentials as rows (starting from row 2)
+ * 
+ * 3. Go to Extensions > Apps Script
+ * 4. Replace the code with this script
+ * 5. Deploy as Web App:
+ *    - Execute as: Me
+ *    - Who has access: Anyone (or Anyone with the link)
+ * 6. Copy the Web App URL to google_sheets_config.json
+ * 
+ * EXAMPLE SHEET DATA:
+ * Row 1 (Headers): username | password | site_content_url | tableau_server_url | api_version
+ * Row 2 (Data):   cca49542@gmail.com | Tableau@126 | cca49542-0680f1e1d6 | https://prod-in-a.online.tableau.com | 3.21
+ */
+
+// Sheet configuration
+const SHEET_NAME = 'Credentials'; // Change this to your sheet name
+const COLUMN_USERNAME = 1; // Column A
+const COLUMN_PASSWORD = 2; // Column B
+const COLUMN_SITE_CONTENT_URL = 3; // Column C
+const COLUMN_SERVER_URL = 4; // Column D (optional)
+const COLUMN_API_VERSION = 5; // Column E (optional)
+
+/**
+ * Handle GET requests (for testing)
+ */
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      success: true,
+      message: 'Tableau Credentials Service is running',
+      version: '1.0',
+      timestamp: new Date().toISOString()
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Handle POST requests (for credential lookup)
+ */
+function doPost(e) {
+  try {
+    // Parse the request payload
+    const payload = JSON.parse(e.postData.contents);
+    const action = payload.action || 'get_credentials';
+    
+    Logger.log('Received request - Action: ' + action);
+    
+    // Handle different actions
+    if (action === 'get_credentials') {
+      const username = payload.username;
+      
+      if (!username) {
+        return createErrorResponse('Username is required');
+      }
+      
+      Logger.log('Looking up credentials for: ' + username);
+      
+      // Lookup credentials
+      const credentials = lookupCredentials(username);
+      
+      if (credentials) {
+        Logger.log('Credentials found for: ' + username);
+        return createSuccessResponse(credentials);
+      } else {
+        Logger.log('Credentials not found for: ' + username);
+        return createErrorResponse('Credentials not found for username: ' + username);
+      }
+      
+    } else if (action === 'get_all_credentials') {
+      // WARNING: Only use this for admin purposes!
+      Logger.log('Fetching all credentials (admin action)');
+      const allCredentials = getAllCredentials();
+      return createSuccessResponse(allCredentials);
+      
+    } else {
+      return createErrorResponse('Unknown action: ' + action);
+    }
+    
+  } catch (error) {
+    Logger.log('Error processing request: ' + error.toString());
+    return createErrorResponse('Error processing request: ' + error.toString());
+  }
+}
+
+/**
+ * Lookup credentials by username
+ */
+function lookupCredentials(username) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    
+    if (!sheet) {
+      Logger.log('Sheet not found: ' + SHEET_NAME);
+      return null;
+    }
+    
+    // Get all data from the sheet
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    
+    // Skip header row (index 0) and search for username
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      const rowUsername = row[COLUMN_USERNAME - 1]; // -1 because array is 0-indexed
+      
+      if (rowUsername && rowUsername.toString().trim().toLowerCase() === username.toLowerCase()) {
+        // Found matching username
+        const password = row[COLUMN_PASSWORD - 1] || '';
+        const siteContentUrl = row[COLUMN_SITE_CONTENT_URL - 1] || '';
+        const serverUrl = row[COLUMN_SERVER_URL - 1] || 'https://prod-in-a.online.tableau.com';
+        const apiVersion = row[COLUMN_API_VERSION - 1] || '3.21';
+        
+        return {
+          username: rowUsername,
+          password: password,
+          site_content_url: siteContentUrl,
+          tableau_server_url: serverUrl,
+          api_version: apiVersion,
+          auth_type: 'username_password',
+          site_id: ''
+        };
+      }
+    }
+    
+    // Username not found
+    return null;
+    
+  } catch (error) {
+    Logger.log('Error in lookupCredentials: ' + error.toString());
+    throw error;
+  }
+}
+
+/**
+ * Get all credentials (admin function - use with caution!)
+ */
+function getAllCredentials() {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME);
+    
+    if (!sheet) {
+      return [];
+    }
+    
+    const dataRange = sheet.getDataRange();
+    const values = dataRange.getValues();
+    const credentials = [];
+    
+    // Skip header row (index 0)
+    for (let i = 1; i < values.length; i++) {
+      const row = values[i];
+      const username = row[COLUMN_USERNAME - 1];
+      
+      if (username) {
+        credentials.push({
+          username: username,
+          password: '***HIDDEN***', // Don't expose passwords in list view
+          site_content_url: row[COLUMN_SITE_CONTENT_URL - 1] || '',
+          tableau_server_url: row[COLUMN_SERVER_URL - 1] || 'https://prod-in-a.online.tableau.com',
+          api_version: row[COLUMN_API_VERSION - 1] || '3.21',
+          row_number: i + 1
+        });
+      }
+    }
+    
+    return credentials;
+    
+  } catch (error) {
+    Logger.log('Error in getAllCredentials: ' + error.toString());
+    throw error;
+  }
+}
+
+/**
+ * Create a success response
+ */
+function createSuccessResponse(data) {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      success: true,
+      data: data,
+      timestamp: new Date().toISOString()
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Create an error response
+ */
+function createErrorResponse(message) {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      success: false,
+      message: message,
+      timestamp: new Date().toISOString()
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Test function (run this from the Apps Script editor to test)
+ */
+function testCredentialsLookup() {
+  const testUsername = 'cca49542@gmail.com';
+  const credentials = lookupCredentials(testUsername);
+  
+  if (credentials) {
+    Logger.log('✓ Test PASSED - Found credentials for: ' + testUsername);
+    Logger.log(JSON.stringify(credentials, null, 2));
+  } else {
+    Logger.log('✗ Test FAILED - Credentials not found for: ' + testUsername);
+  }
+}
+

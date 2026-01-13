@@ -1,0 +1,1 @@
+March data by year: [{'year': 2022, 'row_count': 36650, 'twc_sum': 6973910.4}, {'year': 2023, 'row_count': 26732, 'twc_sum': 10969745.970000003}, {'year': 2024, 'row_count': 23966, 'twc_sum': 19651976.300000004}, {'year': 2025, 'row_count': 36676, 'twc_sum': 52726023.406}]

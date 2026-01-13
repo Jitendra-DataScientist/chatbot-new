@@ -752,6 +752,109 @@ class NLToPythonGeneratorV5:
         self.logger.debug(f"❌ '{column_name}' not detected as identifier")
         return False
 
+    def _map_field_to_column(self, field_name: str, available_columns: List[str]) -> Optional[str]:
+        """
+        Map filter field name to actual DataFrame column name
+
+        Handles:
+        - Case insensitivity (Client → client)
+        - Exact matches
+        - Partial matches
+
+        Args:
+            field_name: Field name from Tableau filter
+            available_columns: List of available column names in DataFrame
+
+        Returns:
+            Matched column name or None
+        """
+        field_lower = field_name.lower()
+
+        # Exact match (case-insensitive)
+        for col in available_columns:
+            if col.lower() == field_lower:
+                self.logger.debug(f"[FIELD_MAP] Exact match: '{field_name}' → '{col}'")
+                return col
+
+        # Partial match
+        for col in available_columns:
+            if field_lower in col.lower() or col.lower() in field_lower:
+                self.logger.info(f"[FIELD_MAP] Partial match: '{field_name}' → '{col}'")
+                return col
+
+        self.logger.warning(f"[FIELD_MAP] No match found for '{field_name}'")
+        return None
+
+    def _apply_dashboard_filters(
+        self,
+        df: pl.DataFrame,
+        dashboard_filters: Dict[str, Any]
+    ) -> pl.DataFrame:
+        """
+        Apply dashboard filters to DataFrame
+
+        Args:
+            df: polars DataFrame
+            dashboard_filters: {
+                'client': {'type': 'categorical', 'values': ['Support - All'], 'is_exclude': False},
+                'vendor': {'type': 'categorical', 'values': ['MT Only'], 'is_exclude': False},
+                ...
+            }
+
+        Returns:
+            Filtered DataFrame
+        """
+        if not dashboard_filters:
+            self.logger.info("[DASHBOARD_FILTER] No filters to apply")
+            return df
+
+        self.logger.info(f"[DASHBOARD_FILTER] Applying {len(dashboard_filters)} dashboard filters")
+        original_row_count = len(df)
+
+        for field_name, filter_config in dashboard_filters.items():
+            # Map field name to column (handle case sensitivity, aliases)
+            column_name = self._map_field_to_column(field_name, df.columns)
+
+            if not column_name:
+                self.logger.warning(f"[DASHBOARD_FILTER] Column '{field_name}' not found in data, skipping")
+                continue
+
+            filter_type = filter_config.get('type')
+
+            if filter_type == 'categorical':
+                values = filter_config.get('values', [])
+                is_exclude = filter_config.get('is_exclude', False)
+
+                if not values:
+                    self.logger.warning(f"[DASHBOARD_FILTER] No values provided for '{column_name}', skipping")
+                    continue
+
+                if is_exclude:
+                    df = df.filter(~pl.col(column_name).is_in(values))
+                    self.logger.info(f"[DASHBOARD_FILTER] ✅ {column_name} NOT IN {values}")
+                else:
+                    df = df.filter(pl.col(column_name).is_in(values))
+                    self.logger.info(f"[DASHBOARD_FILTER] ✅ {column_name} IN {values}")
+
+            elif filter_type == 'range':
+                min_val = filter_config.get('min')
+                max_val = filter_config.get('max')
+
+                if min_val is not None:
+                    df = df.filter(pl.col(column_name) >= min_val)
+                if max_val is not None:
+                    df = df.filter(pl.col(column_name) <= max_val)
+
+                self.logger.info(f"[DASHBOARD_FILTER] ✅ {column_name} RANGE [{min_val}, {max_val}]")
+
+            else:
+                self.logger.warning(f"[DASHBOARD_FILTER] Unsupported filter type '{filter_type}' for '{column_name}'")
+
+        filtered_row_count = len(df)
+        self.logger.info(f"[DASHBOARD_FILTER] Filtering complete: {original_row_count} → {filtered_row_count} rows ({filtered_row_count / original_row_count * 100:.1f}% remaining)")
+
+        return df
+
     @traceable(name="langgraph_workflow_execution")
     def generate_python_code(
         self,
@@ -759,25 +862,35 @@ class NLToPythonGeneratorV5:
         df_columns: List[str],
         df_sample: pl.DataFrame,
         workbook_name: Optional[str] = None,
+        use_dashboard_filters: bool = False,
+        dashboard_filters: Optional[Dict[str, Any]] = None,
         **kwargs
     ) -> Optional[NLToPythonResult]:
         """
         Main entry point - generates python code from natural language using LangGraph workflow
-        
+
         This is a simplified version that uses the original implementation approach
         while leveraging the new modular architecture where possible.
-        
+
         Args:
             query: Natural language query
             df_columns: List of dataframe column names
             df_sample: Sample of the dataframe
             workbook_name: Name of the workbook (for metadata lookup)
+            use_dashboard_filters: If True, apply dashboard filters before query processing
+            dashboard_filters: Dictionary of dashboard filter configurations
             **kwargs: Additional parameters
-            
+
         Returns:
             NLToPythonResult object or None
         """
-        
+
+        # Apply dashboard filters if requested (Phase 1: Dashboard Filter Support)
+        if use_dashboard_filters and dashboard_filters:
+            self.logger.info("[GENERATE] Applying dashboard filters before processing query")
+            df_sample = self._apply_dashboard_filters(df_sample, dashboard_filters)
+            self.logger.info(f"[GENERATE] After dashboard filters: {len(df_sample)} rows")
+
         # Store workbook_name for use in helper methods
         self._current_workbook_name = workbook_name
         

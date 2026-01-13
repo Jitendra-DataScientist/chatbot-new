@@ -199,6 +199,11 @@ class EnhancedChatRequest(BaseModel):
     chart_context: Optional[Dict[str, Any]] = None
     source: Optional[str] = None
 
+    # Dashboard filter support (Phase 1 implementation)
+    use_dashboard_filters: bool = False
+    dashboard_filters: Optional[Dict[str, Any]] = None
+    query_filters: Optional[Dict[str, Any]] = None
+
 class EnhancedChatResponse(BaseModel):
     """Enhanced chat response with visualizations and analysis"""
     reply: str

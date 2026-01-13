@@ -104,7 +104,7 @@ class data_exploration:
         
         master_logger.info("✓ All services initialized")
     
-    async def process(self, 
+    async def process(self,
                 query_text: str,
                 csv_data: pl.DataFrame,
                 selected_chart: str,
@@ -113,10 +113,12 @@ class data_exploration:
                 conversation_state: Optional[Dict] = None,
                 use_conversation: bool = True,
                 context: Optional[Dict] = None,
-                query_metadata: Optional[Dict] = None) -> Dict[str, Any]:  # 🆕 Add query_metadata parameter
+                query_metadata: Optional[Dict] = None,
+                use_dashboard_filters: bool = False,
+                dashboard_filters: Optional[Dict] = None) -> Dict[str, Any]:
         """
         Process exploration query
-        
+
         Args:
             query_text: User's natural language query
             csv_data: DataFrame containing the data
@@ -127,6 +129,8 @@ class data_exploration:
             use_conversation: Whether to use conversational mode
             context: Additional context (e.g., workbook_name)
             query_metadata: Metadata about query (is_followup, merged_by, etc.)
+            use_dashboard_filters: Whether to apply dashboard filters
+            dashboard_filters: Dashboard filter configuration
         """
         master_logger.info("=" * 80)
         master_logger.info("=== PROCESSING DATA EXPLORATION QUERY ===")
@@ -144,6 +148,14 @@ class data_exploration:
                 # Handle Pydantic ChatContext model
                 self.workbook_name = context.workbook_name
             master_logger.info(f"🔍 Workbook extracted from context: {self.workbook_name}")
+
+        # 🆕 Phase 1: Store dashboard filter parameters
+        self.use_dashboard_filters = use_dashboard_filters
+        self.dashboard_filters = dashboard_filters
+        if use_dashboard_filters and dashboard_filters:
+            master_logger.info(f"🔍 Dashboard filters enabled: {len(dashboard_filters)} filters active")
+        else:
+            master_logger.info("🔍 Dashboard filters: Not enabled")
         
         if use_conversation and self.has_conversation_support:
             return await self._process_with_orchestrator(
@@ -192,16 +204,24 @@ class data_exploration:
                     'response': orchestrator_result['clarifying_question'],
                     'needs_clarification': True,
                     'conversation_state': orchestrator_result.get('conversation_state'),
-                    'execution_time': time.time() - start_time
+                    'execution_time': time.time() - start_time,
+                    # 🆕 PHASE 5: Empty filter info for clarification
+                    'filters_applied': False,
+                    'dashboard_filters': [],
+                    'filter_count': 0
                 }
-            
+
             if not orchestrator_result.get('success'):
                 return {
                     'success': False,
                     'response': f"Error: {orchestrator_result.get('error', 'Unknown error')}",
                     'error': True,
                     'conversation_state': orchestrator_result.get('conversation_state'),
-                    'execution_time': time.time() - start_time
+                    'execution_time': time.time() - start_time,
+                    # 🆕 PHASE 5: Empty filter info for errors
+                    'filters_applied': False,
+                    'dashboard_filters': [],
+                    'filter_count': 0
                 }
             
             analysis_result = orchestrator_result.get('result')
@@ -224,7 +244,10 @@ class data_exploration:
                 analysis_dict['nl_result'] = orchestrator_result['nl_result']
             
             response_dict = self._format_table_response(analysis_dict, query=query_text, intent_result=intent_result)
-            
+
+            # 🆕 PHASE 5: Get filter information for response
+            filter_info = self._format_applied_filters_info()
+
             return {
                 'success': True,
                 'response': response_dict.get('response', 'Analysis completed'),
@@ -235,7 +258,11 @@ class data_exploration:
                 'chart_image': visualization.get('chart_image') if visualization else None,
                 'chart_context': chart_context,
                 'conversation_state': orchestrator_result.get('conversation_state'),
-                'execution_time': time.time() - start_time
+                'execution_time': time.time() - start_time,
+                # 🆕 PHASE 5: Include filter information
+                'filters_applied': filter_info['filters_applied'],
+                'dashboard_filters': filter_info['dashboard_filters'],
+                'filter_count': filter_info['filter_count']
             }
             
         except Exception as e:
@@ -451,10 +478,13 @@ class data_exploration:
             table_data = response_dict.get("table_data", None)
             
             execution_time = time.time() - start_time
-            
+
+            # 🆕 PHASE 5: Get filter information for response
+            filter_info = self._format_applied_filters_info()
+
             master_logger.info("=== DATA EXPLORATION PROCESSING COMPLETED ===")
             master_logger.info("=" * 80)
-            
+
             return {
                 "success": True,
                 "response": response_text,
@@ -464,7 +494,11 @@ class data_exploration:
                 "chart_type": visualization.get('chart_type') if visualization else None,
                 "chart_image": visualization.get('chart_image') if visualization else None,
                 "chart_context": chart_context,
-                "execution_time": execution_time
+                "execution_time": execution_time,
+                # 🆕 PHASE 5: Include filter information
+                "filters_applied": filter_info['filters_applied'],
+                "dashboard_filters": filter_info['dashboard_filters'],
+                "filter_count": filter_info['filter_count']
             }
             
         except Exception as e:
@@ -475,12 +509,16 @@ class data_exploration:
             master_logger.error("=" * 80)
             
             execution_time = time.time() - start_time
-            
+
             return {
                 "success": False,
                 "response": f"I encountered an error processing your query: {str(e)}",
                 "error": True,
-                "execution_time": execution_time
+                "execution_time": execution_time,
+                # 🆕 PHASE 5: Empty filter info for errors
+                "filters_applied": False,
+                "dashboard_filters": [],
+                "filter_count": 0
             }
     
     def _check_if_scalar(self, analysis_result: Any) -> bool:
@@ -993,6 +1031,86 @@ class data_exploration:
                 lines.append(row_str)
             return '\n'.join(lines)
 
+    def _format_applied_filters_info(self) -> Dict[str, Any]:
+        """
+        🆕 PHASE 5: Format information about applied dashboard filters
+
+        Returns a dictionary containing filter information to be included
+        in the response to the frontend.
+
+        Returns:
+            Dict with:
+                - filters_applied: bool - Whether dashboard filters were applied
+                - dashboard_filters: list - List of applied filter descriptions
+                - filter_count: int - Number of filters applied
+        """
+        filter_info = {
+            'filters_applied': False,
+            'dashboard_filters': [],
+            'filter_count': 0
+        }
+
+        # Check if dashboard filters were actually used
+        if not self.use_dashboard_filters or not self.dashboard_filters:
+            return filter_info
+
+        filter_info['filters_applied'] = True
+        filter_descriptions = []
+
+        try:
+            for field_name, filter_config in self.dashboard_filters.items():
+                filter_type = filter_config.get('type', 'unknown')
+
+                if filter_type == 'categorical':
+                    values = filter_config.get('values', [])
+                    is_exclude = filter_config.get('is_exclude', False)
+
+                    if is_exclude:
+                        filter_desc = f"{field_name} NOT IN [{', '.join(str(v) for v in values)}]"
+                    else:
+                        if len(values) == 1:
+                            filter_desc = f"{field_name} = {values[0]}"
+                        else:
+                            filter_desc = f"{field_name} IN [{', '.join(str(v) for v in values)}]"
+
+                    filter_descriptions.append(filter_desc)
+
+                elif filter_type == 'range':
+                    min_val = filter_config.get('min')
+                    max_val = filter_config.get('max')
+
+                    if min_val is not None and max_val is not None:
+                        filter_desc = f"{field_name} BETWEEN {min_val} AND {max_val}"
+                    elif min_val is not None:
+                        filter_desc = f"{field_name} >= {min_val}"
+                    elif max_val is not None:
+                        filter_desc = f"{field_name} <= {max_val}"
+                    else:
+                        filter_desc = f"{field_name} (range filter)"
+
+                    filter_descriptions.append(filter_desc)
+
+                elif filter_type == 'relative-date':
+                    period_type = filter_config.get('period_type', 'UNKNOWN')
+                    range_n = filter_config.get('range_n', 0)
+                    range_type = filter_config.get('range_type', 'UNKNOWN')
+                    filter_desc = f"{field_name} = {range_type} {range_n} {period_type}"
+                    filter_descriptions.append(filter_desc)
+
+                else:
+                    filter_desc = f"{field_name} ({filter_type})"
+                    filter_descriptions.append(filter_desc)
+
+            filter_info['dashboard_filters'] = filter_descriptions
+            filter_info['filter_count'] = len(filter_descriptions)
+
+            master_logger.info(f"[PHASE5_FILTER_INFO] Formatted {len(filter_descriptions)} filter descriptions")
+
+        except Exception as e:
+            master_logger.error(f"[PHASE5_FILTER_INFO] Error formatting filter info: {e}")
+
+        return filter_info
+
     def _format_column_description_for_display(self, column_desc_result) -> str:
         """
         🆕 Format column description data for Chrome extension display
@@ -1433,11 +1551,17 @@ class data_exploration:
                 query_to_use = query
             
             # Generate code using LangGraph workflow (using polars DataFrame directly)
+            # 🆕 Phase 1: Pass dashboard filter parameters if available
+            use_dashboard_filters = getattr(self, 'use_dashboard_filters', False)
+            dashboard_filters = getattr(self, 'dashboard_filters', None)
+
             nl_result = self.nl_to_python.generate_python_code(
                 query=query_to_use,
                 df_columns=list(df_for_code.columns),
                 df_sample=df_for_code,
-                workbook_name=workbook_name  # 🆕 Pass workbook_name for identifier detection
+                workbook_name=workbook_name,  # 🆕 Pass workbook_name for identifier detection
+                use_dashboard_filters=use_dashboard_filters,  # 🆕 Phase 1: Dashboard filters
+                dashboard_filters=dashboard_filters  # 🆕 Phase 1: Dashboard filters
             )
             
             if not nl_result or not nl_result.generated_code:

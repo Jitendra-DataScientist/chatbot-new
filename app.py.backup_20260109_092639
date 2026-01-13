@@ -1655,21 +1655,6 @@ def chat_api():
         selected_chart = data.get("selected_chart")
         chart_context = data.get("chart_context", {})
         
-
-        # Phase 2: Extract dashboard filter parameters
-        use_dashboard_filters = data.get("use_dashboard_filters", False)
-        dashboard_filters = data.get("dashboard_filters", None)
-        query_filters = data.get("query_filters", None)
-
-        # Log filter parameters for debugging
-        if use_dashboard_filters:
-            debug_log("Dashboard filters received from client", {
-                "use_dashboard_filters": use_dashboard_filters,
-                "num_dashboard_filters": len(dashboard_filters) if dashboard_filters else 0,
-                "num_query_filters": len(query_filters) if query_filters else 0,
-                "dashboard_filter_fields": list(dashboard_filters.keys()) if dashboard_filters else []
-            })
-
         # Enhanced Chrome extension logging for chat requests
         if data.get("source") == "chrome_extension":
             chrome_extension_logger.log_chat_request(
@@ -1734,7 +1719,7 @@ def chat_api():
         # NEW: Enhanced agentic processing
         if ENHANCED_SERVICES_AVAILABLE and enhanced_query_agent:
             debug_log("Using enhanced agentic processing")
-            return handle_enhanced_query_processing_sync(msg, current_state, selected_chart, chart_context, data.get("source"), data.get('cache_only', False), use_dashboard_filters, dashboard_filters, query_filters)
+            return handle_enhanced_query_processing_sync(msg, current_state, selected_chart, chart_context, data.get("source"), data.get('cache_only', False))
         
         # Handle AUTO_ANALYSIS even without enhanced services
         if msg == "AUTO_ANALYSIS" and selected_chart:
@@ -1788,21 +1773,18 @@ def chat_api():
             "error": True
         }), 500
 
-async def handle_enhanced_query_processing(msg, state, selected_chart, chart_context, source, cache_only=False, use_dashboard_filters=False, dashboard_filters=None, query_filters=None):
+async def handle_enhanced_query_processing(msg, state, selected_chart, chart_context, source, cache_only=False):
     """Handle query processing using enhanced agentic system"""
     # Initialize csv_data at function level to avoid scoping issues
     csv_data = None
-
+    
     debug_log("=== ENHANCED QUERY PROCESSING ===")
     debug_log("Enhanced query processing started", {
         "message": msg,
         "selected_chart": selected_chart,
         "workbook": state.workbook_name,
         "source": source,
-        "cache_only": cache_only,  # Jitendra
-        "use_dashboard_filters": use_dashboard_filters,
-        "has_dashboard_filters": dashboard_filters is not None,
-        "has_query_filters": query_filters is not None
+        "cache_only": cache_only  # Jitendra
     })
     
     try:
@@ -1916,11 +1898,8 @@ async def handle_enhanced_query_processing(msg, state, selected_chart, chart_con
             connection_key=state.workbook_name,
             selected_chart=selected_chart,
             chart_context=chart_context,
-            source=source,
-            # Phase 2: Dashboard filter support
-            use_dashboard_filters=use_dashboard_filters,
-            dashboard_filters=dashboard_filters,
-            query_filters=query_filters)
+            source=source
+        )
         
         # 🔍 DEBUG: Log chat_request.context after creation
         master_logger.info(f"🔍 DEBUG [app.py]: chat_request created:")
@@ -2216,11 +2195,7 @@ async def handle_auto_analysis_request(workbook_data, state, selected_chart, cha
                     "analysis_instruction": f"Focus analysis on columns: {mapped_csv_columns}" if mapped_csv_columns else "Analyze available data"
                 },
                 selected_chart=selected_chart,
-                auto_analysis=True,
-                # Phase 2: Dashboard filter support
-                use_dashboard_filters=use_dashboard_filters,
-                dashboard_filters=dashboard_filters,
-                query_filters=query_filters
+                auto_analysis=True
             )
             
             # Create worksheets data with CSV data for analysis
@@ -2528,16 +2503,16 @@ def handle_basic_auto_analysis(state, selected_chart, chart_context, source):
             "basic_analysis_error": str(e)
         })
 
-def handle_enhanced_query_processing_sync(msg, state, selected_chart, chart_context, source, cache_only=False, use_dashboard_filters=False, dashboard_filters=None, query_filters=None):
+def handle_enhanced_query_processing_sync(msg, state, selected_chart, chart_context, source, cache_only=False):
     """Synchronous wrapper for enhanced query processing"""
     import asyncio
-
+    
     try:
         # Run the async function
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         result = loop.run_until_complete(
-            handle_enhanced_query_processing(msg, state, selected_chart, chart_context, source, cache_only, use_dashboard_filters, dashboard_filters, query_filters)
+            handle_enhanced_query_processing(msg, state, selected_chart, chart_context, source, cache_only)
         )
         loop.close()
         return result
