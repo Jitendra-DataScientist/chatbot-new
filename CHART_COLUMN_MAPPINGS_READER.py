@@ -16,8 +16,8 @@ Version: 3.0 - Production Ready
 import json
 import os
 import re
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Set, Optional
 
 
 class TableauColumnMappingExtractor:
@@ -44,7 +44,7 @@ class TableauColumnMappingExtractor:
             'CASE', 'WHEN', 'IN', 'IS', 'AS', 'TRUE', 'FALSE'
         }
     
-    def _get_tableau_function_glossary(self) -> Dict[str, str]:
+    def _get_tableau_function_glossary(self) -> dict[str, str]:
         """Provide Tableau → Pandas function translation glossary"""
         return {
             "COUNTD": "nunique() - Count distinct values",
@@ -60,7 +60,7 @@ class TableauColumnMappingExtractor:
             "DATEDIFF": "(date2 - date1).dt.days - Calculate date difference"
         }
     
-    def extract_column_references(self, formula: str) -> Set[str]:
+    def extract_column_references(self, formula: str) -> set[str]:
         """
         Extract ALL column references from a formula (with or without brackets).
         FIXED: Now handles both [column_name] and standalone column_name
@@ -100,7 +100,7 @@ class TableauColumnMappingExtractor:
                 continue
             
             # Skip quoted strings
-            if word.startswith("'") or word.startswith('"'):
+            if word.startswith(("'", '"')):
                 continue
             
             # Skip if it contains special characters (likely not a column name)
@@ -113,7 +113,7 @@ class TableauColumnMappingExtractor:
         
         return columns
     
-    def get_all_base_columns_iterative(self, field_name: str, dependencies: Dict, all_calculated_names: Set[str]) -> Set[str]:
+    def get_all_base_columns_iterative(self, field_name: str, dependencies: dict, all_calculated_names: set[str]) -> set[str]:
         """
         Iteratively collect ONLY true base columns using stack-based graph traversal.
         Handles circular dependencies gracefully without recursion limits.
@@ -184,7 +184,7 @@ class TableauColumnMappingExtractor:
 
         return base_cols
 
-    def calculate_dependency_levels(self, dependencies: Dict) -> None:
+    def calculate_dependency_levels(self, dependencies: dict) -> None:
         """
         Calculate dependency levels using Kahn's algorithm (topological sort).
         Handles cycles gracefully by assigning them max level + 1.
@@ -237,7 +237,7 @@ class TableauColumnMappingExtractor:
                 dependencies[node]['level'] = max_level + 1
                 dependencies[node]['has_cycle'] = True
 
-    def analyze_calculated_field_dependencies(self, chart_calculated_fields: List[Dict]) -> tuple:
+    def analyze_calculated_field_dependencies(self, chart_calculated_fields: list[dict]) -> tuple:
         """
         Analyze calculated fields to build dependency chains.
         Uses cycle-safe algorithms throughout.
@@ -286,7 +286,7 @@ class TableauColumnMappingExtractor:
 
         return dependencies, all_calc_names
 
-    def _extract_aggregations_from_formula(self, formula: str) -> Dict[str, List[str]]:
+    def _extract_aggregations_from_formula(self, formula: str) -> dict[str, list[str]]:
         """
         Extract aggregation functions and their target columns from a formula.
 
@@ -317,7 +317,7 @@ class TableauColumnMappingExtractor:
 
         return aggregations
 
-    def _analyze_aggregation_semantics(self) -> Dict[str, Dict]:
+    def _analyze_aggregation_semantics(self) -> dict[str, dict]:
         """
         Analyze all formulas to determine typical aggregation for each base column.
 
@@ -374,7 +374,7 @@ class TableauColumnMappingExtractor:
 
         return semantic_data
 
-    def _infer_column_type_from_usage(self, column_name: str, aggregation_semantic: Dict) -> str:
+    def _infer_column_type_from_usage(self, column_name: str, aggregation_semantic: dict) -> str:
         """
         Infer column type from how it's used in formulas.
         More reliable than keyword-based inference.
@@ -488,7 +488,7 @@ class TableauColumnMappingExtractor:
             print(f"⚠️  Cannot validate {file_path.name}: {e}")
             return False
 
-    def process_dashboard(self, file_path: Path) -> Dict:
+    def process_dashboard(self, file_path: Path) -> dict:
         """Process a single dashboard metadata file"""
         with open(file_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
@@ -722,7 +722,6 @@ class TableauColumnMappingExtractor:
     
     def _get_timestamp(self) -> str:
         """Get current timestamp for tracking"""
-        from datetime import datetime
         return datetime.now().isoformat()
     
     def save_results(self):

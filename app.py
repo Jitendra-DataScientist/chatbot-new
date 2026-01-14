@@ -74,11 +74,11 @@ def after_request(response):
     origin = request.headers.get('Origin')
     
     # Allow Chrome extensions and localhost
-    if (origin and (
-        origin.startswith('chrome-extension://') or 
-        origin.startswith('http://localhost:') or
-        origin.startswith('https://tableau-aws.uberinternal.com') or
-        origin.startswith('https://tableau.uberinternal.com')
+    if origin and origin.startswith((
+        'chrome-extension://',
+        'http://localhost:',
+        'https://tableau-aws.uberinternal.com',
+        'https://tableau.uberinternal.com'
     )):
         response.headers['Access-Control-Allow-Origin'] = origin
     
@@ -96,11 +96,11 @@ def handle_preflight():
         response.status_code = 200
         
         # Add CORS headers directly to preflight response
-        if (origin and (
-            origin.startswith('chrome-extension://') or 
-            origin.startswith('http://localhost:') or
-            origin.startswith('https://tableau-aws.uberinternal.com') or
-            origin.startswith('https://tableau.uberinternal.com')
+        if origin and origin.startswith((
+            'chrome-extension://',
+            'http://localhost:',
+            'https://tableau-aws.uberinternal.com',
+            'https://tableau.uberinternal.com'
         )):
             response.headers['Access-Control-Allow-Origin'] = origin
         
@@ -147,7 +147,7 @@ def debug_log(message, data=None):
 try:
     from meta_agents.enhanced_query_agent import EnhancedQueryAgent
     from meta_agents.query_understanding_agent import QueryAgent
-    from models.schemas import EnhancedChatRequest, EnhancedChatResponse
+    from models.schemas import EnhancedChatRequest
     ENHANCED_SERVICES_AVAILABLE = True
     debug_log("Enhanced services imported successfully")
 except ImportError as e:
@@ -261,7 +261,7 @@ def cleanup_expired_auth_tokens():
         master_logger.info(f"[STATS] AUTH_STARTUP_STATS: Found {initial_total} cached tokens ({initial_valid} valid, {initial_expired} expired)")
         
         # Load cache (automatically cleans expired tokens)
-        cache = auth_storage.load_auth_cache()
+        auth_storage.load_auth_cache()
         
         # Get post-cleanup stats
         final_stats = auth_storage.get_cache_stats()

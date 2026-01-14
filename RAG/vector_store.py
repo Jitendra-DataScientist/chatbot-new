@@ -6,13 +6,13 @@ Caches workbook-level data for efficient retrieval and context
 import os
 import json
 import pickle
+import logging
+import hashlib
+from datetime import datetime, timedelta
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Any, Optional, Tuple
-import logging
-from datetime import datetime, timedelta
-import hashlib
-from pathlib import Path
 
 # Optional dependencies for RAG system
 try:
@@ -40,7 +40,7 @@ class TableauVectorStore:
     Uses FAISS for efficient similarity search and retrieval
     """
     
-    def __init__(self, data_dir: str = "RAG/data", openai_client=None, openai_api_key: str = None):
+    def __init__(self, data_dir: str = "RAG/data", openai_client=None, openai_api_key: str | None = None):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         
@@ -55,7 +55,7 @@ class TableauVectorStore:
             self.openai_client = None
             self.embedding_dim = 1536  # OpenAI text-embedding-3-small dimension
             self.index = None
-            self.chunks: List[DataChunk] = []
+            self.chunks: list[DataChunk] = []
             self.cache_ttl = 3600 * 24  # 24 hours
             return
         
@@ -76,7 +76,7 @@ class TableauVectorStore:
             self.embedding_model = "text-embedding-3-small"  # Cheaper and faster than text-embedding-3-large
             
             # Test the connection
-            test_response = self.openai_client.embeddings.create(
+            self.openai_client.embeddings.create(
                 input="test",
                 model=self.embedding_model
             )
@@ -89,7 +89,7 @@ class TableauVectorStore:
         
         # FAISS index for vector similarity search
         self.index = None
-        self.chunks: List[DataChunk] = []
+        self.chunks: list[DataChunk] = []
         
         # Cache settings
         self.cache_ttl = 3600 * 24  # 24 hours
@@ -97,7 +97,7 @@ class TableauVectorStore:
         # Initialize or load existing index
         self._initialize_index()
 
-    def _generate_embedding(self, text: str) -> Optional[List[float]]:
+    def _generate_embedding(self, text: str) -> list[float] | None:
         """Generate embedding using OpenAI API"""
         if not self.openai_client:
             return None
@@ -139,7 +139,7 @@ class TableauVectorStore:
             self.index = faiss.IndexFlatIP(self.embedding_dim)
             self.chunks = []
 
-    def cache_workbook_data(self, workbook_id: str, workbook_name: str, worksheets_data: Dict[str, pd.DataFrame]) -> bool:
+    def cache_workbook_data(self, workbook_id: str, workbook_name: str, worksheets_data: dict[str, pd.DataFrame]) -> bool:
         """
         Cache workbook data in vector database
         
@@ -222,7 +222,7 @@ class TableauVectorStore:
             self.logger.error(f"Error caching workbook data: {e}")
             return False
 
-    def search_similar_data(self, query: str, workbook_id: Optional[str] = None, top_k: int = 5) -> List[VectorSearchResult]:
+    def search_similar_data(self, query: str, workbook_id: str | None = None, top_k: int = 5) -> list[VectorSearchResult]:
         """
         Search for similar data chunks based on query
         
@@ -291,7 +291,7 @@ class TableauVectorStore:
             self.logger.error(f"Error searching similar data: {e}")
             return []
 
-    def get_worksheet_data(self, chunk_id: str) -> Optional[pd.DataFrame]:
+    def get_worksheet_data(self, chunk_id: str) -> pd.DataFrame | None:
         """
         Retrieve cached worksheet DataFrame by chunk ID
         
@@ -318,7 +318,7 @@ class TableauVectorStore:
             self.logger.error(f"Error retrieving worksheet data for {chunk_id}: {e}")
             return None
 
-    def get_workbook_chunks(self, workbook_id: str) -> List[DataChunk]:
+    def get_workbook_chunks(self, workbook_id: str) -> list[DataChunk]:
         """
         Get all chunks for a specific workbook
         
@@ -344,8 +344,6 @@ class TableauVectorStore:
     def clear_expired_cache(self):
         """Remove expired cache entries"""
         try:
-            initial_count = len(self.chunks)
-            
             # Find expired chunks
             expired_chunk_ids = []
             valid_chunks = []
@@ -373,7 +371,7 @@ class TableauVectorStore:
         except Exception as e:
             self.logger.error(f"Error clearing expired cache: {e}")
 
-    def get_cache_stats(self) -> Dict[str, Any]:
+    def get_cache_stats(self) -> dict:
         """Get cache statistics"""
         try:
             workbook_counts = {}
@@ -443,7 +441,7 @@ class TableauVectorStore:
             self.logger.error(f"Error generating data summary: {e}")
             return f"Worksheet '{worksheet_name}' with {len(df)} rows and {len(df.columns)} columns."
 
-    def _generate_column_info(self, df: pd.DataFrame) -> Dict[str, Any]:
+    def _generate_column_info(self, df: pd.DataFrame) -> dict:
         """Generate detailed column information"""
         
         try:
@@ -476,7 +474,7 @@ class TableauVectorStore:
             self.logger.error(f"Error generating column info: {e}")
             return {}
 
-    def _add_chunks_to_index(self, chunks: List[DataChunk]):
+    def _add_chunks_to_index(self, chunks: list[DataChunk]):
         """Add data chunks to FAISS index"""
         
         if not self.encoder:
