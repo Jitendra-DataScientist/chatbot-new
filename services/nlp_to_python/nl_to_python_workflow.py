@@ -35,6 +35,8 @@ from .nl_to_python_operations import (
 )
 from .nl_to_python_codegen import CODE_GENERATORS
 
+# gazelle:ignore models
+# gazelle:ignore services
 # External imports
 from models.schemas import NLToPythonResult, PandasOperation
 from services.fuzzy_column_matcher import FuzzyColumnMatcher

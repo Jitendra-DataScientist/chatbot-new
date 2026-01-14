@@ -34,6 +34,9 @@ except Exception:
     stats = None
     SCIPY_AVAILABLE = False
 
+# gazelle:ignore master_logger
+# gazelle:ignore models
+# gazelle:ignore services
 # Import models and services (from existing V4)
 from models.schemas import NLToPythonResult, PandasOperation
 from services.fuzzy_column_matcher import FuzzyColumnMatcher

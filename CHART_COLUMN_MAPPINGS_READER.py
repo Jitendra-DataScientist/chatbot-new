@@ -487,6 +487,8 @@ class TableauColumnMappingExtractor:
         except (json.JSONDecodeError, IOError, Exception) as e:
             print(f"⚠️  Cannot validate {file_path.name}: {e}")
             return False
+        else:
+            return result
 
     def process_dashboard(self, file_path: Path) -> dict:
         """Process a single dashboard metadata file"""
@@ -520,15 +522,15 @@ class TableauColumnMappingExtractor:
                 all_base_columns = list(self.get_all_base_columns_iterative(field_name, dependencies, all_calc_names))
                 
                 # Get dependent calculated fields
-                dependent_fields = []
-                if field_name in dependencies:
-                    for dep in dependencies[field_name]['depends_on']:
-                        if dep in dependencies:
-                            dependent_fields.append({
-                                "alias": dep,
-                                "formula": dependencies[dep]['formula'],
-                                "datatype": dependencies[dep]['datatype']
-                            })
+                dependent_fields = [
+                    {
+                        "alias": dep,
+                        "formula": dependencies[dep]['formula'],
+                        "datatype": dependencies[dep]['datatype']
+                    }
+                    for dep in dependencies[field_name]['depends_on']
+                    if dep in dependencies
+                ] if field_name in dependencies else []
                 
                 y_axis_fields.append({
                     "alias": field_name,
@@ -549,15 +551,15 @@ class TableauColumnMappingExtractor:
                 all_base_columns = list(self.get_all_base_columns_iterative(field_name, dependencies, all_calc_names))
                 
                 # Get dependent calculated fields
-                dependent_fields = []
-                if field_name in dependencies:
-                    for dep in dependencies[field_name]['depends_on']:
-                        if dep in dependencies:
-                            dependent_fields.append({
-                                "alias": dep,
-                                "formula": dependencies[dep]['formula'],
-                                "datatype": dependencies[dep]['datatype']
-                            })
+                dependent_fields = [
+                    {
+                        "alias": dep,
+                        "formula": dependencies[dep]['formula'],
+                        "datatype": dependencies[dep]['datatype']
+                    }
+                    for dep in dependencies[field_name]['depends_on']
+                    if dep in dependencies
+                ] if field_name in dependencies else []
                 
                 field_info = {
                     "alias": field_name,
@@ -813,6 +815,7 @@ def main():
     
     # Optional: Add CSV mappings if CSVDataLoader is available
     try:
+        # gazelle:ignore services
         from services.csv_data_loader import CSVDataLoader
         csv_loader = CSVDataLoader()
         if csv_loader.load_data():

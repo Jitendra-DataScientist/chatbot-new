@@ -21,6 +21,10 @@ os.environ['NO_PROXY'] = '*'
 for key in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']:
     os.environ.pop(key, None)
 
+# gazelle:ignore master_logger
+# gazelle:ignore chrome_extension_logger
+# gazelle:ignore tableau_backend
+# gazelle:ignore services
 # Import master logger for comprehensive logging
 from master_logger import get_master_logger, function_logger, log_js_message, setup_module_logger
 

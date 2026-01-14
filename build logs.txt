@@ -1,0 +1,761 @@
+Phabricator10
+Search
+ DifferentialD21161571
+deployment 1 - lints fixed
+Changes PlannedACL: Differential users - ENGDraft
+Authored by aranja14 on Wed, Jan 14, 12:27 PM.
+Edit Revision
+Update Diff
+Download Raw Diff
+Edit Related Revisions...
+Edit Related Objects...
+Mute Notifications
+Launch Changes in Devpod (Beta)
+Follow up with Minion
+Land to SubmitQueue
+Create JIRA issue
+Assign to KTLO task
+Start Tracking Time
+Award Token
+Flag For Later
+Tags
+Autoland
+Subscribers
+None
+Details	
+ReviewersNoneGroup Reviewers
+LDAP: cpp_diff_approvers	
+JIRA IssuesJIRA GSSQDA-787 tableau chatbot
+Diff Detail	
+RepositoryrUBEONECADB uber-oneLint
+Lint Errors	Excuse: NA
+Severity	Location	Code	Message
+Error	uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py:192	ruff checkPLC0206	Ruff lint error
+Error	uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py:197	ruff checkB007	Ruff lint error
+Error	uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py:484	ruff checkTRY300	Ruff lint error
+Error	uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py:526	ruff checkPERF401	Ruff lint error
+Error	uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py:602	ruff checkW293	Ruff lint error
+Error	uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py:817	ruff checkPLC0415	Ruff lint error
+Error	uber/gss/chatbot-new/RAG/vector_store.py:35	ruff checkE402	Ruff lint error
+Error	uber/gss/chatbot-new/RAG/vector_store.py:289	ruff checkTRY300	Ruff lint error
+Error	uber/gss/chatbot-new/RAG/vector_store.py:339	ruff checkTRY300	Ruff lint error
+Error	uber/gss/chatbot-new/RAG/vector_store.py:472	ruff checkTRY300	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:25	ruff checkE402	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:28	ruff checkE402	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:31	ruff checkE402	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:54	ruff checkE402	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:174	ruff checkE402	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:175	ruff checkE402	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:176	ruff checkE402	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:239	ruff checkPLC0415	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:273	ruff checkTRY300	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:516	ruff checkE501	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:519	ruff checkTRY300	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:538	ruff checkTRY300	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:582	ruff checkF841	Ruff lint error
+Error	uber/gss/chatbot-new/app.py:908	ruff checkE501	Ruff lint error
+Auto-Fix	uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py:837	ruff check1	Ruff lint violation
+Unit
+Unit Tests OK	
+Branchtableau_chatbot_phase_1 (branched from main)IMP Review Status
+Checking...	
+Build Status
+Buildable 162986997	
+Build 396126187: Uber-One Monorepo Buildkite E2E Tests (BITS)	View in Buildkite
+Build 396126185: [Non Blocking] Run flaky tests	View in Buildkite
+Build 396126183: [Non-Blocking] Run Commit Signature Verification	View in Buildkite
+Build 396126181: [Blocking] Build Unit Tests and Coverage	View in Buildkite
+Build 396126179: Check METADATA reviewer status	
+Build 396126177: Check if Differential Revision requires re-review	
+Build 396126175: Add METADATA reviewers	
+Build 396126153: arc lint + arc unit	
+Unit TestsFailed	
+Time	Test
+0 ms	uber/gss/chatbot-new
+Incremental coverage				New line coverage		
+Static threshold	Coverage before diff	Coverage after diff	Incremental check	New line threshold	Diff new line coverage	New line check
+80.0%	--.-%	0.0%	Passed	80.0%	0.0%	Failed
+0 ms	uber/gss/chatbot-new/RAG
+Incremental coverage				New line coverage		
+Static threshold	Coverage before diff	Coverage after diff	Incremental check	New line threshold	Diff new line coverage	New line check
+80.0%	--.-%	0.0%	Passed	80.0%	0.0%	Failed
+0 ms	uber/gss/chatbot-new/meta_agents
+Incremental coverage				New line coverage		
+Static threshold	Coverage before diff	Coverage after diff	Incremental check	New line threshold	Diff new line coverage	New line check
+80.0%	--.-%	0.0%	Passed	80.0%	0.0%	Failed
+0 ms	uber/gss/chatbot-new/models
+Incremental coverage				New line coverage		
+Static threshold	Coverage before diff	Coverage after diff	Incremental check	New line threshold	Diff new line coverage	New line check
+80.0%	--.-%	0.0%	Passed	80.0%	0.0%	Failed
+0 ms	uber/gss/chatbot-new/reference-code
+Incremental coverage				New line coverage		
+Static threshold	Coverage before diff	Coverage after diff	Incremental check	New line threshold	Diff new line coverage	New line check
+80.0%	--.-%	0.0%	Passed	80.0%	0.0%	Failed
+View Full Test Results (8 Failed · 2 Skipped)
+aranja14 created this diff.Wed, Jan 14, 12:27 PM
+aranja14 created this revision.Wed, Jan 14, 12:27 PM
+in-repo-metadata-bot added a reviewer: LDAP: cpp_diff_approvers.Wed, Jan 14, 12:28 PM
+WARNING: Problems listed below were detected when adding reviewers from METADATA files.
+Listed groups can not be added as reviewers because contains more than 50 users: gss-tech. Users from mentioned groups still can accept the diff. Please reach out to users in the mentioned groups manually for review. This constraint exists to avoid unnecesary noise created by sending review request to so many users.
+More information can be found on docs.
+
+aranja14 added a project: Autoland.Wed, Jan 14, 12:28 PM
+buildkite-bot added a comment.Wed, Jan 14, 12:29 PM
+IMPORTANT:  Coverage check failed for one or more files below
+Incremental coverage				New line coverage		
+Package	Static threshold	Coverage before diff	Coverage after diff	Incremental check	New line threshold	Diff new line coverage	New line check
+uber/gss/chatbot-new	80.0%	--.-%	0.0%	Passed	80.0%	0.0%	 Failed
+uber/gss/chatbot-new/RAG	80.0%	--.-%	0.0%	Passed	80.0%	0.0%	 Failed
+uber/gss/chatbot-new/chrome-extension	80.0%	--.-%	--.-%	No executable code	80.0%	--.-%	No executable code
+uber/gss/chatbot-new/meta_agents	80.0%	--.-%	0.0%	Passed	80.0%	0.0%	 Failed
+uber/gss/chatbot-new/models	80.0%	--.-%	0.0%	Passed	80.0%	0.0%	 Failed
+uber/gss/chatbot-new/reference-code	80.0%	--.-%	0.0%	Passed	80.0%	0.0%	 Failed
+uber/gss/chatbot-new/services	80.0%	--.-%	0.0%	Passed	80.0%	0.0%	 Failed
+uber/gss/chatbot-new/services/context_manager	80.0%	--.-%	0.0%	Passed	80.0%	0.0%	 Failed
+uber/gss/chatbot-new/services/nlp_to_python	80.0%	--.-%	0.0%	Passed	80.0%	0.0%	 Failed
+uber/gss/chatbot-new/static	80.0%	--.-%	--.-%	No executable code	80.0%	--.-%	No executable code
+Harbormaster returned this revision to the author for changes because remote builds failed.Wed, Jan 14, 12:32 PM
+Harbormaster failed remote builds in B162986997: Diff 56502113!
+
+Large Diff
+This large diff affects 137 files. Files without inline comments have been collapsed. Expand All Files
+Revision Contents	
+FilesReviewersHistoryCommitsSimilar
+Path	Size	Coverage (All)	Coverage (Touched)
+uber/
+gss/
+chatbot-new/
+AGGREGATION_SEMANTICS_IMPLEMENTATION.md
+595 lines	-	-
+ATTEMPTED_FIXES_SESSION_DEC16.md
+292 lines	-	-
+BUGFIX_CONVERSATION_ORCHESTRATOR_DEPENDENCY.md
+274 lines	-	-
+BUGFIX_PYDANTIC_OBJECT_TYPE_ERROR.md
+398 lines	-	-
+BUGFIX_SUMMARY_lowest_ticket_count.md
+138 lines	-	-
+BUGFIX_SUMMARY_sorting_fix.md
+284 lines	-	-
+CHART_COLUMN_MAPPINGS_READER.py
+850 lines	0%	
+?
+COLUMN_DESCRIPTION_FLOW_README.md
+315 lines	-	-
+CONVERSATION_MEMORY_INIT_FIX.md
+164 lines	-	-
+CONVERSATION_STATE_IMPLEMENTATION_COMPLETE.md
+439 lines	-	-
+CREDENTIALS_QUICK_REFERENCE.txt
+209 lines	-	-
+CREDENTIALS_SETUP_GUIDE.md
+341 lines	-	-
+ENTITY_EXTRACTION_FIX_COMPLETE.md
+283 lines	-	-
+ERD_Chrome_Extension.docx
+-	-
+ERD_Chrome_Extension.md
+260 lines	-	-
+FIXES_TEMPORAL_QUERY_BUGS.md
+449 lines	-	-
+FIX_SUMMARY_PYARROW_BOOL_ERROR.md
+300 lines	-	-
+FOLLOWUP_DETECTION_IMPLEMENTATION.md
+358 lines	-	-
+FOLLOWUP_QUERY_FIX_COMPLETE.md
+400 lines	-	-
+IMPLEMENTATION_SUMMARY_CALCULATED_FIELDS.md
+352 lines	-	-
+IMPORT_ERROR_FIX.md
+192 lines	-	-
+INTEGRATION_COMPLETE_SUMMARY.md
+289 lines	-	-
+INTENT_CLASSIFICATION_FIX_COMPLETE.md
+446 lines	-	-
+ISSUE_ANALYSIS.md
+274 lines	-	-
+LAYER0_FOLLOWUP_IMPLEMENTATION.md
+242 lines	-	-
+PARAMETER_PASSING_FIX_COMPLETE.md
+245 lines	-	-
+PERIOD_COMPARISON_FIX_SUMMARY.md
+200 lines	-	-
+RAG/
+__init__.py
+1 line	-	-
+vector_store.py
+580 lines	0%	
+?
+README_CREDENTIALS_SYSTEM.md
+253 lines	-	-
+SYSTEM_ARCHITECTURE_DIAGRAM.txt
+284 lines	-	-
+TEMPLATE_SYSTEM_README.md
+290 lines	-	-
+TODO_FILTER_STATE_CAPTURE.md
+226 lines	-	-
+TWC_DISCREPANCY_FINDINGS.md
+451 lines	-	-
+analyze_twc_discrepancy.py
+76 lines	0%	
+?
+app.py
+3960 lines	0%	
+?
+auth_cache.pickle.tmp.1765267537.0
+-	-
+auth_cache.pickle.tmp.1765268980.1
+-	-
+auth_cache.pickle.tmp.1765269027.1
+-	-
+auth_cache.pickle.tmp.1765269028.2
+-	-
+auth_storage.py
+439 lines	0%	
+?
+check_chart_context.py
+25 lines	0%	
+?
+chrome-extension/
+INSTALL.md
+93 lines	-	-
+README.md
+220 lines	-	-
+background.js
+261 lines	-	-
+content-script.js
+4652 lines	-	-
+content-style.css
+818 lines	-	-
+feedback.css
+444 lines	-	-
+feedback.js
+588 lines	-	-
+icons/
+icon-128.svg
+5 lines	-	-
+icon-16.svg
+4 lines	-	-
+icon-48.svg
+4 lines	-	-
+manifest.json
+72 lines	-	-
+network-interceptor-bootstrap.js
+29 lines	-	-
+network-interceptor.js
+329 lines	-	-
+popup.html
+184 lines	-	-
+popup.js
+229 lines	-	-
+chrome_extension_logger.py
+146 lines	0%	
+?
+code_repair_log.json
+10 lines	-	-
+credentials.json
+1 line	-	-
+data_cache/
+default.parquet
+-	-
+data_exploration_logs.json
+92 lines	-	-
+feedback_submissions.json
+79 lines	-	-
+google_sheets_config.json
+34 lines	-	-
+march_check.py
+28 lines	0%	
+?
+master_logger.py
+224 lines	0%	
+?
+meta_agents/
+__init__.py
+9 lines	0%	
+?
+enhanced_query_agent.py
+2459 lines	0%	
+?
+query_understanding_agent.py
+2641 lines	0%	
+?
+models/
+__init__.py
+1 line	-	-
+schemas.py
+335 lines	0%	
+?
+reference-code/
+tableau_downloader_cli.py
+5775 lines	0%	
+?
+regenerate_mappings.py
+56 lines	0%	
+?
+requirements.txt
+140 lines	-	-
+services/
+LAYER0_README.md
+380 lines	-	-
+NL_to_python.py
+26 lines	0%	
+?
+__init__.py
+1 line	-	-
+causal_feature_importance.py
+715 lines	0%	
+?
+causal_feature_importance_analysis.py
+1894 lines	0%	
+?
+causal_feature_importance_aniket.py
+1773 lines	0%	
+?
+chart_column_mapper.py
+465 lines	0%	
+?
+codet5_service.py
+525 lines	0%	
+?
+context_manager/
+__init__.py
+54 lines	0%	
+?
+conversation_memory.py
+605 lines	0%	
+?
+disambiguation_manager.py
+337 lines	0%	
+?
+schemas.py
+256 lines	0%	
+?
+temporal_detector.py
+310 lines	0%	
+?
+conversation_orchestrator.py
+555 lines	0%	
+?
+csv_calculated_fields_enhancer.py
+415 lines	0%	
+?
+csv_data_loader.py
+537 lines	0%	
+?
+data_exploration.py
+1232 lines	0%	
+?
+data_exploration_no_chart.py
+1499 lines	0%	
+?
+data_manager.py
+285 lines	0%	
+?
+data_processor.py
+586 lines	0%	
+?
+date_analyzer.py
+356 lines	0%	
+?
+enhanced_analysis_service.py
+2733 lines	0%	
+?
+fuzzy_column_matcher.py
+798 lines	0%	
+?
+google_sheets_service.py
+433 lines	0%	
+?
+insight_generator.py
+609 lines	0%	
+?
+layer0_constrained_parser.py
+567 lines	0%	
+?
+llm_service.py
+345 lines	0%	
+?
+multi_table_service.py
+611 lines	0%	
+?
+nlp_to_python/
+__init__.py
+148 lines	0%	
+?
+nl_to_python_codegen.py
+1909 lines	0%	
+?
+nl_to_python_operations.py
+1136 lines	0%	
+?
+nl_to_python_schemas.py
+1114 lines	0%	
+?
+nl_to_python_workflow.py
+3472 lines	0%	
+?
+outlier_detection_service.py
+393 lines	0%	
+?
+period_extraction_service.py
+417 lines	0%	
+?
+response_template_engine.py
+1196 lines	0%	
+?
+shap_analysis_v6.py
+8259 lines	0%	
+?
+smart_aggregation_service.py
+682 lines	0%	
+?
+tableau_aggregation_hints.py
+221 lines	0%	
+?
+tableau_credentials_service.py
+379 lines	0%	
+?
+temporal_anomaly_detection_service.py
+777 lines	0%	
+?
+temporal_comparison_analysis.py
+696 lines	0%	
+?
+temporal_entity_extractor.py
+484 lines	0%	
+?
+temporal_validator.py
+462 lines	0%	
+?
+timeseries_analysis.py
+263 lines	0%	
+?
+utils.py
+121 lines	0%	
+?
+visualization_service.py
+717 lines	0%	
+?
+workbook_data_summarizer.py
+473 lines	0%	
+?
+smart_aggregation_cache.json
+779 lines	-	-
+static/
+app.js
+1508 lines	-	-
+style.css
+264 lines	-	-
+tableau_aggregation_hints.json
+9 lines	-	-
+tableau_backend.py
+4450 lines	0%	
+?
+tableau_config.json
+8 lines	-	-
+tableau_config_orig.json
+8 lines	-	-
+tableau_descriptions/
+CentralizedL10NMetrics/
+field_descriptions_CentralizedL10NMetrics.json
+6 lines	-	-
+FRODashboard_Updated_test/
+field_descriptions_FRODashboard_Updated_test.json
+6 lines	-	-
+FRODashboard_final/
+field_descriptions_FRODashboard_final.json
+99 lines	-	-
+FRODashboard_new_updated/
+field_descriptions_FRODashboard_new_updated.json
+6 lines	-	-
+tableau_sticky_chat.trex
+28 lines	-	-
+templates/
+index.html
+274 lines	-	-
+token.pickle
+-	-
+workbook_data_summary.json
+3493 lines	-	-
+Diff 56502113	
+
+uber/gss/chatbot-new/AGGREGATION_SEMANTICS_IMPLEMENTATION.md
+
+uber/gss/chatbot-new/ATTEMPTED_FIXES_SESSION_DEC16.md
+
+uber/gss/chatbot-new/BUGFIX_CONVERSATION_ORCHESTRATOR_DEPENDENCY.md
+
+uber/gss/chatbot-new/BUGFIX_PYDANTIC_OBJECT_TYPE_ERROR.md
+
+uber/gss/chatbot-new/BUGFIX_SUMMARY_lowest_ticket_count.md
+
+uber/gss/chatbot-new/BUGFIX_SUMMARY_sorting_fix.md
+
+uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py
+
+uber/gss/chatbot-new/COLUMN_DESCRIPTION_FLOW_README.md
+
+uber/gss/chatbot-new/CONVERSATION_MEMORY_INIT_FIX.md
+
+uber/gss/chatbot-new/CONVERSATION_STATE_IMPLEMENTATION_COMPLETE.md
+
+uber/gss/chatbot-new/CREDENTIALS_QUICK_REFERENCE.txt
+
+uber/gss/chatbot-new/CREDENTIALS_SETUP_GUIDE.md
+
+uber/gss/chatbot-new/ENTITY_EXTRACTION_FIX_COMPLETE.md
+
+uber/gss/chatbot-new/ERD_Chrome_Extension.docx
+
+uber/gss/chatbot-new/ERD_Chrome_Extension.md
+
+uber/gss/chatbot-new/FIXES_TEMPORAL_QUERY_BUGS.md
+
+uber/gss/chatbot-new/FIX_SUMMARY_PYARROW_BOOL_ERROR.md
+
+uber/gss/chatbot-new/FOLLOWUP_DETECTION_IMPLEMENTATION.md
+
+uber/gss/chatbot-new/FOLLOWUP_QUERY_FIX_COMPLETE.md
+
+uber/gss/chatbot-new/IMPLEMENTATION_SUMMARY_CALCULATED_FIELDS.md
+
+uber/gss/chatbot-new/IMPORT_ERROR_FIX.md
+
+uber/gss/chatbot-new/INTEGRATION_COMPLETE_SUMMARY.md
+
+uber/gss/chatbot-new/INTENT_CLASSIFICATION_FIX_COMPLETE.md
+
+uber/gss/chatbot-new/ISSUE_ANALYSIS.md
+
+uber/gss/chatbot-new/LAYER0_FOLLOWUP_IMPLEMENTATION.md
+
+uber/gss/chatbot-new/PARAMETER_PASSING_FIX_COMPLETE.md
+
+uber/gss/chatbot-new/PERIOD_COMPARISON_FIX_SUMMARY.md
+
+uber/gss/chatbot-new/RAG/__init__.py
+
+uber/gss/chatbot-new/RAG/vector_store.py
+
+uber/gss/chatbot-new/README_CREDENTIALS_SYSTEM.md
+
+uber/gss/chatbot-new/SYSTEM_ARCHITECTURE_DIAGRAM.txt
+
+uber/gss/chatbot-new/TEMPLATE_SYSTEM_README.md
+
+uber/gss/chatbot-new/TODO_FILTER_STATE_CAPTURE.md
+
+uber/gss/chatbot-new/TWC_DISCREPANCY_FINDINGS.md
+
+uber/gss/chatbot-new/analyze_twc_discrepancy.py
+
+uber/gss/chatbot-new/app.py
+
+uber/gss/chatbot-new/auth_cache.pickle.tmp.1765267537.0
+
+uber/gss/chatbot-new/auth_cache.pickle.tmp.1765268980.1
+
+uber/gss/chatbot-new/auth_cache.pickle.tmp.1765269027.1
+
+uber/gss/chatbot-new/auth_cache.pickle.tmp.1765269028.2
+
+uber/gss/chatbot-new/auth_storage.py
+
+uber/gss/chatbot-new/check_chart_context.py
+
+uber/gss/chatbot-new/chrome-extension/INSTALL.md
+
+uber/gss/chatbot-new/chrome-extension/README.md
+
+uber/gss/chatbot-new/chrome-extension/background.js
+
+uber/gss/chatbot-new/chrome-extension/content-script.js
+
+uber/gss/chatbot-new/chrome-extension/content-style.css
+
+uber/gss/chatbot-new/chrome-extension/feedback.css
+
+uber/gss/chatbot-new/chrome-extension/feedback.js
+
+uber/gss/chatbot-new/chrome-extension/icons/icon-128.svg
+
+uber/gss/chatbot-new/chrome-extension/icons/icon-16.svg
+
+uber/gss/chatbot-new/chrome-extension/icons/icon-48.svg
+
+uber/gss/chatbot-new/chrome-extension/manifest.json
+
+uber/gss/chatbot-new/chrome-extension/network-interceptor-bootstrap.js
+
+uber/gss/chatbot-new/chrome-extension/network-interceptor.js
+
+uber/gss/chatbot-new/chrome-extension/popup.html
+
+uber/gss/chatbot-new/chrome-extension/popup.js
+
+uber/gss/chatbot-new/chrome_extension_logger.py
+
+uber/gss/chatbot-new/code_repair_log.json
+
+uber/gss/chatbot-new/credentials.json
+
+uber/gss/chatbot-new/data_cache/default.parquet
+
+uber/gss/chatbot-new/data_exploration_logs.json
+
+uber/gss/chatbot-new/feedback_submissions.json
+
+uber/gss/chatbot-new/google_sheets_config.json
+
+uber/gss/chatbot-new/march_check.py
+
+uber/gss/chatbot-new/master_logger.py
+
+uber/gss/chatbot-new/meta_agents/__init__.py
+
+uber/gss/chatbot-new/meta_agents/enhanced_query_agent.py
+
+uber/gss/chatbot-new/meta_agents/query_understanding_agent.py
+
+uber/gss/chatbot-new/models/__init__.py
+
+uber/gss/chatbot-new/models/schemas.py
+
+uber/gss/chatbot-new/reference-code/tableau_downloader_cli.py
+
+uber/gss/chatbot-new/regenerate_mappings.py
+
+uber/gss/chatbot-new/requirements.txt
+
+uber/gss/chatbot-new/services/LAYER0_README.md
+
+uber/gss/chatbot-new/services/NL_to_python.py
+
+uber/gss/chatbot-new/services/__init__.py
+
+uber/gss/chatbot-new/services/causal_feature_importance.py
+
+uber/gss/chatbot-new/services/causal_feature_importance_analysis.py
+
+uber/gss/chatbot-new/services/causal_feature_importance_aniket.py
+
+uber/gss/chatbot-new/services/chart_column_mapper.py
+
+uber/gss/chatbot-new/services/codet5_service.py
+
+uber/gss/chatbot-new/services/context_manager/__init__.py
+
+uber/gss/chatbot-new/services/context_manager/conversation_memory.py
+
+uber/gss/chatbot-new/services/context_manager/disambiguation_manager.py
+
+uber/gss/chatbot-new/services/context_manager/schemas.py
+
+uber/gss/chatbot-new/services/context_manager/temporal_detector.py
+
+uber/gss/chatbot-new/services/conversation_orchestrator.py
+
+uber/gss/chatbot-new/services/csv_calculated_fields_enhancer.py
+
+uber/gss/chatbot-new/services/csv_data_loader.py
+
+uber/gss/chatbot-new/services/data_exploration.py
+
+uber/gss/chatbot-new/services/data_exploration_no_chart.py
+
+uber/gss/chatbot-new/services/data_manager.py
+
+uber/gss/chatbot-new/services/data_processor.py
+
+uber/gss/chatbot-new/services/date_analyzer.py
+
+uber/gss/chatbot-new/services/enhanced_analysis_service.py
+
+uber/gss/chatbot-new/services/fuzzy_column_matcher.py
+
+uber/gss/chatbot-new/services/google_sheets_service.py
+
+uber/gss/chatbot-new/services/insight_generator.py
+
+uber/gss/chatbot-new/services/layer0_constrained_parser.py
+
+uber/gss/chatbot-new/services/llm_service.py
+
+uber/gss/chatbot-new/services/multi_table_service.py
+
+uber/gss/chatbot-new/services/nlp_to_python/__init__.py
+
+uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_codegen.py
+
+uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_operations.py
+
+uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py
+
+uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py
+
+uber/gss/chatbot-new/services/outlier_detection_service.py
+
+uber/gss/chatbot-new/services/period_extraction_service.py
+
+uber/gss/chatbot-new/services/response_template_engine.py
+
+uber/gss/chatbot-new/services/shap_analysis_v6.py
+
+uber/gss/chatbot-new/services/smart_aggregation_service.py
+
+uber/gss/chatbot-new/services/tableau_aggregation_hints.py
+
+uber/gss/chatbot-new/services/tableau_credentials_service.py
+
+uber/gss/chatbot-new/services/temporal_anomaly_detection_service.py
+
+uber/gss/chatbot-new/services/temporal_comparison_analysis.py
+
+uber/gss/chatbot-new/services/temporal_entity_extractor.py
+
+uber/gss/chatbot-new/services/temporal_validator.py
+
+uber/gss/chatbot-new/services/timeseries_analysis.py
+
+uber/gss/chatbot-new/services/utils.py
+
+uber/gss/chatbot-new/services/visualization_service.py
+
+uber/gss/chatbot-new/services/workbook_data_summarizer.py
+
+uber/gss/chatbot-new/smart_aggregation_cache.json
+
+uber/gss/chatbot-new/static/app.js
+
+uber/gss/chatbot-new/static/style.css
+
+uber/gss/chatbot-new/tableau_aggregation_hints.json
+
+uber/gss/chatbot-new/tableau_backend.py
+
+uber/gss/chatbot-new/tableau_config.json
+
+uber/gss/chatbot-new/tableau_config_orig.json
+
+uber/gss/chatbot-new/tableau_descriptions/CentralizedL10NMetrics/field_descriptions_CentralizedL10NMetrics.json
+
+uber/gss/chatbot-new/tableau_descriptions/FRODashboard_Updated_test/field_descriptions_FRODashboard_Updated_test.json
+
+uber/gss/chatbot-new/tableau_descriptions/FRODashboard_final/field_descriptions_FRODashboard_final.json
+
+uber/gss/chatbot-new/tableau_descriptions/FRODashboard_new_updated/field_descriptions_FRODashboard_new_updated.json
+
+uber/gss/chatbot-new/tableau_sticky_chat.trex
+
+uber/gss/chatbot-new/templates/index.html
+
+uber/gss/chatbot-new/token.pickle
+
+uber/gss/chatbot-new/workbook_data_summary.json
+
+Add Action...
+These changes have lint problems.
+These changes have failed to build.
+This revision is currently a draft. You can leave comments, but no one will be notified until the revision is submitted for review.
+jnayak4 added a subscriber: jnayak4.PREVIEW

@@ -34,6 +34,9 @@ from typing import TypedDict, Annotated
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# gazelle:ignore master_logger
+# gazelle:ignore services
+# gazelle:ignore models
 from master_logger import get_master_logger, function_logger, setup_module_logger
 
 # Import services for query processing

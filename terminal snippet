@@ -1,0 +1,1027 @@
+directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.NL_to_python.NLToPythonGenerator' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 45:
+    "services.NL_to_python" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.NL_to_python TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.NL_to_python' in
+    the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 45:
+    "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    341: "services.context_manager.conversation_memory.ConversationMemory" is
+    an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.context_manager.conversation_memory.ConversationMemory
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.context_manager.conversation_memory.ConversationMemory' in the
+    Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    341: "services.context_manager.conversation_memory" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.context_manager.conversation_memory TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.context_manager.conversation_memory' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    341: "services.context_manager" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.context_manager TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.context_manager'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    341: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2125: "services.data_exploration.data_exploration" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.data_exploration.data_exploration TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.data_exploration.data_exploration' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2125: "services.data_exploration" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.data_exploration TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.data_exploration'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2125: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2005: "services.data_exploration_no_chart.data_exploration" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.data_exploration_no_chart.data_exploration TARGET_LABEL' BUILD
+    file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.data_exploration_no_chart.data_exploration' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2005: "services.data_exploration_no_chart" is an invalid dependency:
+    possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.data_exploration_no_chart
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.data_exploration_no_chart' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2005: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2136: "services.data_manager.DataManager" is an invalid dependency:
+    possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.data_manager.DataManager
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.data_manager.DataManager' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2136: "services.data_manager" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.data_manager TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.data_manager' in
+    the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2136: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 38:
+    "services.data_processor.TableauDataProcessor" is an invalid dependency:
+    possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.data_processor.TableauDataProcessor TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.data_processor.TableauDataProcessor' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 38:
+    "services.data_processor" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.data_processor TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.data_processor'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 38:
+    "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 46:
+    "services.enhanced_analysis_service.EnhancedAnalysisService" is an
+    invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.enhanced_analysis_service.EnhancedAnalysisService TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.enhanced_analysis_service.EnhancedAnalysisService' in the Python
+    file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 46:
+    "services.enhanced_analysis_service" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.enhanced_analysis_service
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.enhanced_analysis_service' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 46:
+    "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 40:
+    "services.fuzzy_column_matcher.FuzzyColumnMatcher" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.fuzzy_column_matcher.FuzzyColumnMatcher TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.fuzzy_column_matcher.FuzzyColumnMatcher' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 40:
+    "services.fuzzy_column_matcher" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.fuzzy_column_matcher
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.fuzzy_column_matcher' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 40:
+    "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 42:
+    "services.insight_generator.TableauInsightGenerator" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.insight_generator.TableauInsightGenerator TARGET_LABEL' BUILD
+    file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.insight_generator.TableauInsightGenerator' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 42:
+    "services.insight_generator" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.insight_generator
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.insight_generator' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 42:
+    "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    340: "services.layer0_constrained_parser.Layer0QueryNormalizer" is an
+    invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.layer0_constrained_parser.Layer0QueryNormalizer TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.layer0_constrained_parser.Layer0QueryNormalizer' in the Python
+    file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    340: "services.layer0_constrained_parser" is an invalid dependency:
+    possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.layer0_constrained_parser
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.layer0_constrained_parser' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    340: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 37:
+    "services.llm_service.LLMService" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.llm_service.LLMService
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.llm_service.LLMService' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 37:
+    "services.llm_service" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.llm_service TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.llm_service' in
+    the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 37:
+    "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 41:
+    "services.multi_table_service.TableauMultiTableService" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.multi_table_service.TableauMultiTableService TARGET_LABEL' BUILD
+    file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.multi_table_service.TableauMultiTableService' in the Python
+    file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 41:
+    "services.multi_table_service" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.multi_table_service
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.multi_table_service' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 41:
+    "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2064: "services.shap_analysis_v6.shap_analysis" is an invalid dependency:
+    possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.shap_analysis_v6.shap_analysis
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.shap_analysis_v6.shap_analysis' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2064: "services.shap_analysis_v6" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.shap_analysis_v6 TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.shap_analysis_v6'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line
+    2064: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/meta_agents:query_understanding_agent":
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 39:
+    "services.visualization_service.IntelligentVisualizationService" is an
+    invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.visualization_service.IntelligentVisualizationService
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.visualization_service.IntelligentVisualizationService' in the
+    Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 39:
+    "services.visualization_service" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.visualization_service
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.visualization_service' in the Python file.
+    
+    "uber/gss/chatbot-new/meta_agents/query_understanding_agent.py", line 39:
+    "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+
+
+   Error  (GAZELLE3) Gazelle command failed!
+    Gazelle linter failed with error code: 1
+    stderr:
+    gazelle: WARNING: failed to parse
+    "uber/gss/chatbot-new/services/tableau_credentials_service.py". The
+    resulting BUILD target may be incorrect.
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 31: "master_logger.setup_module_logger" is an invalid dependency:
+    possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py master_logger.setup_module_logger
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    master_logger.setup_module_logger' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 31: "master_logger" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py master_logger TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore master_logger' in the
+    Python file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 31: "models.schemas.NLToPythonResult" is an invalid dependency:
+    possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py models.schemas.NLToPythonResult
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    models.schemas.NLToPythonResult' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 31: "models.schemas" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py models.schemas TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore models.schemas' in the
+    Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 31: "models" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py models TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore models' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 39: "services.context_manager.ContextManagerState" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.context_manager.ContextManagerState TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.context_manager.ContextManagerState' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 39: "services.context_manager" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.context_manager TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.context_manager'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 39: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 36: "services.context_manager.ConversationMemory" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.context_manager.ConversationMemory TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.context_manager.ConversationMemory' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 36: "services.context_manager" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.context_manager TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.context_manager'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 36: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 35: "services.context_manager.DisambiguationManager" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.context_manager.DisambiguationManager TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.context_manager.DisambiguationManager' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 35: "services.context_manager" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.context_manager TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.context_manager'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 35: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 37: "services.context_manager.TemporalDetector" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.context_manager.TemporalDetector TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.context_manager.TemporalDetector' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 37: "services.context_manager" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.context_manager TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.context_manager'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 37: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 38: "services.context_manager.UserDisambiguationRequired" is an
+    invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.context_manager.UserDisambiguationRequired TARGET_LABEL' BUILD
+    file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.context_manager.UserDisambiguationRequired' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 38: "services.context_manager" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.context_manager TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.context_manager'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 38: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 318: "services.context_manager.build_cache_key" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.context_manager.build_cache_key TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.context_manager.build_cache_key' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 318: "services.context_manager" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.context_manager TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.context_manager'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 318: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 144: "services.context_manager.normalize_cache_key" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.context_manager.normalize_cache_key TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.context_manager.normalize_cache_key' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 144: "services.context_manager" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.context_manager TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.context_manager'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py",
+    line 144: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 32: "services.fuzzy_column_matcher.FuzzyColumnMatcher" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.fuzzy_column_matcher.FuzzyColumnMatcher TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.fuzzy_column_matcher.FuzzyColumnMatcher' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 32: "services.fuzzy_column_matcher" is an invalid dependency:
+    possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.fuzzy_column_matcher
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.fuzzy_column_matcher' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 32: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new/services/nlp_to_python:py_default_library":
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 2302: "services.nlp_to_python.nl_to_python_codegen.RankingCodeGen"
+    is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.nlp_to_python.nl_to_python_codegen.RankingCodeGen TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.nlp_to_python.nl_to_python_codegen.RankingCodeGen' in the Python
+    file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 2302: "services.nlp_to_python.nl_to_python_codegen" is an invalid
+    dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py
+    services.nlp_to_python.nl_to_python_codegen TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.nlp_to_python.nl_to_python_codegen' in the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 2302: "services.nlp_to_python" is an invalid dependency: possible
+    solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.nlp_to_python TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.nlp_to_python' in
+    the Python file.
+    
+    "uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py",
+    line 2302: "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+
+
+   Error  (GAZELLE3) Gazelle command failed!
+    Gazelle linter failed with error code: 1
+    stderr:
+    gazelle: ERROR: failed to validate dependencies for target
+    "@uber-one//uber/gss/chatbot-new:CHART_COLUMN_MAPPINGS_READER":
+    
+    "uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py", line 817:
+    "services.csv_data_loader.CSVDataLoader" is an invalid dependency:
+    possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.csv_data_loader.CSVDataLoader
+    TARGET_LABEL' BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore
+    services.csv_data_loader.CSVDataLoader' in the Python file.
+    
+    "uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py", line 817:
+    "services.csv_data_loader" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services.csv_data_loader TARGET_LABEL'
+    BUILD file directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services.csv_data_loader'
+    in the Python file.
+    
+    "uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py", line 817:
+    "services" is an invalid dependency: possible solutions:
+        1. Add it as a dependency in the requirements.txt file.
+        2. Use the '# gazelle:resolve py services TARGET_LABEL' BUILD file
+    directive to resolve to a known dependency.
+        3. Ignore it with a comment '# gazelle:ignore services' in the Python
+    file.
+    
+
+
+
+    Amend HEAD with lint patches? [Y/n] 
+
+ LINT ERRORS  Lint raised errors!
+
+
+Lint issued unresolved errors! Provide explanation to continue or press Enter
+to abort.
+
+    Explanation: NA
+Running unit tests...
+WARNING! This diff changes a lot (137) of files.
+Running tests for all affected packages may take a while.
+To skip local testing and submit diff immediately use 'arc diff --nounit' command.
+ UNIT OKAY  No unit test failures.
+Invalid Content Encoding (Non-UTF8)
+This diff includes files which are not valid UTF-8 (they contain invalid byte
+sequences). You can either stop this workflow and fix these files, or
+continue. If you continue, these files will be marked as binary.
+
+You can learn more about how Phabricator handles character encodings (and how
+to configure encoding settings and detect and correct encoding problems) by
+reading 'User Guide: UTF-8 and Character Encoding' in the Phabricator
+documentation.
+
+    AFFECTED FILES
+    uber/gss/chatbot-new/auth_cache.pickle.tmp.1765267537.0
+    uber/gss/chatbot-new/auth_cache.pickle.tmp.1765268980.1
+    uber/gss/chatbot-new/auth_cache.pickle.tmp.1765269027.1
+    uber/gss/chatbot-new/auth_cache.pickle.tmp.1765269028.2
+
+    Do you want to mark these files as binary and continue? [Y/n] Y
+
+[2026-01-14 06:56:57] ERROR 8192: strlen(): Passing null to parameter #1 ($string) of type string is deprecated at [/usr/local/arcanist/src/repository/api/ArcanistGitAPI.php:1034]
+arcanist(head=637ce8e1273101ebfe69b9ecaa969a98ae44c231), phutil(head=stable, ref.stable=5296bdce23f2), uber-one()
+  #0 ArcanistGitAPI::getFileDataAtRevision(NULL, string) called at [<arcanist>/src/repository/api/ArcanistGitAPI.php:994]
+  #1 ArcanistGitAPI::getOriginalFileData(NULL) called at [<arcanist>/src/parser/diff/ArcanistDiffChange.php:245]
+  #2 ArcanistDiffChange::convertToBinaryChange(ArcanistGitAPI) called at [<arcanist>/src/workflow/ArcanistDiffWorkflow.php:1468]
+  #3 ArcanistDiffWorkflow::generateChanges() called at [<arcanist>/src/workflow/ArcanistDiffWorkflow.php:539]
+  #4 ArcanistDiffWorkflow::run() called at [<arcanist>/scripts/arcanist.php:394]
+[2026-01-14 06:56:57] ERROR 8192: strlen(): Passing null to parameter #1 ($string) of type string is deprecated at [/usr/local/arcanist/src/repository/api/ArcanistGitAPI.php:1034]
+arcanist(head=637ce8e1273101ebfe69b9ecaa969a98ae44c231), phutil(head=stable, ref.stable=5296bdce23f2), uber-one()
+  #0 ArcanistGitAPI::getFileDataAtRevision(NULL, string) called at [<arcanist>/src/repository/api/ArcanistGitAPI.php:994]
+  #1 ArcanistGitAPI::getOriginalFileData(NULL) called at [<arcanist>/src/parser/diff/ArcanistDiffChange.php:245]
+  #2 ArcanistDiffChange::convertToBinaryChange(ArcanistGitAPI) called at [<arcanist>/src/workflow/ArcanistDiffWorkflow.php:1468]
+  #3 ArcanistDiffWorkflow::generateChanges() called at [<arcanist>/src/workflow/ArcanistDiffWorkflow.php:539]
+  #4 ArcanistDiffWorkflow::run() called at [<arcanist>/scripts/arcanist.php:394]
+[2026-01-14 06:56:57] ERROR 8192: strlen(): Passing null to parameter #1 ($string) of type string is deprecated at [/usr/local/arcanist/src/repository/api/ArcanistGitAPI.php:1034]
+arcanist(head=637ce8e1273101ebfe69b9ecaa969a98ae44c231), phutil(head=stable, ref.stable=5296bdce23f2), uber-one()
+  #0 ArcanistGitAPI::getFileDataAtRevision(NULL, string) called at [<arcanist>/src/repository/api/ArcanistGitAPI.php:994]
+  #1 ArcanistGitAPI::getOriginalFileData(NULL) called at [<arcanist>/src/parser/diff/ArcanistDiffChange.php:245]
+  #2 ArcanistDiffChange::convertToBinaryChange(ArcanistGitAPI) called at [<arcanist>/src/workflow/ArcanistDiffWorkflow.php:1468]
+  #3 ArcanistDiffWorkflow::generateChanges() called at [<arcanist>/src/workflow/ArcanistDiffWorkflow.php:539]
+  #4 ArcanistDiffWorkflow::run() called at [<arcanist>/scripts/arcanist.php:394]
+[2026-01-14 06:56:57] ERROR 8192: strlen(): Passing null to parameter #1 ($string) of type string is deprecated at [/usr/local/arcanist/src/repository/api/ArcanistGitAPI.php:1034]
+arcanist(head=637ce8e1273101ebfe69b9ecaa969a98ae44c231), phutil(head=stable, ref.stable=5296bdce23f2), uber-one()
+  #0 ArcanistGitAPI::getFileDataAtRevision(NULL, string) called at [<arcanist>/src/repository/api/ArcanistGitAPI.php:994]
+  #1 ArcanistGitAPI::getOriginalFileData(NULL) called at [<arcanist>/src/parser/diff/ArcanistDiffChange.php:245]
+  #2 ArcanistDiffChange::convertToBinaryChange(ArcanistGitAPI) called at [<arcanist>/src/workflow/ArcanistDiffWorkflow.php:1468]
+  #3 ArcanistDiffWorkflow::generateChanges() called at [<arcanist>/src/workflow/ArcanistDiffWorkflow.php:539]
+  #4 ArcanistDiffWorkflow::run() called at [<arcanist>/scripts/arcanist.php:394]
+Uploading chunks (17 chunks to upload).
+Uploaded binary data for "ERD_Chrome_Extension.docx".                         
+Uploaded binary data for "auth_cache.pickle.tmp.1765267537.0".
+Uploaded binary data for "auth_cache.pickle.tmp.1765268980.1".
+Uploaded binary data for "auth_cache.pickle.tmp.1765269027.1".
+Uploaded binary data for "auth_cache.pickle.tmp.1765269028.2".
+Uploaded binary data for "default.parquet".
+Uploaded binary data for "token.pickle".
+Upload complete.
+ PUSH STAGING  Pushing changes to staging area...
+Found certificates in ssh agent, proceeding without ussh check
+# Using ga-code primary phx7-vzk (gitoroute phx6-y5r)
+2026/01/14 06:57:30 proto: duplicate proto type registered: google.rpc.Status
+2026/01/14 06:57:40 proto: duplicate proto type registered: google.rpc.Status
+
+Enumerating objects: 160, done.
+Counting objects: 100% (160/160), done.
+Delta compression using up to 96 threads
+Compressing objects: 100% (150/150), done.
+Writing objects: 100% (156/156), 49.50 MiB | 7.97 MiB/s, done.
+Total 156 (delta 7), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (7/7), completed with 3 local objects.
+remote: warning: See https://gh.io/lfs for more information.
+remote: warning: File uber/gss/chatbot-new/data_cache/default.parquet is 66.47 MB; this is larger than GitHub's recommended maximum file size of 50.00 MB
+remote: warning: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.
+To code.uber.internal:staging/uber-one-staging-area
+ * [new reference]           feee8ce9c2cddc59ee00c1f66da7c4a7f2d3857c -> refs/phabricator/base/56502113
+ * [new reference]           142b1125b69baea29dad1c5b1280b594b07a1fda -> refs/phabricator/diff/56502113
+Updating commit message...
+Created a new Differential revision:
+        Revision URI: https://code.uberinternal.com/D21161571
+
+Included changes:
+  A       uber/gss/chatbot-new/AGGREGATION_SEMANTICS_IMPLEMENTATION.md
+  A       uber/gss/chatbot-new/ATTEMPTED_FIXES_SESSION_DEC16.md
+  A       uber/gss/chatbot-new/BUGFIX_CONVERSATION_ORCHESTRATOR_DEPENDENCY.md
+  A       uber/gss/chatbot-new/BUGFIX_PYDANTIC_OBJECT_TYPE_ERROR.md
+  A       uber/gss/chatbot-new/BUGFIX_SUMMARY_lowest_ticket_count.md
+  A       uber/gss/chatbot-new/BUGFIX_SUMMARY_sorting_fix.md
+  A       uber/gss/chatbot-new/CHART_COLUMN_MAPPINGS_READER.py
+  A       uber/gss/chatbot-new/COLUMN_DESCRIPTION_FLOW_README.md
+  A       uber/gss/chatbot-new/CONVERSATION_MEMORY_INIT_FIX.md
+  A       uber/gss/chatbot-new/CONVERSATION_STATE_IMPLEMENTATION_COMPLETE.md
+  A       uber/gss/chatbot-new/CREDENTIALS_QUICK_REFERENCE.txt
+  A       uber/gss/chatbot-new/CREDENTIALS_SETUP_GUIDE.md
+  A       uber/gss/chatbot-new/ENTITY_EXTRACTION_FIX_COMPLETE.md
+  A (bin) uber/gss/chatbot-new/ERD_Chrome_Extension.docx
+  A       uber/gss/chatbot-new/ERD_Chrome_Extension.md
+  A       uber/gss/chatbot-new/FIXES_TEMPORAL_QUERY_BUGS.md
+  A       uber/gss/chatbot-new/FIX_SUMMARY_PYARROW_BOOL_ERROR.md
+  A       uber/gss/chatbot-new/FOLLOWUP_DETECTION_IMPLEMENTATION.md
+  A       uber/gss/chatbot-new/FOLLOWUP_QUERY_FIX_COMPLETE.md
+  A       uber/gss/chatbot-new/IMPLEMENTATION_SUMMARY_CALCULATED_FIELDS.md
+  A       uber/gss/chatbot-new/IMPORT_ERROR_FIX.md
+  A       uber/gss/chatbot-new/INTEGRATION_COMPLETE_SUMMARY.md
+  A       uber/gss/chatbot-new/INTENT_CLASSIFICATION_FIX_COMPLETE.md
+  A       uber/gss/chatbot-new/ISSUE_ANALYSIS.md
+  A       uber/gss/chatbot-new/LAYER0_FOLLOWUP_IMPLEMENTATION.md
+  A       uber/gss/chatbot-new/PARAMETER_PASSING_FIX_COMPLETE.md
+  A       uber/gss/chatbot-new/PERIOD_COMPARISON_FIX_SUMMARY.md
+  A       uber/gss/chatbot-new/RAG/__init__.py
+  A       uber/gss/chatbot-new/RAG/vector_store.py
+  A       uber/gss/chatbot-new/README_CREDENTIALS_SYSTEM.md
+  A       uber/gss/chatbot-new/SYSTEM_ARCHITECTURE_DIAGRAM.txt
+  A       uber/gss/chatbot-new/TEMPLATE_SYSTEM_README.md
+  A       uber/gss/chatbot-new/TODO_FILTER_STATE_CAPTURE.md
+  A       uber/gss/chatbot-new/TWC_DISCREPANCY_FINDINGS.md
+  A       uber/gss/chatbot-new/analyze_twc_discrepancy.py
+  A       uber/gss/chatbot-new/app.py
+  A (bin) uber/gss/chatbot-new/auth_cache.pickle.tmp.1765267537.0
+  A (bin) uber/gss/chatbot-new/auth_cache.pickle.tmp.1765268980.1
+  A (bin) uber/gss/chatbot-new/auth_cache.pickle.tmp.1765269027.1
+  A (bin) uber/gss/chatbot-new/auth_cache.pickle.tmp.1765269028.2
+  A       uber/gss/chatbot-new/auth_storage.py
+  A       uber/gss/chatbot-new/check_chart_context.py
+  A       uber/gss/chatbot-new/chrome-extension/INSTALL.md
+  A       uber/gss/chatbot-new/chrome-extension/README.md
+  A       uber/gss/chatbot-new/chrome-extension/background.js
+  A       uber/gss/chatbot-new/chrome-extension/content-script.js
+  A       uber/gss/chatbot-new/chrome-extension/content-style.css
+  A       uber/gss/chatbot-new/chrome-extension/feedback.css
+  A       uber/gss/chatbot-new/chrome-extension/feedback.js
+  A       uber/gss/chatbot-new/chrome-extension/icons/icon-128.svg
+  A       uber/gss/chatbot-new/chrome-extension/icons/icon-16.svg
+  A       uber/gss/chatbot-new/chrome-extension/icons/icon-48.svg
+  A       uber/gss/chatbot-new/chrome-extension/manifest.json
+  A       uber/gss/chatbot-new/chrome-extension/network-interceptor-bootstrap.js
+  A       uber/gss/chatbot-new/chrome-extension/network-interceptor.js
+  A       uber/gss/chatbot-new/chrome-extension/popup.html
+  A       uber/gss/chatbot-new/chrome-extension/popup.js
+  A       uber/gss/chatbot-new/chrome_extension_logger.py
+  A       uber/gss/chatbot-new/code_repair_log.json
+  A       uber/gss/chatbot-new/credentials.json
+  A (bin) uber/gss/chatbot-new/data_cache/default.parquet
+  A       uber/gss/chatbot-new/data_exploration_logs.json
+  A       uber/gss/chatbot-new/feedback_submissions.json
+  A       uber/gss/chatbot-new/google_sheets_config.json
+  A       uber/gss/chatbot-new/march_check.py
+  A       uber/gss/chatbot-new/master_logger.py
+  A       uber/gss/chatbot-new/meta_agents/__init__.py
+  A       uber/gss/chatbot-new/meta_agents/enhanced_query_agent.py
+  A       uber/gss/chatbot-new/meta_agents/query_understanding_agent.py
+  A       uber/gss/chatbot-new/models/__init__.py
+  A       uber/gss/chatbot-new/models/schemas.py
+  A       uber/gss/chatbot-new/reference-code/tableau_downloader_cli.py
+  A       uber/gss/chatbot-new/regenerate_mappings.py
+  A       uber/gss/chatbot-new/requirements.txt
+  A       uber/gss/chatbot-new/services/LAYER0_README.md
+  A       uber/gss/chatbot-new/services/NL_to_python.py
+  A       uber/gss/chatbot-new/services/__init__.py
+  A       uber/gss/chatbot-new/services/causal_feature_importance.py
+  A       uber/gss/chatbot-new/services/causal_feature_importance_analysis.py
+  A       uber/gss/chatbot-new/services/causal_feature_importance_aniket.py
+  A       uber/gss/chatbot-new/services/chart_column_mapper.py
+  A       uber/gss/chatbot-new/services/codet5_service.py
+  A       uber/gss/chatbot-new/services/context_manager/__init__.py
+  A       uber/gss/chatbot-new/services/context_manager/conversation_memory.py
+  A       uber/gss/chatbot-new/services/context_manager/disambiguation_manager.py
+  A       uber/gss/chatbot-new/services/context_manager/schemas.py
+  A       uber/gss/chatbot-new/services/context_manager/temporal_detector.py
+  A       uber/gss/chatbot-new/services/conversation_orchestrator.py
+  A       uber/gss/chatbot-new/services/csv_calculated_fields_enhancer.py
+  A       uber/gss/chatbot-new/services/csv_data_loader.py
+  A       uber/gss/chatbot-new/services/data_exploration.py
+  A       uber/gss/chatbot-new/services/data_exploration_no_chart.py
+  A       uber/gss/chatbot-new/services/data_manager.py
+  A       uber/gss/chatbot-new/services/data_processor.py
+  A       uber/gss/chatbot-new/services/date_analyzer.py
+  A       uber/gss/chatbot-new/services/enhanced_analysis_service.py
+  A       uber/gss/chatbot-new/services/fuzzy_column_matcher.py
+  A       uber/gss/chatbot-new/services/google_sheets_service.py
+  A       uber/gss/chatbot-new/services/insight_generator.py
+  A       uber/gss/chatbot-new/services/layer0_constrained_parser.py
+  A       uber/gss/chatbot-new/services/llm_service.py
+  A       uber/gss/chatbot-new/services/multi_table_service.py
+  A       uber/gss/chatbot-new/services/nlp_to_python/__init__.py
+  A       uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_codegen.py
+  A       uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_operations.py
+  A       uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_schemas.py
+  A       uber/gss/chatbot-new/services/nlp_to_python/nl_to_python_workflow.py
+  A       uber/gss/chatbot-new/services/outlier_detection_service.py
+  A       uber/gss/chatbot-new/services/period_extraction_service.py
+  A       uber/gss/chatbot-new/services/response_template_engine.py
+  A       uber/gss/chatbot-new/services/shap_analysis_v6.py
+  A       uber/gss/chatbot-new/services/smart_aggregation_service.py
+  A       uber/gss/chatbot-new/services/tableau_aggregation_hints.py
+  A       uber/gss/chatbot-new/services/tableau_credentials_service.py
+  A       uber/gss/chatbot-new/services/temporal_anomaly_detection_service.py
+  A       uber/gss/chatbot-new/services/temporal_comparison_analysis.py
+  A       uber/gss/chatbot-new/services/temporal_entity_extractor.py
+  A       uber/gss/chatbot-new/services/temporal_validator.py
+  A       uber/gss/chatbot-new/services/timeseries_analysis.py
+  A       uber/gss/chatbot-new/services/utils.py
+  A       uber/gss/chatbot-new/services/visualization_service.py
+  A       uber/gss/chatbot-new/services/workbook_data_summarizer.py
+  A       uber/gss/chatbot-new/smart_aggregation_cache.json
+  A       uber/gss/chatbot-new/static/app.js
+  A       uber/gss/chatbot-new/static/style.css
+  A       uber/gss/chatbot-new/tableau_aggregation_hints.json
+  A       uber/gss/chatbot-new/tableau_backend.py
+  A       uber/gss/chatbot-new/tableau_config.json
+  A       uber/gss/chatbot-new/tableau_config_orig.json
+  A       uber/gss/chatbot-new/tableau_descriptions/CentralizedL10NMetrics/field_descriptions_CentralizedL10NMetrics.json
+  A       uber/gss/chatbot-new/tableau_descriptions/FRODashboard_Updated_test/field_descriptions_FRODashboard_Updated_test.json
+  A       uber/gss/chatbot-new/tableau_descriptions/FRODashboard_final/field_descriptions_FRODashboard_final.json
+  A       uber/gss/chatbot-new/tableau_descriptions/FRODashboard_new_updated/field_descriptions_FRODashboard_new_updated.json
+  A       uber/gss/chatbot-new/tableau_sticky_chat.trex
+  A       uber/gss/chatbot-new/templates/index.html
+  A (bin) uber/gss/chatbot-new/token.pickle
+  A       uber/gss/chatbot-new/workbook_data_summary.json
+aranja14@uberone(aranja14.devpod-us-or) ~/uber-one/uber/gss/chatbot-new
+ % claude
+zsh: command not found: claude
+aranja14@uberone(aranja14.devpod-us-or) ~/uber-one/uber/gss/chatbot-new

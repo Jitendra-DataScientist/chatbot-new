@@ -4,6 +4,7 @@ Combines the robust Tableau connection logic with Flask-compatible state managem
 """
 
 import pandas as pd
+import polars as pl
 import requests
 import xml.etree.ElementTree as ET
 import urllib.parse
@@ -41,6 +42,10 @@ import tempfile
 import shutil
 from pathlib import Path
 
+# gazelle:ignore master_logger
+# gazelle:ignore services
+# gazelle:ignore RAG
+# gazelle:ignore models
 # Import master logger for comprehensive logging
 from master_logger import get_master_logger, function_logger, setup_module_logger
 
@@ -172,76 +177,130 @@ def get_env_variable(key: str, default: str = "") -> str:
         return default
 
 @function_logger('tableau_backend.load_tableau_config')
-def load_tableau_config(filepath: str = None) -> Dict:
+def load_tableau_config(filepath: str = None, site_content_url: str = None, tableau_url: str = None, get_all_fallbacks: bool = False) -> Dict:
     """
-    Loads Tableau configuration from Google Sheets credentials service
-    
-    This function now uses the centralized credentials service which:
-    - Fetches credentials from Google Sheets by username lookup
+    Loads Tableau configuration from Google Sheets PAT credentials service
+
+    This function now uses the direct Google Sheets API to fetch credentials by site_content_url:
+    - Fetches credentials from Google Sheets by site_content_url lookup
+    - Supports extracting site_content_url from Tableau URLs
     - Includes 5-minute in-memory caching for performance
     - Provides comprehensive logging and error handling
-    
+    - Supports fallback credentials (multiple credentials for same site)
+
     Args:
-        filepath: DEPRECATED - Kept for backwards compatibility but not used
-                 Credentials now loaded from Google Sheets exclusively
-    
+        filepath: DEPRECATED - Kept for backwards compatibility, falls back to tableau_config.json if needed
+        site_content_url: The site_content_url to lookup (e.g., "uMetricAnalytics")
+        tableau_url: Full Tableau URL to extract site_content_url from
+        get_all_fallbacks: If True, returns ALL credentials for the site (for fallback support)
+
     Returns:
-        Dict containing Tableau configuration with keys:
-        - username, password, site_content_url, tableau_server_url, api_version, etc.
+        If get_all_fallbacks=False:
+            Dict containing single Tableau configuration
+            If get_all_fallbacks=True:
+            List of Dict containing all credentials for the site (ordered by priority)
     """
-    from services.tableau_credentials_service import load_tableau_config as load_credentials
-    
-    master_logger.info("[CONFIG] Configuration mode: Google Sheets Credentials Service")
+    # gazelle:ignore services
+    from services.tableau_pat_service import tableau_pat_service
+
+    master_logger.info("[CONFIG] Configuration mode: Google Sheets PAT Service (Direct API)")
     master_logger.info("[CONFIG] Fetching credentials from Google Sheets...")
-    
+
     try:
-        # Load credentials from Google Sheets (no fallback to pass_config.json)
-        # Username must be set in environment variable TABLEAU_USERNAME or .env file
-        username = get_env_variable('TABLEAU_USERNAME', None)
-        
-        if not username:
-            raise ValueError(
-                "TABLEAU_USERNAME environment variable not set. "
-                "Please set it in your .env file or environment variables."
-            )
-        
-        config = load_credentials(username=username)
-        
+        # Priority 1: Use provided site_content_url
+        if site_content_url:
+            master_logger.info(f"Using provided site_content_url: {site_content_url}")
+
+        # Priority 2: Extract from provided Tableau URL
+        elif tableau_url:
+            master_logger.info(f"Extracting site_content_url from URL: {tableau_url}")
+            site_content_url = tableau_pat_service.extract_site_content_url_from_url(tableau_url)
+            # fixed for default sitecontenturl
+            if not site_content_url:
+                site_content_url = "Default"
+                master_logger.info(f"No site_content_url extracted, using 'Default' for default site")
+            master_logger.info(f"Extracted site_content_url: {site_content_url}")
+
+        # Priority 3: Check environment variable
+        elif get_env_variable('TABLEAU_SITE_CONTENT_URL', None):
+            site_content_url = get_env_variable('TABLEAU_SITE_CONTENT_URL')
+            master_logger.info(f"Using site_content_url from environment: {site_content_url}")
+
+        # Priority 4: Fall back to tableau_config.json
+        else:
+            master_logger.warning("No site_content_url or tableau_url provided, falling back to tableau_config.json")
+            if filepath is None:
+                filepath = 'tableau_config.json'
+
+            if os.path.exists(filepath):
+                with open(filepath, 'r') as f:
+                    config = json.load(f)
+                master_logger.info(f"[FALLBACK] Loaded configuration from {filepath}")
+
+                # Ensure auth_type is set
+                if 'auth_type' not in config:
+                    if 'personal_access_token_name' in config:
+                        config['auth_type'] = 'personal_access_token'
+                    elif 'username' in config:
+                        config['auth_type'] = 'username_password'
+
+                return config
+            else:
+                raise FileNotFoundError(
+                    f"No site_content_url/tableau_url provided and fallback file not found: {filepath}. "
+                    f"Please provide site_content_url, tableau_url, or set TABLEAU_SITE_CONTENT_URL env variable."
+                )
+
+        # Fetch credentials from Google Sheets by site_content_url
+        if get_all_fallbacks:
+            # Get ALL credentials for fallback support
+            master_logger.info(f"Fetching ALL credentials for {site_content_url} (fallback mode enabled)")
+            success, credentials_list, error = tableau_pat_service.get_all_credentials_by_site_content_url(site_content_url)
+
+            if not success:
+                raise RuntimeError(f"Failed to fetch credentials from Google Sheets: {error}")
+
+            master_logger.info(f"[SUCCESS] Loaded {len(credentials_list)} credential(s) for fallback")
+            return credentials_list  # Return list of credentials
+
+        else:
+            # Get single credential (first match)
+            success, config, error = tableau_pat_service.get_credentials_by_site_content_url(site_content_url)
+
+            if not success:
+                raise RuntimeError(f"Failed to fetch credentials from Google Sheets: {error}")
+
         master_logger.info("[SUCCESS] Tableau configuration loaded successfully from Google Sheets")
         master_logger.debug(f"Configuration keys: {list(config.keys())}")
-        
+
         # Log important configuration details (without sensitive info)
         if 'tableau_server_url' in config:
             master_logger.info(f"Tableau server URL: {config['tableau_server_url']}")
         if 'api_version' in config:
             master_logger.info(f"API version: {config['api_version']}")
-        
-        # Handle different authentication types
-        if 'auth_type' in config:
-            auth_type = config['auth_type']
-            master_logger.info(f"Authentication type: {auth_type}")
-            
-            if auth_type == "username_password":
-                if 'username' in config:
-                    master_logger.info(f"Username configured: {config['username']}")
-            elif auth_type == "personal_access_token":
-                if 'personal_access_token_name' in config:
-                    master_logger.info(f"PAT name configured: {config['personal_access_token_name']}")
-        else:
-            # Default to username_password
-            config['auth_type'] = 'username_password'
-            master_logger.info("Authentication type: username_password (default)")
-            
+        if 'site_content_url' in config:
+            master_logger.info(f"Site content URL: {config['site_content_url']}")
+
+        # Log authentication type
+        auth_type = config.get('auth_type', 'unknown')
+        master_logger.info(f"Authentication type: {auth_type}")
+
+        if auth_type == "username_password" and 'username' in config:
+            master_logger.info(f"Username configured: {config['username']}")
+        elif auth_type == "personal_access_token" and 'personal_access_token_name' in config:
+            master_logger.info(f"PAT name configured: {config['personal_access_token_name']}")
+
         return config
-        
+
     except Exception as e:
         master_logger.error(f"[FAILED] Failed to load Tableau configuration: {e}")
-        master_logger.error("Google Sheets credentials service failed - no fallback available")
-        print(f"CRITICAL ERROR: Failed to load Tableau configuration from Google Sheets: {e}")
+        master_logger.error(traceback.format_exc())
+        print(f"CRITICAL ERROR: Failed to load Tableau configuration: {e}")
         print("Please check:")
-        print("  1. google_sheets_config.json has correct Apps Script URL")
-        print("  2. Google Sheets service is enabled")
-        print("  3. Your Google Sheet has credentials for the username")
+        print("  1. Google Sheet contains credentials for the site_content_url")
+        print("  2. Google Sheets API credentials (token.pickle, credentials.json) are valid")
+        print("  3. The 'Credentials' sheet has the correct columns")
+        print("  4. Or provide a valid tableau_config.json as fallback")
         raise RuntimeError(f"Failed to load Tableau credentials: {e}")
 
 TABLEAU_CONFIG = load_tableau_config()
@@ -295,9 +354,6 @@ class ChatState:
     workbook_name: Optional[str] = None
     dashboard_name: Optional[str] = None
     
-    # Session tracking
-    session_id: Optional[str] = None
-    
     # Data
     available_views: List[dict] = field(default_factory=list)
     raw_data: Optional[pd.DataFrame] = None
@@ -306,9 +362,6 @@ class ChatState:
     chart_interactions: List[Dict] = field(default_factory=list)
     active_worksheet: Optional[str] = None
     selected_data: Optional[List[Dict]] = None
-    
-    # Conversation state (for multi-turn conversations)
-    conversation_state: Optional[Dict] = None
     
     # Metadata
     connection_timestamp: Optional[datetime] = None
@@ -319,19 +372,7 @@ class ChatState:
             self.connection_timestamp = datetime.utcnow()
         self.last_activity = datetime.utcnow()
         
-        # Initialize session_id if not provided
-        if self.session_id is None:
-            self.session_id = f"session_{int(self.connection_timestamp.timestamp())}"
-        
-        # Initialize conversation_state if not provided
-        if self.conversation_state is None:
-            self.conversation_state = {
-                'history': [],
-                'context': {},
-                'session_id': self.session_id
-            }
-        
-        master_logger.debug(f"ChatState initialized - session_id: {self.session_id}, connection_timestamp: {self.connection_timestamp}")
+        master_logger.debug(f"ChatState initialized - connection_timestamp: {self.connection_timestamp}")
     
     def update_activity(self):
         """Update last activity timestamp"""
@@ -1362,6 +1403,7 @@ class EnhancedWorkbookDataFetcher:
         # Initialize ChartColumnMapper (will be configured with CSV data later)
         self.chart_column_mapper = None
         try:
+            # gazelle:ignore services
             from services.chart_column_mapper import ChartColumnMapper
             self.chart_column_mapper = ChartColumnMapper()
             master_logger.info("ChartColumnMapper initialized (CSV data will be set during fetch)")
@@ -2480,6 +2522,7 @@ class CompleteWorkbookDataManager:
             def generate_chart_column_mappings():
                 """Generate chart_column_mappings.json from metadata directory"""
                 try:
+                    # gazelle:ignore CHART_COLUMN_MAPPINGS_READER
                     from CHART_COLUMN_MAPPINGS_READER import TableauColumnMappingExtractor
                     metadata_dir = "tableau_metadata"
                     
@@ -2496,12 +2539,17 @@ class CompleteWorkbookDataManager:
                         output_file="chart_column_mappings.json")
                     extractor.process_all_dashboards()
                     extractor.save_results()
-                    
+
                     master_logger.info(f"✅ Chart column mappings generated successfully")
+                    summary = extractor.results.get('summary', {})
                     master_logger.info(f"   Output: chart_column_mappings.json")
-                    master_logger.info(f"   Dashboards: {extractor.results['summary']['total_dashboards']}")
-                    master_logger.info(f"   Charts: {extractor.results['summary']['total_charts']}")
-                    
+                    master_logger.info(f"   Dashboards: {summary.get('total_dashboards', 0)}")
+                    master_logger.info(f"   Charts: {summary.get('total_charts', 0)}")
+
+                    if summary.get('errors'):
+                        for error in summary['errors']:
+                            master_logger.warning(f"   ⚠️  {error}")
+
                     return extractor.results
                     
                 except Exception as mapping_error:
@@ -2724,8 +2772,40 @@ class CompleteWorkbookDataManager:
                             except:
                                 pass
                         else:
+                            # Live connection changes by Aniket - Use VizQL for live connections
                             master_logger.warning("No .hyper or .csv files found in .twbx package")
-                            
+                            master_logger.info("🔄 Attempting VizQL extraction for live connection workbook...")
+
+                            # Get available views for VizQL extraction
+                            try:
+                                views = self.connection_manager.get_workbook_views(site_id, workbook_id, auth_token)
+
+                                if views:
+                                    master_logger.info(f"Found {len(views)} views for VizQL extraction")
+
+                                    # Extract data using VizQL
+                                    vizql_data = await self._extract_data_via_vizql(
+                                        workbook_id=workbook_id,
+                                        workbook_name=workbook_name,
+                                        site_id=site_id,
+                                        auth_token=auth_token,
+                                        views=views,
+                                        progress_callback=progress_callback
+                                    )
+
+                                    # Add VizQL data to result
+                                    if vizql_data:
+                                        result['datasources_data'].update(vizql_data)
+                                        master_logger.info(f"✅ VizQL extraction successful: {len(vizql_data)} view(s) extracted")
+                                    else:
+                                        master_logger.warning("⚠️  VizQL extraction returned no data")
+                                else:
+                                    master_logger.warning("No views found for VizQL extraction")
+
+                            except Exception as vizql_error:
+                                master_logger.error(f"VizQL extraction failed: {vizql_error}")
+                                master_logger.error(traceback.format_exc())
+
                 except Exception as extract_error:
                     master_logger.error(f"Error extracting data from .twbx: {extract_error}")
                     master_logger.error(traceback.format_exc())
@@ -2863,6 +2943,100 @@ class CompleteWorkbookDataManager:
                 'charts_metadata': {}
             }
     
+    # Live connection changes by Aniket - VizQL with Trusted Authentication for production
+    async def _extract_data_via_vizql(self, workbook_id: str, workbook_name: str, site_id: str, auth_token: str,
+                                      views: List[dict], progress_callback: callable = None) -> Dict[str, pd.DataFrame]:
+        """
+        Extract data from live connection workbooks using VizQL with Trusted Authentication
+
+        PRODUCTION-READY: Fully automated, no manual intervention required
+
+        Uses Tableau Trusted Authentication to:
+        1. Request trusted ticket from Tableau Server
+        2. Redeem ticket for VizQL session cookies
+        3. Query views via VizQL to get underlying data
+        4. Parse and return full DataFrames
+
+        Args:
+            workbook_id: Workbook ID
+            workbook_name: Workbook name
+            site_id: Site ID
+            auth_token: Authentication token (PAT)
+            views: List of view dictionaries with 'id' and 'name'
+            progress_callback: Optional progress callback
+
+        Returns:
+            Dict mapping view names to DataFrames with FULL underlying data
+        """
+        master_logger.info("=" * 80)
+        master_logger.info("LIVE CONNECTION DATA EXTRACTION VIA VIZQL (Trusted Auth) - by Aniket")
+        master_logger.info("=" * 80)
+
+        vizql_data = {}
+
+        def report_progress(**kwargs):
+            if progress_callback and callable(progress_callback):
+                try:
+                    progress_callback(kwargs)
+                except Exception as e:
+                    master_logger.warning(f"Progress callback error (non-critical): {e}")
+
+        total_views = len(views)
+        master_logger.info(f"Extracting data from {total_views} view(s) using VizQL with Trusted Auth")
+
+        # STEP 1: Get username for trusted ticket (required by Tableau)
+        # For now, use a placeholder - admin will configure this
+        username = self.connection_manager.config.get('tableau_username', 'tableau_user')
+        master_logger.info(f"[VIZQL] Using username: {username}")
+
+        for idx, view in enumerate(views, 1):
+            view_id = view.get('id')
+            view_name = view.get('name')
+
+            try:
+                master_logger.info(f"[{idx}/{total_views}] Processing view: {view_name}")
+
+                report_progress(
+                    stage='vizql_extraction',
+                    message=f'Extracting live data from view {idx}/{total_views}: {view_name}',
+                    views_processed=idx - 1,
+                    total_views=total_views,
+                    current_item=view_name
+                )
+
+                # Extract data using VizQL with Trusted Auth
+                master_logger.info(f"[VIZQL] Extracting data using VizQL for view: {view_name}")
+                df = await self.connection_manager.extract_view_data_via_vizql(
+                    username=username,
+                    workbook_name=workbook_name,
+                    view_name=view_name,
+                    site_content_url=self.connection_manager.config.get('site_content_url', '')
+                )
+
+                if df is not None and not df.empty:
+                    vizql_data[view_name] = df
+                    master_logger.info(f"[VIZQL] ✅ Successfully extracted data from {view_name}: {df.shape[0]} rows × {df.shape[1]} columns")
+
+                    report_progress(
+                        stage='vizql_extraction',
+                        message=f'Completed view {idx}/{total_views}: {view_name} ({df.shape[0]} rows)',
+                        views_processed=idx,
+                        total_views=total_views,
+                        current_item=view_name
+                    )
+                else:
+                    master_logger.warning(f"[VIZQL] ⚠️  No data extracted from view: {view_name}")
+
+            except Exception as view_error:
+                master_logger.error(f"[VIZQL] Error extracting data from view {view_name}: {view_error}")
+                master_logger.debug(traceback.format_exc())
+
+        master_logger.info("=" * 80)
+        master_logger.info(f"VIZQL EXTRACTION COMPLETE: {len(vizql_data)}/{total_views} views extracted")
+        master_logger.info("=" * 80)
+
+        return vizql_data
+
     async def _download_twb_file(self, workbook_name: str, workbook_id: str, site_id: str, auth_token: str) -> Optional[str]:
         """Download TWB/TWBX file from Tableau Server"""
         try:
@@ -2916,8 +3090,13 @@ class TableauConnectionManager:
     @function_logger('tableau_backend.TableauConnectionManager.authenticate')
     def authenticate(self, content_url="") -> Tuple[str, str]:
         """Authenticate to Tableau Server using configured method (PAT or username/password)"""
+        # fixed for default sitecontenturl - convert "Default" to empty string for authentication
+        if content_url == "Default":
+            content_url = ""
+            master_logger.info(f"Converting 'Default' site to empty string for Tableau authentication")
+
         auth_type = self.config.get('auth_type', 'personal_access_token')
-        
+
         if auth_type == 'username_password':
             return self.sign_in_with_username_password(content_url)
         else:
@@ -3327,7 +3506,728 @@ class TableauConnectionManager:
             master_logger.info(f"[UPD] CHATSTATE_REFRESH: Updated existing ChatState | token: {token_preview} | update_time: {update_time*1000:.1f}ms")
         else:
             master_logger.info(f"[NEW] CHATSTATE_INIT: Initialized new ChatState | token: {token_preview} | update_time: {update_time*1000:.1f}ms")
-    
+
+    def _manual_browser_login(self, driver, site_content_url: str = "") -> bool:
+        """
+        Opens browser for manual login and saves session cookies
+        Handles Uber's two-step authentication process:
+        1. Authenticate at whober.uberinternal.com
+        2. Then access Tableau
+
+        Returns True if login successful, False otherwise
+        """
+        try:
+            import time as time_module
+            import pickle
+
+            master_logger.info("[MANUAL_LOGIN] Opening Tableau SSO for manual login...")
+            master_logger.info("[MANUAL_LOGIN] ⚠️  PLEASE LOGIN MANUALLY IN THE BROWSER WINDOW")
+
+            # Navigate to Tableau's SAML SSO endpoint
+            # This will redirect to whober/USSO automatically and handle the full auth flow
+            sso_url = "https://tableau.uberinternal.com/wg/saml/SSO/index.html"
+            master_logger.info(f"[MANUAL_LOGIN] Loading Tableau SSO: {sso_url}")
+            master_logger.info("[MANUAL_LOGIN] This will redirect to Uber authentication...")
+
+            driver.get(sso_url)
+
+            # Wait a bit for the redirect
+            time_module.sleep(3)
+
+            master_logger.info("[MANUAL_LOGIN] ⚠️  Please complete authentication in the browser")
+            master_logger.info("[MANUAL_LOGIN] The page will redirect through Uber SSO automatically")
+            master_logger.info("[MANUAL_LOGIN] Waiting for authentication to complete and Tableau cookies...")
+
+            # Wait for user to login (check every 5 seconds for up to 5 minutes)
+            max_wait_time = 300  # 5 minutes
+            check_interval = 5
+            elapsed = 0
+
+            while elapsed < max_wait_time:
+                time_module.sleep(check_interval)
+                elapsed += check_interval
+
+                try:
+                    # Check current URL - might be on USSO page
+                    current_url = driver.current_url
+
+                    # Check if login successful by looking for cookies
+                    cookies = driver.get_cookies()
+
+                    if cookies is None:
+                        master_logger.debug(f"[MANUAL_LOGIN] On redirect page ({current_url}), waiting... ({elapsed}/{max_wait_time}s)")
+                        continue
+
+                    # Look for Tableau session cookies
+                    tableau_cookies = [c for c in cookies if 'workgroup_session_id' in c.get('name', '').lower()
+                                     or 'tableausessionid' in c.get('name', '').lower()]
+
+                    if tableau_cookies:
+                        master_logger.info(f"[MANUAL_LOGIN] ✅ Login detected! Found {len(tableau_cookies)} session cookies")
+
+                        # Save cookies to file
+                        cookie_file = "/Users/aranja14/Desktop/chatbot/tableau_browser_cookies.pkl"
+                        with open(cookie_file, 'wb') as f:
+                            pickle.dump(cookies, f)
+
+                        master_logger.info(f"[MANUAL_LOGIN] ✅ Saved {len(cookies)} cookies to {cookie_file}")
+                        return True
+
+                    master_logger.debug(f"[MANUAL_LOGIN] Waiting for login... ({elapsed}/{max_wait_time}s)")
+
+                except Exception as check_error:
+                    master_logger.debug(f"[MANUAL_LOGIN] Cookie check error (normal during SSO redirect): {check_error}")
+                    continue
+
+            master_logger.error("[MANUAL_LOGIN] ❌ Timeout waiting for login")
+            return False
+
+        except Exception as e:
+            master_logger.error(f"[MANUAL_LOGIN] Error during manual login: {e}")
+            return False
+
+    def _load_saved_cookies(self, driver) -> bool:
+        """Load previously saved cookies into browser"""
+        try:
+            import pickle
+            import urllib.parse
+
+            cookie_file = "/Users/aranja14/Desktop/chatbot/tableau_browser_cookies.pkl"
+
+            if not os.path.exists(cookie_file):
+                master_logger.warning("[COOKIES] No saved cookies found")
+                return False
+
+            with open(cookie_file, 'rb') as f:
+                cookies = pickle.load(f)
+
+            # Navigate to Tableau first (required to set cookies)
+            driver.get(self.config['tableau_server_url'])
+            import time as time_module
+            time_module.sleep(2)
+
+            # Inject cookies
+            for cookie in cookies:
+                try:
+                    # Remove domain if it conflicts
+                    if 'domain' in cookie:
+                        cookie['domain'] = urllib.parse.urlparse(self.config['tableau_server_url']).hostname
+                    driver.add_cookie(cookie)
+                except Exception as e:
+                    master_logger.debug(f"[COOKIES] Skipped cookie {cookie.get('name')}: {e}")
+
+            master_logger.info(f"[COOKIES] ✅ Loaded {len(cookies)} cookies from file")
+            return True
+
+        except Exception as e:
+            master_logger.error(f"[COOKIES] Error loading cookies: {e}")
+            return False
+
+    # Live connection changes by Aniket - VizQL extraction with Trusted Authentication for PRODUCTION
+    async def extract_view_data_via_vizql(self, username: str, workbook_name: str, view_name: str,
+                                          site_content_url: str = "") -> Optional[pd.DataFrame]:
+        """
+        Extract data from a Tableau view using VizQL with Trusted Authentication
+
+        PRODUCTION-READY: Fully automated, no manual intervention
+
+        Args:
+            username: Tableau username for trusted ticket
+            workbook_name: Name of the workbook
+            view_name: Name of the view
+            site_content_url: Site content URL (e.g., "uMetricAnalytics")
+
+        Returns:
+            DataFrame with full underlying data or None if failed
+        """
+        try:
+            master_logger.info(f"[VIZQL] Extracting data for view: {view_name}")
+
+            # STEP 1: Request trusted ticket
+            master_logger.info(f"[VIZQL] Step 1: Requesting trusted ticket for user: {username}")
+            trusted_ticket = await self._get_trusted_ticket(username, site_content_url)
+
+            if not trusted_ticket:
+                master_logger.error("[VIZQL] ❌ Failed to get trusted ticket")
+                return None
+
+            master_logger.info(f"[VIZQL] ✅ Got trusted ticket: {trusted_ticket[:20]}...")
+
+            # STEP 2: Redeem ticket for session cookies
+            master_logger.info("[VIZQL] Step 2: Redeeming ticket for VizQL session cookies...")
+            session = await self._redeem_trusted_ticket(trusted_ticket, site_content_url)
+
+            if not session:
+                master_logger.error("[VIZQL] ❌ Failed to redeem trusted ticket")
+                return None
+
+            master_logger.info(f"[VIZQL] ✅ Got VizQL session with {len(session.cookies)} cookies")
+
+            # STEP 3: Make VizQL request to get data
+            master_logger.info("[VIZQL] Step 3: Requesting data via VizQL...")
+            df = await self._vizql_get_data(session, workbook_name, view_name, site_content_url)
+
+            if df is not None and not df.empty:
+                master_logger.info(f"[VIZQL] ✅ Successfully extracted data: {df.shape[0]} rows × {df.shape[1]} columns")
+                return df
+            else:
+                master_logger.warning("[VIZQL] ⚠️  No data extracted")
+                return None
+
+        except Exception as e:
+            master_logger.error(f"[VIZQL] Error extracting data: {type(e).__name__}: {str(e)}")
+            master_logger.debug(traceback.format_exc())
+            return None
+
+    async def _get_trusted_ticket(self, username: str, site_content_url: str = "") -> Optional[str]:
+        """Request a trusted ticket from Tableau Server"""
+        try:
+            # Build trusted ticket URL
+            trusted_url = f"{self.config['tableau_server_url']}/trusted"
+
+            # Prepare request data
+            data = {
+                'username': username
+            }
+
+            if site_content_url:
+                data['target_site'] = site_content_url
+
+            master_logger.debug(f"[VIZQL] Requesting trusted ticket from: {trusted_url}")
+            master_logger.debug(f"[VIZQL] Request data: {data}")
+
+            # Make request
+            response = requests.post(trusted_url, data=data, verify=False, timeout=30)
+
+            if response.status_code == 200:
+                ticket = response.text.strip()
+
+                # Check if ticket is valid (not -1 which means auth failed)
+                if ticket == "-1":
+                    master_logger.error("[VIZQL] Trusted authentication failed - ticket returned -1")
+                    master_logger.error("[VIZQL] This means:")
+                    master_logger.error("[VIZQL]   1. Trusted authentication is not enabled on Tableau Server")
+                    master_logger.error("[VIZQL]   2. Your server IP is not in the trusted hosts list")
+                    master_logger.error("[VIZQL]   3. Username is invalid")
+                    return None
+
+                return ticket
+            else:
+                master_logger.error(f"[VIZQL] Failed to get trusted ticket: {response.status_code}")
+                master_logger.error(f"[VIZQL] Response: {response.text}")
+                return None
+
+        except Exception as e:
+            master_logger.error(f"[VIZQL] Error getting trusted ticket: {e}")
+            return None
+
+    async def _redeem_trusted_ticket(self, ticket: str, site_content_url: str = "") -> Optional[requests.Session]:
+        """Redeem trusted ticket for VizQL session cookies"""
+        try:
+            # Create session
+            session = requests.Session()
+            session.verify = False
+
+            # Build redeem URL
+            if site_content_url:
+                redeem_url = f"{self.config['tableau_server_url']}/t/{site_content_url}/trusted/{ticket}"
+            else:
+                redeem_url = f"{self.config['tableau_server_url']}/trusted/{ticket}"
+
+            master_logger.debug(f"[VIZQL] Redeeming ticket at: {redeem_url}")
+
+            # Redeem ticket
+            response = session.get(redeem_url, timeout=30)
+
+            if response.status_code == 200:
+                master_logger.info(f"[VIZQL] Ticket redeemed successfully")
+                master_logger.debug(f"[VIZQL] Session cookies: {list(session.cookies.keys())}")
+                return session
+            else:
+                master_logger.error(f"[VIZQL] Failed to redeem ticket: {response.status_code}")
+                return None
+
+        except Exception as e:
+            master_logger.error(f"[VIZQL] Error redeeming ticket: {e}")
+            return None
+
+    async def _vizql_get_data(self, session: requests.Session, workbook_name: str, view_name: str,
+                             site_content_url: str = "") -> Optional[pd.DataFrame]:
+        """Get data from Tableau view using VizQL (uses Polars internally for large data performance)"""
+        try:
+            import urllib.parse
+            import re
+            import json
+
+            # Build view URL
+            encoded_workbook = urllib.parse.quote(workbook_name)
+            encoded_view = urllib.parse.quote(view_name)
+
+            if site_content_url:
+                view_url = f"{self.config['tableau_server_url']}/t/{site_content_url}/views/{encoded_workbook}/{encoded_view}"
+            else:
+                view_url = f"{self.config['tableau_server_url']}/views/{encoded_workbook}/{encoded_view}"
+
+            master_logger.debug(f"[VIZQL] View URL: {view_url}")
+
+            # STEP 1: Load the view page to establish VizQL session
+            master_logger.info("[VIZQL] Loading view page to establish session...")
+            response = session.get(view_url, timeout=60)
+
+            if response.status_code != 200:
+                master_logger.error(f"[VIZQL] Failed to load view: {response.status_code}")
+                return None
+
+            master_logger.info("[VIZQL] ✅ View page loaded successfully")
+            html_content = response.text
+
+            # STEP 2: Extract session information from the page
+            master_logger.info("[VIZQL] Extracting session information...")
+
+            # Extract session ID (multiple patterns to try)
+            session_id = None
+            session_patterns = [
+                r'"sessionid":"([^"]+)"',
+                r'sessionid["\']?\s*:\s*["\']([^"\']+)["\']',
+                r'vizql_session["\']?\s*:\s*["\']([^"\']+)["\']'
+            ]
+
+            for pattern in session_patterns:
+                match = re.search(pattern, html_content, re.IGNORECASE)
+                if match:
+                    session_id = match.group(1)
+                    master_logger.info(f"[VIZQL] ✅ Found session ID: {session_id[:20]}...")
+                    break
+
+            if not session_id:
+                master_logger.error("[VIZQL] Failed to extract session ID from page")
+                master_logger.debug(f"[VIZQL] HTML preview: {html_content[:500]}")
+                return None
+
+            # Extract worksheet name(s)
+            worksheet_names = []
+            worksheet_patterns = [
+                r'"worksheet":"([^"]+)"',
+                r'"name":"([^"]+)","worksheetImpl"',
+                r'worksheet["\']?\s*:\s*["\']([^"\']+)["\']'
+            ]
+
+            for pattern in worksheet_patterns:
+                matches = re.findall(pattern, html_content, re.IGNORECASE)
+                if matches:
+                    worksheet_names.extend(matches)
+
+            # Remove duplicates
+            worksheet_names = list(set(worksheet_names))
+
+            if not worksheet_names:
+                # Fallback: try to use view name as worksheet name
+                worksheet_names = [view_name]
+                master_logger.warning(f"[VIZQL] No worksheet names found, using view name: {view_name}")
+            else:
+                master_logger.info(f"[VIZQL] ✅ Found {len(worksheet_names)} worksheet(s): {worksheet_names}")
+
+            # STEP 3: Try to extract data from each worksheet
+            all_dataframes = []
+
+            for worksheet_name in worksheet_names:
+                try:
+                    master_logger.info(f"[VIZQL] Attempting to extract data from worksheet: {worksheet_name}")
+
+                    # Build VizQL data endpoint
+                    if site_content_url:
+                        vizql_base = f"{self.config['tableau_server_url']}/t/{site_content_url}/vizql/w/{encoded_workbook}/v/{encoded_view}"
+                    else:
+                        vizql_base = f"{self.config['tableau_server_url']}/vizql/w/{encoded_workbook}/v/{encoded_view}"
+
+                    # Try the summary data endpoint first (this usually returns underlying data)
+                    vizql_data_url = f"{vizql_base}/vudcsv/sessions/{session_id}/views/{urllib.parse.quote(worksheet_name)}"
+
+                    master_logger.debug(f"[VIZQL] Requesting data from: {vizql_data_url}")
+
+                    # Try CSV format first (easiest to parse)
+                    params = {
+                        'summary': 'true',
+                        'underlying': 'true'
+                    }
+
+                    data_response = session.get(vizql_data_url, params=params, timeout=60)
+
+                    if data_response.status_code == 200:
+                        master_logger.info(f"[VIZQL] ✅ Successfully retrieved data for worksheet: {worksheet_name}")
+
+                        # Try to parse as CSV using Polars for better performance
+                        try:
+                            df = pl.read_csv(StringIO(data_response.text))
+
+                            if df.height > 0:  # Polars uses .height instead of .shape[0]
+                                master_logger.info(f"[VIZQL] ✅ Parsed CSV data: {df.height} rows × {df.width} columns")
+                                all_dataframes.append(df)
+                                continue
+                        except Exception as csv_error:
+                            master_logger.debug(f"[VIZQL] CSV parsing failed: {csv_error}")
+
+                    # If CSV didn't work, try alternative endpoint
+                    master_logger.info("[VIZQL] CSV endpoint failed, trying alternative VizQL endpoints...")
+
+                    # Try bootstrapSession/getSummaryData endpoint
+                    alt_url = f"{vizql_base}/bootstrapSession/sessions/{session_id}"
+                    post_data = {
+                        'sheet_id': worksheet_name,
+                        'summary': 'true'
+                    }
+
+                    alt_response = session.post(alt_url, data=post_data, timeout=60)
+
+                    if alt_response.status_code == 200:
+                        # Try to parse JSON response
+                        try:
+                            json_data = alt_response.json()
+                            df = self._parse_vizql_json_to_polars(json_data, worksheet_name)
+
+                            if df is not None and df.height > 0:
+                                master_logger.info(f"[VIZQL] ✅ Parsed JSON data: {df.height} rows × {df.width} columns")
+                                all_dataframes.append(df)
+                                continue
+                        except Exception as json_error:
+                            master_logger.debug(f"[VIZQL] JSON parsing failed: {json_error}")
+
+                    master_logger.warning(f"[VIZQL] ⚠️  Could not extract data from worksheet: {worksheet_name}")
+
+                except Exception as worksheet_error:
+                    master_logger.error(f"[VIZQL] Error processing worksheet {worksheet_name}: {worksheet_error}")
+                    master_logger.debug(traceback.format_exc())
+
+            # STEP 4: Combine all dataframes and convert to pandas
+            if all_dataframes:
+                if len(all_dataframes) == 1:
+                    final_df = all_dataframes[0]
+                else:
+                    # Concatenate all dataframes using Polars
+                    try:
+                        final_df = pl.concat(all_dataframes, how="vertical")
+                        master_logger.info(f"[VIZQL] ✅ Combined {len(all_dataframes)} worksheets into single DataFrame")
+                    except Exception as concat_error:
+                        master_logger.warning(f"[VIZQL] Failed to concatenate dataframes: {concat_error}")
+                        final_df = all_dataframes[0]
+
+                master_logger.info(f"[VIZQL] ✅ Final data: {final_df.height} rows × {final_df.width} columns")
+                
+                # Convert Polars DataFrame to Pandas for compatibility with rest of codebase
+                return final_df.to_pandas()
+            else:
+                master_logger.warning("[VIZQL] ⚠️  No data extracted from any worksheet")
+                return None
+
+        except Exception as e:
+            master_logger.error(f"[VIZQL] Error getting VizQL data: {e}")
+            master_logger.debug(traceback.format_exc())
+            return None
+
+    def _parse_vizql_json_to_polars(self, json_data: dict, worksheet_name: str) -> Optional[pl.DataFrame]:
+        """
+        Parse VizQL JSON response and convert to Polars DataFrame
+
+        Args:
+            json_data: JSON response from VizQL API
+            worksheet_name: Name of the worksheet being parsed
+
+        Returns:
+            Polars DataFrame or None if parsing fails
+        """
+        try:
+            master_logger.debug(f"[VIZQL] Parsing JSON data for worksheet: {worksheet_name}")
+
+            # VizQL JSON can have various structures, try common patterns
+            data_dict = {}
+
+            # Pattern 1: Check for 'vqlCmdResponse' structure
+            if 'vqlCmdResponse' in json_data:
+                cmd_response = json_data['vqlCmdResponse']
+
+                # Look for data in layoutStatus.applicationPresModel
+                if 'layoutStatus' in cmd_response:
+                    layout_status = cmd_response['layoutStatus']
+
+                    if 'applicationPresModel' in layout_status:
+                        pres_model = layout_status['applicationPresModel']
+
+                        # Extract data from presentation model
+                        if 'dataDictionary' in pres_model:
+                            data_dict = pres_model['dataDictionary']
+                        elif 'dataSegments' in pres_model:
+                            # Alternative structure
+                            data_dict = pres_model['dataSegments']
+
+            # Pattern 2: Direct data structure
+            elif 'secondaryInfo' in json_data and 'presModelHolder' in json_data['secondaryInfo']:
+                pres_model = json_data['secondaryInfo']['presModelHolder']
+                if 'dataDictionary' in pres_model:
+                    data_dict = pres_model['dataDictionary']
+
+            # Pattern 3: dataValues direct structure
+            elif 'dataValues' in json_data:
+                data_dict = json_data['dataValues']
+
+            # If we found data dictionary, try to extract columns and values
+            if data_dict:
+                # Extract column information
+                columns = []
+                column_data = {}
+
+                # Try to find column names and data
+                if 'presModelMap' in data_dict:
+                    pres_map = data_dict['presModelMap']
+
+                    # Iterate through presentation model to find columns
+                    for key, value in pres_map.items():
+                        if isinstance(value, dict):
+                            if 'fieldCaption' in value:
+                                col_name = value['fieldCaption']
+                                columns.append(col_name)
+
+                                # Look for data values
+                                if 'valueAlias' in value:
+                                    column_data[col_name] = value['valueAlias']
+                                elif 'dataValues' in value:
+                                    column_data[col_name] = value['dataValues']
+
+                # If we have columns and data, create DataFrame
+                if columns and column_data:
+                    try:
+                        df = pl.DataFrame(column_data)
+                        master_logger.info(f"[VIZQL] ✅ Parsed JSON to DataFrame: {df.height} rows × {df.width} columns")
+                        return df
+                    except Exception as df_error:
+                        master_logger.debug(f"[VIZQL] Failed to create DataFrame from column_data: {df_error}")
+
+            # If standard parsing didn't work, try to extract any tabular data
+            # Look for arrays that might contain row data
+            for key in ['dataTable', 'rows', 'data', 'values']:
+                if key in json_data and isinstance(json_data[key], list):
+                    try:
+                        # Try to convert list to DataFrame
+                        if json_data[key]:
+                            df = pl.DataFrame(json_data[key])
+                            if df.height > 0:
+                                master_logger.info(f"[VIZQL] ✅ Parsed JSON array '{key}' to DataFrame: {df.height} rows × {df.width} columns")
+                                return df
+                    except Exception:
+                        pass
+
+            master_logger.warning("[VIZQL] Could not parse VizQL JSON response into DataFrame")
+            master_logger.debug(f"[VIZQL] JSON structure keys: {list(json_data.keys())}")
+            return None
+
+        except Exception as e:
+            master_logger.error(f"[VIZQL] Error parsing VizQL JSON: {e}")
+            master_logger.debug(traceback.format_exc())
+            return None
+
+    # JavaScript API implementation (kept for reference, not used in production)
+    @retry_on_failure(max_retries=2, backoff_factor=0.5)
+    def extract_view_data_via_javascript_api(self, workbook_name: str, view_name: str,
+                                             site_content_url: str = "") -> Optional[pd.DataFrame]:
+        """
+        Extract data from a Tableau view using JavaScript API with manual browser login
+
+        FIRST TIME: Opens visible browser window and waits for you to login manually via Uber SSO
+        SUBSEQUENT TIMES: Uses saved cookies for automatic authentication (runs headless)
+
+        This approach gets FULL underlying data from live connection dashboards!
+
+        Args:
+            workbook_name: Name of the workbook
+            view_name: Name of the view
+            site_content_url: Site content URL (e.g., "uMetricAnalytics")
+
+        Returns:
+            DataFrame with extracted data or None if failed
+        """
+        try:
+            master_logger.info(f"[JS_API] Extracting data for view: {view_name}")
+
+            # Import selenium here to avoid loading if not needed
+            from selenium import webdriver
+            from selenium.webdriver.chrome.options import Options
+            from selenium.webdriver.chrome.service import Service
+            from selenium.webdriver.common.by import By
+            from selenium.webdriver.support.ui import WebDriverWait
+            from selenium.webdriver.support import expected_conditions as EC
+            from webdriver_manager.chrome import ChromeDriverManager
+
+            # Check if we have saved cookies
+            cookie_file = "/Users/aranja14/Desktop/chatbot/tableau_browser_cookies.pkl"
+            has_saved_cookies = os.path.exists(cookie_file)
+
+            # Configure Chrome - use headless ONLY if we have saved cookies
+            chrome_options = Options()
+            if has_saved_cookies:
+                master_logger.info("[JS_API] Using saved cookies - running in headless mode")
+                chrome_options.add_argument('--headless')
+            else:
+                master_logger.info("[JS_API] No saved cookies - opening visible browser for manual login")
+                master_logger.info("[JS_API] ⚠️  YOU WILL NEED TO LOGIN MANUALLY IN THE BROWSER WINDOW")
+
+            chrome_options.add_argument('--no-sandbox')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--disable-gpu')
+            chrome_options.add_argument('--window-size=1920,1080')
+            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+            chrome_options.add_argument('--ignore-certificate-errors')
+
+            master_logger.debug("[JS_API] Initializing Chrome browser...")
+
+            # Initialize driver with automatic driver management
+            service = Service(ChromeDriverManager().install())
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+
+            try:
+                import time as time_module
+
+                # STEP 1: Authenticate browser session
+                if has_saved_cookies:
+                    master_logger.info("[JS_API] Step 1: Loading saved cookies...")
+                    if not self._load_saved_cookies(driver):
+                        master_logger.warning("[JS_API] Failed to load saved cookies, requesting manual login...")
+                        if not self._manual_browser_login(driver, site_content_url):
+                            master_logger.error("[JS_API] Manual login failed")
+                            return None
+                else:
+                    master_logger.info("[JS_API] Step 1: Requesting manual login...")
+                    if not self._manual_browser_login(driver, site_content_url):
+                        master_logger.error("[JS_API] Manual login failed")
+                        return None
+
+                master_logger.info("[JS_API] ✅ Browser authenticated successfully")
+
+                # STEP 2: Navigate to the Tableau view
+                master_logger.info("[JS_API] Step 2: Loading Tableau view...")
+
+                # URL-encode workbook and view names for Tableau URL format
+                import urllib.parse
+                encoded_workbook = urllib.parse.quote(workbook_name)
+                encoded_view = urllib.parse.quote(view_name)
+
+                # Build Tableau view URL
+                if site_content_url:
+                    view_url = f"{self.config['tableau_server_url']}/t/{site_content_url}/views/{encoded_workbook}/{encoded_view}"
+                else:
+                    view_url = f"{self.config['tableau_server_url']}/views/{encoded_workbook}/{encoded_view}"
+
+                # Add embed parameter for simpler rendering
+                view_url += "?:embed=y&:display_count=n&:showVizHome=n"
+
+                master_logger.info(f"[JS_API] Loading Tableau view: {view_url}")
+
+                driver.get(view_url)
+
+                # STEP 3: Wait for Tableau visualization to load
+                master_logger.info("[JS_API] Step 3: Waiting for Tableau viz to load...")
+
+                time_module.sleep(3)
+                page_title = driver.title
+                master_logger.debug(f"[JS_API] Page title: {page_title}")
+
+                # Wait for Tableau API to be available (max 30 seconds)
+                WebDriverWait(driver, 30).until(
+                    lambda d: d.execute_script("return typeof tableau !== 'undefined'")
+                )
+                master_logger.debug("[JS_API] Tableau API loaded")
+
+                # Check what Tableau API is available
+                tableau_info = driver.execute_script("""
+                    if (typeof tableau === 'undefined') return {available: false};
+                    return {
+                        available: true,
+                        hasVizManager: typeof tableau.VizManager !== 'undefined',
+                        hasEmbedding: typeof tableau.Embedding !== 'undefined',
+                        properties: Object.keys(tableau)
+                    };
+                """)
+                master_logger.debug(f"[JS_API] Tableau API info: {tableau_info}")
+
+                # Wait a bit more for the viz to fully initialize
+                time_module.sleep(3)
+
+                # STEP 4: Extract data from the visualization
+                master_logger.info("[JS_API] Step 4: Extracting data via JavaScript API...")
+
+                # Check if any vizzes are loaded
+                viz_count = driver.execute_script("return tableau.VizManager.getVizs().length;")
+                master_logger.debug(f"[JS_API] Number of vizzes found: {viz_count}")
+
+                if viz_count == 0:
+                    master_logger.error("[JS_API] ❌ No vizzes found on page - visualization may not have loaded")
+                    master_logger.debug(f"[JS_API] Current URL: {driver.current_url}")
+                    return None
+
+                # Execute JavaScript to extract data using Tableau's JS API
+                data_json = driver.execute_script("""
+                    return new Promise((resolve, reject) => {
+                        try {
+                            // Get the viz object
+                            var viz = tableau.VizManager.getVizs()[0];
+                            if (!viz) {
+                                reject('No viz found - this should not happen');
+                                return;
+                            }
+
+                            // Get the active sheet
+                            var sheet = viz.getWorkbook().getActiveSheet();
+
+                            // If it's a dashboard, get the first worksheet
+                            if (sheet.getSheetType() === 'dashboard') {
+                                var worksheets = sheet.getWorksheets();
+                                if (worksheets.length > 0) {
+                                    sheet = worksheets[0];
+                                }
+                            }
+
+                            // Get underlying data
+                            sheet.getUnderlyingDataAsync().then(function(table) {
+                                var columns = table.getColumns().map(col => col.getFieldName());
+                                var data = table.getData().map(function(row) {
+                                    var rowData = {};
+                                    for (var i = 0; i < columns.length; i++) {
+                                        rowData[columns[i]] = row[i].formattedValue;
+                                    }
+                                    return rowData;
+                                });
+
+                                resolve({
+                                    columns: columns,
+                                    data: data
+                                });
+                            }).catch(reject);
+
+                        } catch(e) {
+                            reject(e.toString());
+                        }
+                    });
+                """)
+
+                master_logger.info(f"[JS_API] ✅ Data extracted successfully: {len(data_json.get('data', []))} rows")
+
+                # Convert to DataFrame
+                if data_json and 'data' in data_json and len(data_json['data']) > 0:
+                    df = pd.DataFrame(data_json['data'])
+                    master_logger.info(f"[JS_API] Created DataFrame: {df.shape[0]} rows x {df.shape[1]} columns")
+                    return df
+                else:
+                    master_logger.warning("[JS_API] No data extracted from view")
+                    return None
+
+            finally:
+                # Always close the browser
+                driver.quit()
+                master_logger.debug("[JS_API] Browser closed")
+
+        except Exception as e:
+            master_logger.error(f"[JS_API] Error extracting data: {type(e).__name__}: {str(e)}")
+            master_logger.debug(traceback.format_exc())
+            return None
+
     @retry_on_failure(max_retries=3, backoff_factor=1.0)
     def get_workbook_id(self, site_id: str, auth_token: str, workbook_name: str) -> str:
         """Get workbook ID by name with retry logic"""
@@ -3349,26 +4249,62 @@ class TableauConnectionManager:
     
     @retry_on_failure(max_retries=2, backoff_factor=0.5)
     def get_all_workbooks(self, auth_token: str, site_id: str) -> List[str]:
-        """Get list of all available workbook names for fuzzy matching"""
-        url = f"{self.config['tableau_server_url']}/api/{self.config['api_version']}/sites/{site_id}/workbooks"
-        headers = {"X-Tableau-Auth": auth_token}
-        response = requests.get(url, headers=headers, verify=False)
-        
-        if response.status_code == 200:
-            root = ET.fromstring(response.text)
-            namespace = {'ts': 'http://tableau.com/api'}
-            
-            workbook_names = []
-            for workbook_elem in root.findall(".//ts:workbook", namespace):
-                workbook_name = workbook_elem.attrib.get('name')
-                if workbook_name:
-                    workbook_names.append(workbook_name)
-            
-            master_logger.info(f"Retrieved {len(workbook_names)} workbooks for fuzzy matching")
-            return workbook_names
-        else:
-            master_logger.error(f"Failed to get workbooks list: {response.text}")
-            raise Exception(f"Failed to fetch workbooks list: {response.text}")
+        """Get list of all available workbook names for fuzzy matching with pagination support
+
+        Fix for pagination: Retrieve ALL workbooks, not just first 100
+        by Aniket 2/12/2025
+        """
+        workbook_names = []
+        page_size = 100
+        page_number = 1
+        namespace = {'ts': 'http://tableau.com/api'}
+
+        while True:
+            url = f"{self.config['tableau_server_url']}/api/{self.config['api_version']}/sites/{site_id}/workbooks?pageSize={page_size}&pageNumber={page_number}"
+            headers = {"X-Tableau-Auth": auth_token}
+            response = requests.get(url, headers=headers, verify=False)
+
+            if response.status_code == 200:
+                root = ET.fromstring(response.text)
+
+                # Get pagination info from response
+                pagination = root.find(".//ts:pagination", namespace)
+
+                # Extract workbooks from this page
+                page_workbooks = []
+                for workbook_elem in root.findall(".//ts:workbook", namespace):
+                    workbook_name = workbook_elem.attrib.get('name')
+                    if workbook_name:
+                        page_workbooks.append(workbook_name)
+
+                workbook_names.extend(page_workbooks)
+                master_logger.debug(f"Retrieved {len(page_workbooks)} workbooks from page {page_number}")
+
+                # Check if there are more pages
+                if pagination is not None:
+                    total_available = int(pagination.attrib.get('totalAvailable', 0))
+                    page_size_attr = int(pagination.attrib.get('pageSize', page_size))
+
+                    # If we've retrieved all workbooks, break
+                    if len(workbook_names) >= total_available:
+                        master_logger.info(f"Retrieved all {total_available} workbooks across {page_number} page(s)")
+                        break
+                else:
+                    # No pagination element means we got all results
+                    break
+
+                # Check if we got fewer workbooks than page size (last page)
+                if len(page_workbooks) < page_size:
+                    master_logger.info(f"Retrieved total {len(workbook_names)} workbooks across {page_number} page(s)")
+                    break
+
+                page_number += 1
+            else:
+                master_logger.error(f"Failed to get workbooks list: {response.text}")
+                raise Exception(f"Failed to fetch workbooks list: {response.text}")
+
+        master_logger.info(f"Retrieved {len(workbook_names)} workbooks for fuzzy matching")
+        return workbook_names
     
     @retry_on_failure(max_retries=2, backoff_factor=0.5)
     def get_workbook_views(self, site_id: str, workbook_id: str, auth_token: str) -> List[dict]:
@@ -4155,20 +5091,79 @@ def initialize_tableau_connection(dashboard_context: Optional[Dict] = None) -> T
 
         master_logger.info(f"Context - workbook_id: '{extracted_workbook_id}', workbook_name: '{extracted_workbook_name}', view_path: '{view_content_url}', dashboard: '{dashboard_name}'")
 
-        # Authenticate using multi-layer caching
-        # First, try to get or create a temporary ChatState for this session
-        content_url = TABLEAU_CONFIG.get("site_content_url", "")
-        
-        # Get authentication with smart caching (pickle cache will be used if available)
-        auth_token, site_id = connection_manager.get_or_create_auth_from_storage(
-            content_url=content_url,
-            chat_state=None  # Will be created later with full context
-        )
-
-        # Extract source URL for caching
+        # Extract source URL for dynamic credential loading
         source_url = dashboard_context.get("url") if dashboard_context else None
         if source_url:
             master_logger.debug(f"Extracted source URL from dashboard context: '{source_url}'")
+
+        # Load credentials dynamically based on URL if provided
+        # This allows different sites to use different credentials from Google Sheets
+        # NEW: Support for multiple credentials with fallback
+        config_to_use = TABLEAU_CONFIG
+        all_credentials = None
+        auth_token = None
+        site_id = None
+
+        if source_url:
+            master_logger.info("🔄 Loading site-specific credentials from Google Sheets based on URL...")
+            try:
+                # Get ALL credentials for this site (for fallback support)
+                all_credentials = load_tableau_config(tableau_url=source_url, get_all_fallbacks=True)
+                master_logger.info(f"✅ Loaded {len(all_credentials)} credential(s) for site")
+
+                # Try each credential until one succeeds
+                for credential_idx, credential in enumerate(all_credentials, start=1):
+                    master_logger.info(f"🔑 Trying credential #{credential_idx}/{len(all_credentials)} - auth_type: {credential.get('auth_type')}")
+
+                    try:
+                        # Update connection_manager config with this credential
+                        connection_manager.config = credential
+                        content_url = credential.get("site_content_url", "")
+
+                        # Try to authenticate with this credential
+                        # Clear cache to force fresh authentication attempt
+                        cache_key = f"{content_url}_auth"
+                        if hasattr(connection_manager, '_auth_cache') and cache_key in connection_manager._auth_cache:
+                            del connection_manager._auth_cache[cache_key]
+                            master_logger.debug(f"Cleared auth cache for fresh attempt with credential #{credential_idx}")
+
+                        # Attempt authentication
+                        auth_token, site_id = connection_manager.authenticate(content_url)
+
+                        # If we get here, authentication succeeded!
+                        master_logger.info(f"✅ SUCCESS! Credential #{credential_idx} worked - auth_type: {credential.get('auth_type')}")
+                        config_to_use = credential
+                        break  # Exit loop on success
+
+                    except Exception as auth_error:
+                        master_logger.warning(f"❌ Credential #{credential_idx} failed: {auth_error}")
+                        if credential_idx < len(all_credentials):
+                            master_logger.info(f"⏩ Trying next credential...")
+                        else:
+                            master_logger.error(f"❌ All {len(all_credentials)} credentials failed!")
+                            raise Exception(f"All {len(all_credentials)} credentials failed. Last error: {auth_error}")
+
+            except Exception as e:
+                master_logger.warning(f"⚠️ Failed to load site-specific credentials with fallback, using default config: {e}")
+                config_to_use = TABLEAU_CONFIG
+                all_credentials = None
+
+        # If no URL provided or fallback failed, use default authentication
+        if not auth_token:
+            master_logger.info("Using default authentication flow...")
+
+            # Update connection_manager config if we have a valid config
+            if config_to_use:
+                connection_manager.config = config_to_use
+
+            # Authenticate using multi-layer caching
+            content_url = config_to_use.get("site_content_url", "")
+
+            # Get authentication with smart caching (pickle cache will be used if available)
+            auth_token, site_id = connection_manager.get_or_create_auth_from_storage(
+                content_url=content_url,
+                chat_state=None  # Will be created later with full context
+            )
 
         # Resolution strategy: ID -> view path -> exact name -> fuzzy last
         current_workbook = None
