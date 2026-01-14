@@ -32,6 +32,10 @@ except ImportError:
 
 RAG_DEPENDENCIES_AVAILABLE = FAISS_AVAILABLE and OPENAI_AVAILABLE
 
+# gazelle:ignore models.schemas.DataChunk
+# gazelle:ignore models.schemas.VectorSearchResult
+# gazelle:ignore models.schemas
+# gazelle:ignore models
 from models.schemas import DataChunk, VectorSearchResult
 
 class TableauVectorStore:

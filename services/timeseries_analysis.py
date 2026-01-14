@@ -20,6 +20,8 @@ from sklearn.metrics import mean_squared_error
 
 # TimeGPT (using nixtla)
 try:
+    # gazelle:ignore nixtla.NixtlaClient
+    # gazelle:ignore nixtla
     from nixtla import NixtlaClient
 except ImportError:
     print("Warning: nixtla not installed. Install with: pip install nixtla")

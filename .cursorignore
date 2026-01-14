@@ -1,6 +1,3 @@
-
-RAG/
-
 # Ignore backup files in nl_to_python folder only
 services/nlp_to_python/*_beforePolars.py
 services/nlp_to_python/*_afterMerging.py

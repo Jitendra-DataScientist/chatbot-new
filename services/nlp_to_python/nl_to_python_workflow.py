@@ -35,10 +35,14 @@ from .nl_to_python_operations import (
 )
 from .nl_to_python_codegen import CODE_GENERATORS
 
-# gazelle:ignore models
-# gazelle:ignore services
 # External imports
+# gazelle:ignore models.schemas.NLToPythonResult
+# gazelle:ignore models.schemas
+# gazelle:ignore models
 from models.schemas import NLToPythonResult, PandasOperation
+# gazelle:ignore services.fuzzy_column_matcher.FuzzyColumnMatcher
+# gazelle:ignore services.fuzzy_column_matcher
+# gazelle:ignore services
 from services.fuzzy_column_matcher import FuzzyColumnMatcher
 
 # LangGraph imports
@@ -839,6 +843,9 @@ class NLToPythonGeneratorV5:
             confidence = stage2_result.confidence if hasattr(stage2_result, 'confidence') else 0.7
             
             # Detect ranking query flags for proper display sorting
+            # gazelle:ignore services.nlp_to_python.nl_to_python_codegen.RankingCodeGen
+            # gazelle:ignore services.nlp_to_python.nl_to_python_codegen
+            # gazelle:ignore services.nlp_to_python
             from services.nlp_to_python.nl_to_python_codegen import RankingCodeGen
             is_top_query = RankingCodeGen._detect_top_query(query)
             is_bottom_query = RankingCodeGen._detect_bottom_query(query)
@@ -2346,6 +2353,9 @@ result = df_filtered.select([
         # 🔥 FIX BY JITENDRA: Extract ranking params for ALL operations (not just 'ranking') to support multi-operation queries like ['grouped_aggregation', 'ranking']
         # Reason: These are optional parameters that any operation can use if present
         # Import here to avoid circular imports
+        # gazelle:ignore services.nlp_to_python.nl_to_python_codegen.RankingCodeGen
+        # gazelle:ignore services.nlp_to_python.nl_to_python_codegen
+        # gazelle:ignore services.nlp_to_python
         from services.nlp_to_python.nl_to_python_codegen import RankingCodeGen
         
         # Extract limit for "top N" or "bottom N" queries (optional parameter)

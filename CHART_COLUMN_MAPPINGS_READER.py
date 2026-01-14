@@ -190,7 +190,7 @@ class TableauColumnMappingExtractor:
         Handles cycles gracefully by assigning them max level + 1.
         """
         # Initialize all levels to 0
-        for field_name in dependencies:
+        for field_name in dependencies.keys():
             dependencies[field_name]['level'] = 0
 
         # Count incoming edges for each node
@@ -198,7 +198,7 @@ class TableauColumnMappingExtractor:
         for field_name, info in dependencies.items():
             for dep in info['depends_on']:
                 if dep in in_degree:
-                    in_degree[dep] += 1
+                    in_degree[dep] += 1  # noqa: B007
 
         # Queue of nodes with no incoming edges
         queue = [name for name, degree in in_degree.items() if degree == 0]
@@ -411,7 +411,12 @@ class TableauColumnMappingExtractor:
             return 'identifier'
         elif any(keyword in col_lower for keyword in ['queue', 'status', 'country', 'type', 'category', 'state', 'priority']):
             return 'categorical'
-        elif any(keyword in col_lower for keyword in ['count', 'amount', 'total', 'sum', 'avg', 'rate', 'percent', 'aht', 'volume', 'twc', 'wwc', 'cost', 'spend', 'price']):
+        elif any(
+            keyword in col_lower for keyword in [
+                'count', 'amount', 'total', 'sum', 'avg', 'rate',
+                'percent', 'aht', 'volume', 'twc', 'wwc', 'cost', 'spend', 'price'
+            ]
+        ):
             return 'numeric'
 
         # Default
@@ -487,8 +492,6 @@ class TableauColumnMappingExtractor:
         except (json.JSONDecodeError, IOError, Exception) as e:
             print(f"⚠️  Cannot validate {file_path.name}: {e}")
             return False
-        else:
-            return result
 
     def process_dashboard(self, file_path: Path) -> dict:
         """Process a single dashboard metadata file"""
@@ -596,9 +599,9 @@ class TableauColumnMappingExtractor:
             }
             
             dashboard_result["charts"].append(chart_result)
-        
+
         return dashboard_result
-    
+
     def add_csv_column_mapping(self, csv_data_loader=None):
         """
         Add CSV column mappings to prevent column name mismatches.

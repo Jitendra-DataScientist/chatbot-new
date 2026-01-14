@@ -34,15 +34,23 @@ except Exception:
     stats = None
     SCIPY_AVAILABLE = False
 
-# gazelle:ignore master_logger
-# gazelle:ignore models
-# gazelle:ignore services
 # Import models and services (from existing V4)
+# gazelle:ignore models.schemas
+# gazelle:ignore models
 from models.schemas import NLToPythonResult, PandasOperation
+# gazelle:ignore services.fuzzy_column_matcher
+# gazelle:ignore services
 from services.fuzzy_column_matcher import FuzzyColumnMatcher
+# gazelle:ignore master_logger
 from master_logger import setup_module_logger
 
 # Import Context Manager modules (Integration by Aniket 4/12/2025)
+# gazelle:ignore services.context_manager.DisambiguationManager
+# gazelle:ignore services.context_manager.ConversationMemory
+# gazelle:ignore services.context_manager.TemporalDetector
+# gazelle:ignore services.context_manager.UserDisambiguationRequired
+# gazelle:ignore services.context_manager.ContextManagerState
+# gazelle:ignore services.context_manager
 from services.context_manager import (
     DisambiguationManager,
     ConversationMemory,
@@ -151,6 +159,9 @@ class DefaultContextManager:
 
         Integration by Aniket 4/12/2025
         """
+        # gazelle:ignore services.context_manager.normalize_cache_key
+        # gazelle:ignore services.context_manager
+        # gazelle:ignore services
         from services.context_manager import normalize_cache_key
         return normalize_cache_key(value)
     
@@ -192,6 +203,9 @@ class DefaultContextManager:
 
         # Check cache first
         self.logger.info(f"[CONTEXT_MGR] Step 3: Checking cache...")
+        # gazelle:ignore services.context_manager.build_cache_key
+        # gazelle:ignore services.context_manager
+        # gazelle:ignore services
         from services.context_manager import build_cache_key
         cache_key = build_cache_key("filter", filter_value)
         self.logger.info(f"[CONTEXT_MGR] Cache key: {cache_key}")
@@ -301,6 +315,9 @@ class DefaultContextManager:
             Cached disambiguation choice or None
         """
         # Check LangGraph state cache (integrated with DisambiguationManager)
+        # gazelle:ignore services.context_manager.build_cache_key
+        # gazelle:ignore services.context_manager
+        # gazelle:ignore services
         from services.context_manager import build_cache_key
         cache_key_str = build_cache_key("filter", term)
 
@@ -332,6 +349,9 @@ class DefaultContextManager:
             choice: The chosen actual value
         """
         # Update LangGraph state cache
+        # gazelle:ignore services.context_manager.build_cache_key
+        # gazelle:ignore services.context_manager
+        # gazelle:ignore services
         from services.context_manager import build_cache_key
         cache_key_str = build_cache_key("filter", term)
 
