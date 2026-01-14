@@ -9,6 +9,8 @@ import requests
 import urllib3
 from typing import Dict, Any, Optional, Tuple
 from datetime import datetime
+# gazelle:ignore master_logger.setup_module_logger
+# gazelle:ignore master_logger
 from master_logger import setup_module_logger
 
 # Disable proxy for corporate network compatibility - Fix for connection issues

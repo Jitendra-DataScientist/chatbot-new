@@ -47,6 +47,10 @@ from services.fuzzy_column_matcher import FuzzyColumnMatcher
 from services.multi_table_service import TableauMultiTableService
 from services.insight_generator import TableauInsightGenerator
 # 🆕 Import the specialist agent and its context manager
+# gazelle:ignore services.NL_to_python.NLToPythonGenerator
+# gazelle:ignore services.NL_to_python.DefaultContextManager
+# gazelle:ignore services.NL_to_python
+# gazelle:ignore services
 from services.NL_to_python import NLToPythonGenerator, DefaultContextManager
 from services.enhanced_analysis_service import EnhancedAnalysisService
 
@@ -377,6 +381,10 @@ class QueryAgent:
         
         # 🆕 4. Add Layer 0 normalizer and ConversationMemory for follow-up detection
         from services.layer0_constrained_parser import Layer0QueryNormalizer
+        # gazelle:ignore services.context_manager.conversation_memory.ConversationMemory
+        # gazelle:ignore services.context_manager.conversation_memory
+        # gazelle:ignore services.context_manager
+        # gazelle:ignore services
         from services.context_manager.conversation_memory import ConversationMemory
         try:
             self.layer0_normalizer = Layer0QueryNormalizer(llm_client=llm_client)
@@ -734,6 +742,9 @@ class QueryAgent:
             master_logger.info(f"[SCHEMA_ENHANCED] Using enhanced data from last result (Shape: {csv_data.shape})")
 
         # Register data with DataManager EARLY (so all code paths can use data_id)
+        # gazelle:ignore services.data_manager.DataManager
+        # gazelle:ignore services.data_manager
+        # gazelle:ignore services
         from services.data_manager import DataManager
         data_manager = DataManager()
         connection_key = source_id or "default"
@@ -2027,6 +2038,9 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
         
         try:
             # Get DataFrame from DataManager using data_id
+            # gazelle:ignore services.data_manager.DataManager
+            # gazelle:ignore services.data_manager
+            # gazelle:ignore services
             from services.data_manager import DataManager
             data_manager = DataManager()
             data_id = state.get("data_id")
@@ -2093,8 +2107,12 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
         
         try:
             # Extract the no-chart exploration logic from process_with_services
+            # gazelle:ignore services.data_exploration_no_chart.data_exploration
+            # gazelle:ignore services.data_exploration_no_chart
+            # gazelle:ignore services
             from services.data_exploration_no_chart import data_exploration
             
+            # gazelle:ignore app
             import app
             smart_agg_decider = getattr(app, 'smart_agg_decider', None)
             
@@ -2111,6 +2129,9 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
             )
             
             # Get DataFrame from DataManager
+            # gazelle:ignore services.data_manager.DataManager
+            # gazelle:ignore services.data_manager
+            # gazelle:ignore services
             from services.data_manager import DataManager
             data_manager = DataManager()
             csv_data = data_manager.get_data(state["data_id"])
@@ -2213,8 +2234,12 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
         
         try:
             # Extract data exploration logic from process_with_services
+            # gazelle:ignore services.data_exploration.data_exploration
+            # gazelle:ignore services.data_exploration
+            # gazelle:ignore services
             from services.data_exploration import data_exploration
             
+            # gazelle:ignore app
             import app
             smart_agg_decider = getattr(app, 'smart_agg_decider', None)
             
@@ -2225,6 +2250,9 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
             )
             
             # Get DataFrame from DataManager
+            # gazelle:ignore services.data_manager.DataManager
+            # gazelle:ignore services.data_manager
+            # gazelle:ignore services
             from services.data_manager import DataManager
             data_manager = DataManager()
             csv_data = data_manager.get_data(state["data_id"])
@@ -2272,6 +2300,9 @@ DATA SOURCE: {chart_context.get('csv_file_used', 'Unknown')}
             
             if hasattr(self.nl_to_python, 'context_manager'):
                 # Reinitialize context manager with session support
+                # gazelle:ignore services.NL_to_python.DefaultContextManager
+                # gazelle:ignore services.NL_to_python
+                # gazelle:ignore services
                 from services.NL_to_python import DefaultContextManager
                 self.nl_to_python.context_manager = DefaultContextManager(
                     session_manager=self.session_manager,
