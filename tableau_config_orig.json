@@ -1,8 +1,0 @@
-{
-    "personal_access_token_name": "tableau_chatbot",
-    "personal_access_token_secret": "zd6mZDV9R2mIOWWpqAwbdQ==:IlNBDgq2NCk9FOnrv6f8N0DTEqkvtYmf",
-    "tableau_server_url": "https://tableau-aws.uberinternal.com",
-    "api_version": "3.19",
-    "site_id": "4b7b67a8-800f-4a65-b470-12cc35378131",
-    "site_content_url": "CODS"
-}
